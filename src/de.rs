@@ -1,5 +1,5 @@
 use crate::error::Err;
-use serde::de::MapAccess;
+use serde::de::{MapAccess, SeqAccess};
 
 struct Read<'de> {
 	input: &'de str,
@@ -89,7 +89,7 @@ impl<'de> Deserializer<'de> {
 			} else if nxt.is_ascii_whitespace() {
 				break;
 			} else {
-				return Err(Err::UnexpectedChar(nxt));
+				return Err(Err::UnexpectedChar(nxt, "[word] alphanumeric"));
 			}
 		}
 
@@ -282,7 +282,14 @@ impl<'de, 'a> serde::de::Deserializer<'de> for &'a mut Deserializer<'de> {
 	where
 		V: serde::de::Visitor<'de>,
 	{
-		todo!()
+		let next = self.next_whitespace()?;
+		if next != '[' {
+			return Err(Err::Expected('[', next));
+		}
+
+		let acc = SeqAcc::new(self);
+		let val = visitor.visit_seq(acc)?;
+		Ok(val)
 	}
 
 	fn deserialize_tuple<V>(self, len: usize, visitor: V) -> Result<V::Value, Self::Error>
@@ -324,7 +331,7 @@ impl<'de, 'a> serde::de::Deserializer<'de> for &'a mut Deserializer<'de> {
 		match nxt {
 			'{' => todo!("should this even parse"),
 			_ => {
-				let acc = MapVis::new(self);
+				let acc = TopMapAcc::new(self);
 				let val = visitor.visit_map(acc);
 				val
 			}
@@ -351,7 +358,7 @@ impl<'de, 'a> serde::de::Deserializer<'de> for &'a mut Deserializer<'de> {
 		if peek == '"' || peek == '\'' {
 			return self.deserialize_str(visitor);
 		} else if !peek.is_ascii_alphabetic() {
-			return Err(Err::UnexpectedChar(peek));
+			return Err(Err::UnexpectedChar(peek, "[ident] alphanumeric"));
 		}
 
 		let ident = self.word()?;
@@ -366,17 +373,17 @@ impl<'de, 'a> serde::de::Deserializer<'de> for &'a mut Deserializer<'de> {
 	}
 }
 
-struct MapVis<'a, 'de> {
+struct TopMapAcc<'a, 'de> {
 	de: &'a mut Deserializer<'de>,
 }
 
-impl<'a, 'de> MapVis<'a, 'de> {
+impl<'a, 'de> TopMapAcc<'a, 'de> {
 	fn new(de: &'a mut Deserializer<'de>) -> Self {
-		MapVis { de }
+		TopMapAcc { de }
 	}
 }
 
-impl<'a, 'de> MapAccess<'de> for MapVis<'a, 'de> {
+impl<'a, 'de> MapAccess<'de> for TopMapAcc<'a, 'de> {
 	type Error = Err;
 	fn next_key_seed<K>(&mut self, seed: K) -> Result<Option<K::Value>, Self::Error>
 	where
@@ -394,11 +401,41 @@ impl<'a, 'de> MapAccess<'de> for MapVis<'a, 'de> {
 	where
 		V: serde::de::DeserializeSeed<'de>,
 	{
-		let next = self.de.next_whitespace()?;
-		if next != '=' {
-			return Err(Err::Expected('=', next));
+		let peek = self.de.peek_whitespace()?;
+		if peek == '=' {
+			self.de.read.discard()
+		} else if peek != '{' && peek != '[' {
+			return Err(Err::Expected('=', peek));
 		}
 
 		seed.deserialize(&mut *self.de)
+	}
+}
+
+struct SeqAcc<'a, 'de> {
+	de: &'a mut Deserializer<'de>,
+}
+
+impl<'a, 'de> SeqAcc<'a, 'de> {
+	fn new(de: &'a mut Deserializer<'de>) -> Self {
+		SeqAcc { de }
+	}
+}
+
+impl<'a, 'de> SeqAccess<'de> for SeqAcc<'a, 'de> {
+	type Error = Err;
+	fn next_element_seed<T>(&mut self, seed: T) -> Result<Option<T::Value>, Self::Error>
+	where
+		T: serde::de::DeserializeSeed<'de>,
+	{
+		let peek = self.de.peek_whitespace()?;
+		if peek == ',' {
+			self.de.read.discard();
+		} else if peek == ']' {
+			self.de.read.discard();
+			return Ok(None);
+		}
+
+		seed.deserialize(&mut *self.de).map(Some)
 	}
 }

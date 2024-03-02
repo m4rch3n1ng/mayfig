@@ -5,12 +5,12 @@ struct Txt {
 	#[allow(dead_code)]
 	abcd: u64,
 	#[allow(dead_code)]
-	test: u8,
+	test: Vec<u8>,
 }
 
 const TXT: &str = r#"
 abcd = 123
-test = 123
+test [ 1 2 3 ]
 "#;
 
 fn main() {

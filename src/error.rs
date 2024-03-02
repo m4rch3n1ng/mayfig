@@ -6,8 +6,8 @@ pub enum Err {
 	InvalidNum,
 	#[error("expected {0:?}, got {1:?}")]
 	Expected(char, char),
-	#[error("unexpected char {0:?}")]
-	UnexpectedChar(char),
+	#[error("unexpected char {0:?}, expected {1}")]
+	UnexpectedChar(char, &'static str),
 	#[error("end of file")]
 	Eof,
 	#[error("custom: {0}")]
