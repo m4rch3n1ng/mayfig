@@ -3,14 +3,14 @@ use serde_derive::Deserialize;
 #[derive(Debug, Deserialize)]
 struct Txt {
 	#[allow(dead_code)]
-	abc: String,
+	abcd: u64,
 }
 
 const TXT: &str = r#"
-abcd = "efgh"
+abcd = 123
 "#;
 
 fn main() {
-	let t = mayfig::from_str::<Txt>(TXT);
+	let t = mayfig::from_str::<Txt>(TXT).unwrap();
 	println!("t {:?}", t);
 }

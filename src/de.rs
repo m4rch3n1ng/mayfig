@@ -1,6 +1,9 @@
 use crate::error::Err;
+use serde::de::MapAccess;
 
-struct Read<'de> { input: &'de str }
+struct Read<'de> {
+	input: &'de str,
+}
 
 impl<'de> Read<'de> {
 	fn peek(&self) -> Result<char, Err> {
@@ -14,8 +17,21 @@ impl<'de> Read<'de> {
 		Ok(char)
 	}
 
+	// todo nope, that's an awful way to solve that
+	fn nth(&self, n: usize) -> Result<char, Err> {
+		let str = self.input.get(n..).ok_or(Err::Eof)?;
+		let ch = str.chars().next().unwrap();
+		Ok(ch)
+	}
+
 	fn discard(&mut self) {
 		let _ = self.next();
+	}
+
+	fn slice(&mut self, end: usize) -> &'de str {
+		let slice = &self.input[..end];
+		self.input = &self.input[end..];
+		slice
 	}
 }
 
@@ -41,17 +57,41 @@ where
 }
 
 impl<'de> Deserializer<'de> {
-	fn peek(&self) -> Result<char, Err> {
-		self.read.peek()
-	}
-
 	fn peek_whitespace(&mut self) -> Result<char, Err> {
 		loop {
-			match self.peek()? {
+			match self.read.peek()? {
 				' ' | '\t' | '\r' | '\n' => self.read.discard(),
 				c => return Ok(c),
 			}
 		}
+	}
+
+	fn next_whitespace(&mut self) -> Result<char, Err> {
+		loop {
+			match self.read.next()? {
+				' ' | '\t' | '\r' | '\n' => (),
+				c => return Ok(c),
+			}
+		}
+	}
+
+	fn word(&mut self) -> Result<&'de str, Err> {
+		self.peek_whitespace()?;
+
+		let mut end = 0;
+		loop {
+			let nxt = self.read.nth(end)?;
+			if nxt.is_ascii_whitespace() {
+				break;
+			} else if nxt.is_alphanumeric() {
+				end += nxt.len_utf8();
+			} else {
+				return Err(Err::UnexpectedChar(nxt));
+			}
+		}
+
+		let word = self.read.slice(end);
+		Ok(word)
 	}
 }
 
@@ -111,28 +151,36 @@ impl<'de, 'a> serde::de::Deserializer<'de> for &'a mut Deserializer<'de> {
 	where
 		V: serde::de::Visitor<'de>,
 	{
-		todo!()
+		let w = self.word()?;
+		let n = w.parse::<u8>().map_err(|_| Err::InvalidNum)?;
+		visitor.visit_u8(n)
 	}
 
 	fn deserialize_u16<V>(self, visitor: V) -> Result<V::Value, Self::Error>
 	where
 		V: serde::de::Visitor<'de>,
 	{
-		todo!()
+		let w = self.word()?;
+		let n = w.parse::<u16>().map_err(|_| Err::InvalidNum)?;
+		visitor.visit_u16(n)
 	}
 
 	fn deserialize_u32<V>(self, visitor: V) -> Result<V::Value, Self::Error>
 	where
 		V: serde::de::Visitor<'de>,
 	{
-		todo!()
+		let w = self.word()?;
+		let n = w.parse::<u32>().map_err(|_| Err::InvalidNum)?;
+		visitor.visit_u32(n)
 	}
 
 	fn deserialize_u64<V>(self, visitor: V) -> Result<V::Value, Self::Error>
 	where
 		V: serde::de::Visitor<'de>,
 	{
-		todo!()
+		let w = self.word()?;
+		let n = w.parse::<u64>().map_err(|_| Err::InvalidNum)?;
+		visitor.visit_u64(n)
 	}
 
 	fn deserialize_u128<V>(self, visitor: V) -> Result<V::Value, Self::Error>
@@ -167,14 +215,14 @@ impl<'de, 'a> serde::de::Deserializer<'de> for &'a mut Deserializer<'de> {
 	where
 		V: serde::de::Visitor<'de>,
 	{
-		todo!()
+		todo!("str")
 	}
 
 	fn deserialize_string<V>(self, visitor: V) -> Result<V::Value, Self::Error>
 	where
 		V: serde::de::Visitor<'de>,
 	{
-		todo!()
+		self.deserialize_str(visitor)
 	}
 
 	fn deserialize_bytes<V>(self, visitor: V) -> Result<V::Value, Self::Error>
@@ -272,7 +320,11 @@ impl<'de, 'a> serde::de::Deserializer<'de> for &'a mut Deserializer<'de> {
 		let nxt = self.peek_whitespace()?;
 		match nxt {
 			'{' => todo!("should this even parse"),
-			_ => todo!()
+			_ => {
+				let acc = MapVis::new(self);
+				let val = visitor.visit_map(acc);
+				val
+			}
 		}
 	}
 
@@ -292,7 +344,15 @@ impl<'de, 'a> serde::de::Deserializer<'de> for &'a mut Deserializer<'de> {
 	where
 		V: serde::de::Visitor<'de>,
 	{
-		todo!()
+		let peek = self.peek_whitespace()?;
+		if peek == '"' || peek == '\'' {
+			return self.deserialize_str(visitor);
+		} else if !peek.is_ascii_alphabetic() {
+			return Err(Err::UnexpectedChar(peek));
+		}
+
+		let ident = self.word()?;
+		visitor.visit_borrowed_str(ident)
 	}
 
 	fn deserialize_ignored_any<V>(self, visitor: V) -> Result<V::Value, Self::Error>
@@ -300,5 +360,42 @@ impl<'de, 'a> serde::de::Deserializer<'de> for &'a mut Deserializer<'de> {
 		V: serde::de::Visitor<'de>,
 	{
 		todo!()
+	}
+}
+
+struct MapVis<'a, 'de> {
+	de: &'a mut Deserializer<'de>,
+}
+
+impl<'a, 'de> MapVis<'a, 'de> {
+	fn new(de: &'a mut Deserializer<'de>) -> Self {
+		MapVis { de }
+	}
+}
+
+impl<'a, 'de> MapAccess<'de> for MapVis<'a, 'de> {
+	type Error = Err;
+	fn next_key_seed<K>(&mut self, seed: K) -> Result<Option<K::Value>, Self::Error>
+	where
+		K: serde::de::DeserializeSeed<'de>,
+	{
+		let next = self.de.peek_whitespace();
+		let Ok(_) = next else {
+			return Ok(None);
+		};
+
+		seed.deserialize(&mut *self.de).map(Some)
+	}
+
+	fn next_value_seed<V>(&mut self, seed: V) -> Result<V::Value, Self::Error>
+	where
+		V: serde::de::DeserializeSeed<'de>,
+	{
+		let next = self.de.next_whitespace()?;
+		if next != '=' {
+			return Err(Err::Expected('=', next));
+		}
+
+		seed.deserialize(&mut *self.de)
 	}
 }
