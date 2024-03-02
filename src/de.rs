@@ -20,7 +20,7 @@ impl<'de> Read<'de> {
 	// todo nope, that's an awful way to solve that
 	fn nth(&self, n: usize) -> Result<char, Err> {
 		let str = self.input.get(n..).ok_or(Err::Eof)?;
-		let ch = str.chars().next().unwrap();
+		let ch = str.chars().next().ok_or(Err::Eof)?;
 		Ok(ch)
 	}
 
@@ -80,11 +80,14 @@ impl<'de> Deserializer<'de> {
 
 		let mut end = 0;
 		loop {
-			let nxt = self.read.nth(end)?;
-			if nxt.is_ascii_whitespace() {
+			let Ok(nxt) = self.read.nth(end) else {
 				break;
-			} else if nxt.is_alphanumeric() {
+			};
+
+			if nxt.is_alphanumeric() {
 				end += nxt.len_utf8();
+			} else if nxt.is_ascii_whitespace() {
+				break;
 			} else {
 				return Err(Err::UnexpectedChar(nxt));
 			}
