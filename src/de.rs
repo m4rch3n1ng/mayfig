@@ -164,28 +164,36 @@ impl<'de, 'a> serde::de::Deserializer<'de> for &'a mut Deserializer<'de> {
 	where
 		V: serde::de::Visitor<'de>,
 	{
-		todo!()
+		let w = self.num()?;
+		let n = w.parse::<i8>().map_err(|_| Err::InvalidNum(w.to_owned()))?;
+		visitor.visit_i8(n)
 	}
 
 	fn deserialize_i16<V>(self, visitor: V) -> Result<V::Value, Self::Error>
 	where
 		V: serde::de::Visitor<'de>,
 	{
-		todo!()
+		let w = self.num()?;
+		let n = w.parse::<i16>().map_err(|_| Err::InvalidNum(w.to_owned()))?;
+		visitor.visit_i16(n)
 	}
 
 	fn deserialize_i32<V>(self, visitor: V) -> Result<V::Value, Self::Error>
 	where
 		V: serde::de::Visitor<'de>,
 	{
-		todo!()
+		let w = self.num()?;
+		let n = w.parse::<i32>().map_err(|_| Err::InvalidNum(w.to_owned()))?;
+		visitor.visit_i32(n)
 	}
 
 	fn deserialize_i64<V>(self, visitor: V) -> Result<V::Value, Self::Error>
 	where
 		V: serde::de::Visitor<'de>,
 	{
-		todo!()
+		let w = self.num()?;
+		let n = w.parse::<i64>().map_err(|_| Err::InvalidNum(w.to_owned()))?;
+		visitor.visit_i64(n)
 	}
 
 	fn deserialize_i128<V>(self, visitor: V) -> Result<V::Value, Self::Error>
@@ -242,14 +250,18 @@ impl<'de, 'a> serde::de::Deserializer<'de> for &'a mut Deserializer<'de> {
 	where
 		V: serde::de::Visitor<'de>,
 	{
-		todo!()
+		let w = self.num()?;
+		let n = w.parse::<f32>().map_err(|_| Err::InvalidNum(w.to_owned()))?;
+		visitor.visit_f32(n)
 	}
 
 	fn deserialize_f64<V>(self, visitor: V) -> Result<V::Value, Self::Error>
 	where
 		V: serde::de::Visitor<'de>,
 	{
-		todo!()
+		let w = self.num()?;
+		let n = w.parse::<f64>().map_err(|_| Err::InvalidNum(w.to_owned()))?;
+		visitor.visit_f64(n)
 	}
 
 	fn deserialize_char<V>(self, visitor: V) -> Result<V::Value, Self::Error>
