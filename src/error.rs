@@ -3,7 +3,7 @@ use thiserror::Error;
 #[derive(Debug, Error)]
 pub enum Err {
 	#[error("invalid number")]
-	InvalidNum,
+	InvalidNum(String),
 	#[error("expected {0:?}, got {1:?}")]
 	Expected(char, char),
 	#[error("unexpected char {0:?}, expected {1}")]

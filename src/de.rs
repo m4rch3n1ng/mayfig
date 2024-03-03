@@ -76,6 +76,12 @@ impl<'de> Deserializer<'de> {
 		}
 	}
 
+	fn discard_all(&mut self, ch: char) {
+		while self.peek_whitespace().is_ok_and(|peek| peek == ch) {
+			self.read.discard();
+		}
+	}
+
 	fn word(&mut self) -> Result<&'de str, Err> {
 		self.peek_whitespace()?;
 
@@ -87,7 +93,7 @@ impl<'de> Deserializer<'de> {
 
 			if nxt.is_alphanumeric() {
 				end += nxt.len_utf8();
-			} else if nxt.is_ascii_whitespace() {
+			} else if nxt.is_ascii_whitespace() || nxt.is_ascii_punctuation() {
 				break;
 			} else {
 				return Err(Err::UnexpectedChar(nxt, "[word] alphanumeric"));
@@ -168,7 +174,7 @@ impl<'de, 'a> serde::de::Deserializer<'de> for &'a mut Deserializer<'de> {
 		V: serde::de::Visitor<'de>,
 	{
 		let w = self.word()?;
-		let n = w.parse::<u8>().map_err(|_| Err::InvalidNum)?;
+		let n = w.parse::<u8>().map_err(|_| Err::InvalidNum(w.to_owned()))?;
 		visitor.visit_u8(n)
 	}
 
@@ -177,7 +183,7 @@ impl<'de, 'a> serde::de::Deserializer<'de> for &'a mut Deserializer<'de> {
 		V: serde::de::Visitor<'de>,
 	{
 		let w = self.word()?;
-		let n = w.parse::<u16>().map_err(|_| Err::InvalidNum)?;
+		let n = w.parse::<u16>().map_err(|_| Err::InvalidNum(w.to_owned()))?;
 		visitor.visit_u16(n)
 	}
 
@@ -186,7 +192,7 @@ impl<'de, 'a> serde::de::Deserializer<'de> for &'a mut Deserializer<'de> {
 		V: serde::de::Visitor<'de>,
 	{
 		let w = self.word()?;
-		let n = w.parse::<u32>().map_err(|_| Err::InvalidNum)?;
+		let n = w.parse::<u32>().map_err(|_| Err::InvalidNum(w.to_owned()))?;
 		visitor.visit_u32(n)
 	}
 
@@ -195,7 +201,7 @@ impl<'de, 'a> serde::de::Deserializer<'de> for &'a mut Deserializer<'de> {
 		V: serde::de::Visitor<'de>,
 	{
 		let w = self.word()?;
-		let n = w.parse::<u64>().map_err(|_| Err::InvalidNum)?;
+		let n = w.parse::<u64>().map_err(|_| Err::InvalidNum(w.to_owned()))?;
 		visitor.visit_u64(n)
 	}
 
@@ -446,7 +452,12 @@ impl<'a, 'de> MapAccess<'de> for TopMapAcc<'a, 'de> {
 		};
 
 		if next == ';' {
-			self.de.read.discard();
+			self.de.discard_all(';');
+		}
+
+		let next = self.de.peek_whitespace();
+		if next.is_err() {
+			return Ok(None)
 		}
 
 		seed.deserialize(&mut *self.de).map(Some)
@@ -484,10 +495,11 @@ impl<'a, 'de> MapAccess<'de> for MapAcc<'a, 'de> {
 	where
 		K: serde::de::DeserializeSeed<'de>,
 	{
-		let peek = self.de.peek_whitespace()?;
-		if peek == ';' {
-			self.de.read.discard();
-		} else if peek == '}' {
+		if self.de.peek_whitespace()? == ';' {
+			self.de.discard_all(';');
+		}
+
+		if self.de.peek_whitespace()? == '}' {
 			self.de.read.discard();
 			return Ok(None);
 		}
@@ -527,11 +539,11 @@ impl<'a, 'de> SeqAccess<'de> for SeqAcc<'a, 'de> {
 	where
 		T: serde::de::DeserializeSeed<'de>,
 	{
-		let peek = self.de.peek_whitespace()?;
-		// todo ? multiple ','
-		if peek == ',' {
-			self.de.read.discard();
-		} else if peek == ']' {
+		if self.de.peek_whitespace()? == ',' {
+			self.de.discard_all(',');
+		}
+
+		if self.de.peek_whitespace()? == ']' {
 			self.de.read.discard();
 			return Ok(None);
 		}
