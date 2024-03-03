@@ -37,13 +37,14 @@ impl<'de> Read<'de> {
 
 pub struct Deserializer<'de> {
 	read: Read<'de>,
+	indent: usize,
 }
 
 impl<'de> Deserializer<'de> {
 	#[allow(clippy::should_implement_trait)]
 	pub fn from_str(input: &'de str) -> Self {
 		let read = Read { input };
-		Deserializer { read }
+		Deserializer { read, indent: 0 }
 	}
 }
 
@@ -282,14 +283,19 @@ impl<'de, 'a> serde::de::Deserializer<'de> for &'a mut Deserializer<'de> {
 	where
 		V: serde::de::Visitor<'de>,
 	{
+		self.indent += 1;
+
 		let next = self.next_whitespace()?;
 		if next != '[' {
 			return Err(Err::Expected('[', next));
 		}
 
 		let acc = SeqAcc::new(self);
-		let val = visitor.visit_seq(acc)?;
-		Ok(val)
+		let val = visitor.visit_seq(acc);
+
+		self.indent -= 1;
+
+		val
 	}
 
 	fn deserialize_tuple<V>(self, len: usize, visitor: V) -> Result<V::Value, Self::Error>
@@ -315,14 +321,19 @@ impl<'de, 'a> serde::de::Deserializer<'de> for &'a mut Deserializer<'de> {
 	where
 		V: serde::de::Visitor<'de>,
 	{
+		self.indent += 1;
+
 		let next = self.next_whitespace()?;
 		if next != '{' {
 			return Err(Err::Expected('{', next));
 		}
 
 		let acc = MapAcc::new(self);
-		let val = visitor.visit_map(acc)?;
-		Ok(val)
+		let val = visitor.visit_map(acc);
+
+		self.indent -= 1;
+
+		val
 	}
 
 	fn deserialize_struct<V>(
@@ -334,14 +345,20 @@ impl<'de, 'a> serde::de::Deserializer<'de> for &'a mut Deserializer<'de> {
 	where
 		V: serde::de::Visitor<'de>,
 	{
-		let nxt = self.peek_whitespace()?;
-		match nxt {
-			'{' => self.deserialize_map(visitor),
-			_ => {
-				let acc = TopMapAcc::new(self);
-				let val = visitor.visit_map(acc);
-				val
-			}
+		let peek = self.peek_whitespace()?;
+		if peek == '{' {
+			self.deserialize_map(visitor)
+		} else if self.indent != 0 {
+			Err(Err::Expected('{', peek))
+		} else {
+			self.indent += 1;
+
+			let acc = TopMapAcc::new(self);
+			let val = visitor.visit_map(acc);
+
+			self.indent -= 1;
+
+			val
 		}
 	}
 
