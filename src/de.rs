@@ -82,6 +82,32 @@ impl<'de> Deserializer<'de> {
 		}
 	}
 
+	fn num(&mut self) -> Result<&'de str, Err> {
+		self.peek_whitespace()?;
+
+		let mut end = 0;
+		if let Ok('-') = self.read.nth(0) {
+			end += '-'.len_utf8();
+		}
+
+		loop {
+			let Ok(nxt) = self.read.nth(end) else {
+				break;
+			};
+
+			if let '0'..='9' | '.' = nxt {
+				end += nxt.len_utf8();
+			} else if nxt.is_ascii_whitespace() || nxt.is_ascii_punctuation() {
+				break
+			} else {
+				return Err(Err::UnexpectedChar(nxt, "[num] numeric"))
+			}
+		}
+
+		let word = self.read.slice(end);
+		Ok(word)
+	}
+
 	fn word(&mut self) -> Result<&'de str, Err> {
 		self.peek_whitespace()?;
 
@@ -173,7 +199,7 @@ impl<'de, 'a> serde::de::Deserializer<'de> for &'a mut Deserializer<'de> {
 	where
 		V: serde::de::Visitor<'de>,
 	{
-		let w = self.word()?;
+		let w = self.num()?;
 		let n = w.parse::<u8>().map_err(|_| Err::InvalidNum(w.to_owned()))?;
 		visitor.visit_u8(n)
 	}
@@ -182,7 +208,7 @@ impl<'de, 'a> serde::de::Deserializer<'de> for &'a mut Deserializer<'de> {
 	where
 		V: serde::de::Visitor<'de>,
 	{
-		let w = self.word()?;
+		let w = self.num()?;
 		let n = w.parse::<u16>().map_err(|_| Err::InvalidNum(w.to_owned()))?;
 		visitor.visit_u16(n)
 	}
@@ -191,7 +217,7 @@ impl<'de, 'a> serde::de::Deserializer<'de> for &'a mut Deserializer<'de> {
 	where
 		V: serde::de::Visitor<'de>,
 	{
-		let w = self.word()?;
+		let w = self.num()?;
 		let n = w.parse::<u32>().map_err(|_| Err::InvalidNum(w.to_owned()))?;
 		visitor.visit_u32(n)
 	}
@@ -200,7 +226,7 @@ impl<'de, 'a> serde::de::Deserializer<'de> for &'a mut Deserializer<'de> {
 	where
 		V: serde::de::Visitor<'de>,
 	{
-		let w = self.word()?;
+		let w = self.num()?;
 		let n = w.parse::<u64>().map_err(|_| Err::InvalidNum(w.to_owned()))?;
 		visitor.visit_u64(n)
 	}
