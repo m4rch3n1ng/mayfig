@@ -91,7 +91,7 @@ impl<'de> Deserializer<'de> {
 				break;
 			};
 
-			if nxt.is_alphanumeric() {
+			if nxt.is_alphanumeric() || nxt == '_' {
 				end += nxt.len_utf8();
 			} else if nxt.is_ascii_whitespace() || nxt.is_ascii_punctuation() {
 				break;
