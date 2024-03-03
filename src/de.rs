@@ -315,7 +315,14 @@ impl<'de, 'a> serde::de::Deserializer<'de> for &'a mut Deserializer<'de> {
 	where
 		V: serde::de::Visitor<'de>,
 	{
-		todo!()
+		let next = self.next_whitespace()?;
+		if next != '{' {
+			return Err(Err::Expected('{', next));
+		}
+
+		let acc = MapAcc::new(self);
+		let val = visitor.visit_map(acc)?;
+		Ok(val)
 	}
 
 	fn deserialize_struct<V>(
@@ -329,7 +336,7 @@ impl<'de, 'a> serde::de::Deserializer<'de> for &'a mut Deserializer<'de> {
 	{
 		let nxt = self.peek_whitespace()?;
 		match nxt {
-			'{' => todo!("should this even parse"),
+			'{' => self.deserialize_map(visitor),
 			_ => {
 				let acc = TopMapAcc::new(self);
 				let val = visitor.visit_map(acc);
@@ -390,9 +397,55 @@ impl<'a, 'de> MapAccess<'de> for TopMapAcc<'a, 'de> {
 		K: serde::de::DeserializeSeed<'de>,
 	{
 		let next = self.de.peek_whitespace();
-		let Ok(_) = next else {
+		let Ok(next) = next else {
 			return Ok(None);
 		};
+
+		if next == ';' {
+			self.de.read.discard();
+		}
+
+		seed.deserialize(&mut *self.de).map(Some)
+	}
+
+	fn next_value_seed<V>(&mut self, seed: V) -> Result<V::Value, Self::Error>
+	where
+		V: serde::de::DeserializeSeed<'de>,
+	{
+		let peek = self.de.peek_whitespace()?;
+		if peek == '=' {
+			self.de.read.discard()
+		} else if peek != '{' && peek != '[' {
+			return Err(Err::Expected('=', peek));
+		}
+
+		seed.deserialize(&mut *self.de)
+	}
+}
+
+struct MapAcc<'a, 'de> {
+	de: &'a mut Deserializer<'de>,
+}
+
+impl<'a, 'de> MapAcc<'a, 'de> {
+	fn new(de: &'a mut Deserializer<'de>) -> Self {
+		MapAcc { de }
+	}
+}
+
+impl<'a, 'de> MapAccess<'de> for MapAcc<'a, 'de> {
+	type Error = Err;
+	fn next_key_seed<K>(&mut self, seed: K) -> Result<Option<K::Value>, Self::Error>
+	where
+		K: serde::de::DeserializeSeed<'de>,
+	{
+		let peek = self.de.peek_whitespace()?;
+		if peek == ';' {
+			self.de.read.discard();
+		} else if peek == '}' {
+			self.de.read.discard();
+			return Ok(None);
+		}
 
 		seed.deserialize(&mut *self.de).map(Some)
 	}
@@ -429,6 +482,7 @@ impl<'a, 'de> SeqAccess<'de> for SeqAcc<'a, 'de> {
 		T: serde::de::DeserializeSeed<'de>,
 	{
 		let peek = self.de.peek_whitespace()?;
+		// todo ? multiple ','
 		if peek == ',' {
 			self.de.read.discard();
 		} else if peek == ']' {

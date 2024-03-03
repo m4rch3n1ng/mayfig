@@ -1,16 +1,25 @@
 use serde_derive::Deserialize;
 
+#[allow(dead_code)]
+#[derive(Debug, Deserialize)]
+struct Sub {
+	nested: u32,
+}
+
+#[allow(dead_code)]
 #[derive(Debug, Deserialize)]
 struct Txt {
-	#[allow(dead_code)]
 	abcd: u64,
-	#[allow(dead_code)]
 	test: Vec<u8>,
+	sub: Sub,
 }
 
 const TXT: &str = r#"
 abcd = 123
-test [ 1 2 3 ]
+test [ 1 2 3 ];
+sub {
+	nested = 123
+}
 "#;
 
 fn main() {
