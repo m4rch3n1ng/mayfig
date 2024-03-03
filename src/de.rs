@@ -1,5 +1,5 @@
 use crate::error::Err;
-use serde::de::{MapAccess, SeqAccess};
+use serde::de::{EnumAccess, MapAccess, SeqAccess, VariantAccess};
 
 struct Read<'de> {
 	input: &'de str,
@@ -106,7 +106,19 @@ impl<'de, 'a> serde::de::Deserializer<'de> for &'a mut Deserializer<'de> {
 	where
 		V: serde::de::Visitor<'de>,
 	{
-		todo!()
+		let peek = self.peek_whitespace()?;
+		if self.indent == 0 || peek == '{' {
+			self.deserialize_map(visitor)
+		} else if peek.is_alphabetic() {
+			self.deserialize_identifier(visitor)
+		// todo floats
+		} else if peek.is_numeric() {
+			self.deserialize_u64(visitor)
+		} else if peek == '-' {
+			self.deserialize_i64(visitor)
+		} else {
+			todo!("any {}", peek)
+		}
 	}
 
 	fn deserialize_bool<V>(self, visitor: V) -> Result<V::Value, Self::Error>
@@ -291,11 +303,11 @@ impl<'de, 'a> serde::de::Deserializer<'de> for &'a mut Deserializer<'de> {
 		}
 
 		let acc = SeqAcc::new(self);
-		let val = visitor.visit_seq(acc);
+		let val = visitor.visit_seq(acc)?;
 
 		self.indent -= 1;
 
-		val
+		Ok(val)
 	}
 
 	fn deserialize_tuple<V>(self, len: usize, visitor: V) -> Result<V::Value, Self::Error>
@@ -321,17 +333,29 @@ impl<'de, 'a> serde::de::Deserializer<'de> for &'a mut Deserializer<'de> {
 	where
 		V: serde::de::Visitor<'de>,
 	{
-		self.indent += 1;
+		let peek = self.peek_whitespace()?;
+		let val = if peek == '{' {
+			self.indent += 1;
+			self.read.discard();
 
-		let next = self.next_whitespace()?;
-		if next != '{' {
-			return Err(Err::Expected('{', next));
-		}
+			let acc = MapAcc::new(self);
+			let val = visitor.visit_map(acc)?;
 
-		let acc = MapAcc::new(self);
-		let val = visitor.visit_map(acc);
+			self.indent -= 1;
 
-		self.indent -= 1;
+			Ok(val)
+		} else if self.indent != 0 {
+			Err(Err::Expected('{', peek))
+		} else {
+			self.indent += 1;
+
+			let acc = TopMapAcc::new(self);
+			let val = visitor.visit_map(acc)?;
+
+			self.indent -= 1;
+
+			Ok(val)
+		};
 
 		val
 	}
@@ -345,21 +369,7 @@ impl<'de, 'a> serde::de::Deserializer<'de> for &'a mut Deserializer<'de> {
 	where
 		V: serde::de::Visitor<'de>,
 	{
-		let peek = self.peek_whitespace()?;
-		if peek == '{' {
-			self.deserialize_map(visitor)
-		} else if self.indent != 0 {
-			Err(Err::Expected('{', peek))
-		} else {
-			self.indent += 1;
-
-			let acc = TopMapAcc::new(self);
-			let val = visitor.visit_map(acc);
-
-			self.indent -= 1;
-
-			val
-		}
+		self.deserialize_map(visitor)
 	}
 
 	fn deserialize_enum<V>(
@@ -371,7 +381,24 @@ impl<'de, 'a> serde::de::Deserializer<'de> for &'a mut Deserializer<'de> {
 	where
 		V: serde::de::Visitor<'de>,
 	{
-		todo!()
+		let peek = self.peek_whitespace()?;
+		if peek == '{' {
+			self.read.discard();
+
+			let acc = EnumAcc::new(self);
+			let val = visitor.visit_enum(acc)?;
+
+			let next = self.next_whitespace()?;
+			if next == '}' {
+				Ok(val)
+			} else {
+				Err(Err::Expected('}', next))
+			}
+		} else if peek == '"' {
+			todo!("unit enum")
+		} else {
+			Err(Err::UnexpectedChar(peek, "[enum]"))
+		}
 	}
 
 	fn deserialize_identifier<V>(self, visitor: V) -> Result<V::Value, Self::Error>
@@ -431,7 +458,7 @@ impl<'a, 'de> MapAccess<'de> for TopMapAcc<'a, 'de> {
 	{
 		let peek = self.de.peek_whitespace()?;
 		if peek == '=' {
-			self.de.read.discard()
+			self.de.read.discard();
 		} else if peek != '{' && peek != '[' {
 			return Err(Err::Expected('=', peek));
 		}
@@ -452,6 +479,7 @@ impl<'a, 'de> MapAcc<'a, 'de> {
 
 impl<'a, 'de> MapAccess<'de> for MapAcc<'a, 'de> {
 	type Error = Err;
+
 	fn next_key_seed<K>(&mut self, seed: K) -> Result<Option<K::Value>, Self::Error>
 	where
 		K: serde::de::DeserializeSeed<'de>,
@@ -473,7 +501,7 @@ impl<'a, 'de> MapAccess<'de> for MapAcc<'a, 'de> {
 	{
 		let peek = self.de.peek_whitespace()?;
 		if peek == '=' {
-			self.de.read.discard()
+			self.de.read.discard();
 		} else if peek != '{' && peek != '[' {
 			return Err(Err::Expected('=', peek));
 		}
@@ -494,6 +522,7 @@ impl<'a, 'de> SeqAcc<'a, 'de> {
 
 impl<'a, 'de> SeqAccess<'de> for SeqAcc<'a, 'de> {
 	type Error = Err;
+
 	fn next_element_seed<T>(&mut self, seed: T) -> Result<Option<T::Value>, Self::Error>
 	where
 		T: serde::de::DeserializeSeed<'de>,
@@ -508,5 +537,71 @@ impl<'a, 'de> SeqAccess<'de> for SeqAcc<'a, 'de> {
 		}
 
 		seed.deserialize(&mut *self.de).map(Some)
+	}
+}
+
+struct EnumAcc<'a, 'de> {
+	de: &'a mut Deserializer<'de>,
+}
+
+impl<'a, 'de> EnumAcc<'a, 'de> {
+	fn new(de: &'a mut Deserializer<'de>) -> Self {
+		EnumAcc { de }
+	}
+}
+
+impl<'a, 'de> EnumAccess<'de> for EnumAcc<'a, 'de> {
+	type Error = Err;
+	type Variant = Self;
+
+	fn variant_seed<V>(self, seed: V) -> Result<(V::Value, Self::Variant), Self::Error>
+	where
+		V: serde::de::DeserializeSeed<'de>,
+	{
+		let val = seed.deserialize(&mut *self.de)?;
+
+		let peek = self.de.peek_whitespace()?;
+		if peek == '=' {
+			self.de.read.discard();
+			Ok((val, self))
+		} else if let '{' | '[' = peek {
+			Ok((val, self))
+		} else {
+			Err(Err::Expected('=', peek))
+		}
+	}
+}
+
+#[allow(unused_variables)]
+impl<'a, 'de> VariantAccess<'de> for EnumAcc<'a, 'de> {
+	type Error = Err;
+
+	fn unit_variant(self) -> Result<(), Self::Error> {
+		todo!()
+	}
+
+	fn newtype_variant_seed<T>(self, seed: T) -> Result<T::Value, Self::Error>
+	where
+		T: serde::de::DeserializeSeed<'de>,
+	{
+		todo!()
+	}
+
+	fn tuple_variant<V>(self, len: usize, visitor: V) -> Result<V::Value, Self::Error>
+	where
+		V: serde::de::Visitor<'de>,
+	{
+		todo!()
+	}
+
+	fn struct_variant<V>(
+		self,
+		fields: &'static [&'static str],
+		visitor: V,
+	) -> Result<V::Value, Self::Error>
+	where
+		V: serde::de::Visitor<'de>,
+	{
+		serde::de::Deserializer::deserialize_map(self.de, visitor)
 	}
 }

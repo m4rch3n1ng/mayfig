@@ -1,29 +1,28 @@
 use serde_derive::Deserialize;
 
-#[allow(dead_code)]
 #[derive(Debug, Deserialize)]
-struct Sub {
-	nested: u32,
+#[allow(dead_code)]
+enum E {
+	Id { id: u64 },
+	St { st: u64 },
 }
 
-#[allow(dead_code)]
 #[derive(Debug, Deserialize)]
-struct Txt {
-	abcd: u64,
-	test: Vec<u8>,
-	sub: Sub,
+#[allow(dead_code)]
+struct T {
+	e: E,
 }
 
 const TXT: &str = r#"
-abcd = 123
-test [ 1 2 3 ];
-sub {
-	nested = 123
+e {
+	Id {
+		id = 4
+	}
 }
 "#;
 
 fn main() {
-	let t = mayfig::from_str::<Txt>(TXT);
+	let t = mayfig::from_str::<T>(TXT);
 	match t {
 		Ok(t) => println!("t: {:?}", t),
 		Err(e) => println!("e: {}", e),
