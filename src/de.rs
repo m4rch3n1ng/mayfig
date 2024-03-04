@@ -1,5 +1,8 @@
 use crate::error::Err;
-use serde::de::{EnumAccess, MapAccess, SeqAccess, VariantAccess};
+use serde::{
+	de::{EnumAccess, MapAccess, SeqAccess, VariantAccess},
+	forward_to_deserialize_any,
+};
 
 struct Read<'de> {
 	input: &'de str,
@@ -135,6 +138,23 @@ impl<'de> Deserializer<'de> {
 		self.peek_whitespace()?;
 		self.read.word()
 	}
+
+	fn deserialize_number<'any, V>(&mut self, visitor: V) -> Result<V::Value, Err>
+	where
+		V: serde::de::Visitor<'any>,
+	{
+		let w = self.num()?;
+		if w.contains('.') {
+			let n = w.parse::<f64>().map_err(|_| Err::InvalidNum(w.into()))?;
+			visitor.visit_f64(n)
+		} else if w.starts_with('-') {
+			let n = w.parse::<i64>().map_err(|_| Err::InvalidNum(w.into()))?;
+			visitor.visit_i64(n)
+		} else {
+			let n = w.parse::<u64>().map_err(|_| Err::InvalidNum(w.into()))?;
+			visitor.visit_u64(n)
+		}
+	}
 }
 
 #[allow(unused_variables)]
@@ -149,11 +169,10 @@ impl<'de, 'a> serde::de::Deserializer<'de> for &'a mut Deserializer<'de> {
 			self.deserialize_map(visitor)
 		} else if peek.is_alphabetic() {
 			self.deserialize_identifier(visitor)
-		// todo floats
-		} else if peek.is_numeric() {
-			self.deserialize_u64(visitor)
-		} else if peek == '-' {
-			self.deserialize_i64(visitor)
+		} else if peek.is_numeric() || peek == '-' {
+			self.deserialize_number(visitor)
+		} else if peek == '"' {
+			self.deserialize_str(visitor)
 		} else {
 			todo!("any {}", peek)
 		}
@@ -548,7 +567,8 @@ impl<'a, 'de> MapAccess<'de> for MapAcc<'a, 'de> {
 			return Ok(None);
 		}
 
-		seed.deserialize(&mut *self.de).map(Some)
+		let map_key = MapKey::new(self.de);
+		seed.deserialize(map_key).map(Some)
 	}
 
 	fn next_value_seed<V>(&mut self, seed: V) -> Result<V::Value, Self::Error>
@@ -659,5 +679,53 @@ impl<'a, 'de> VariantAccess<'de> for EnumAcc<'a, 'de> {
 		V: serde::de::Visitor<'de>,
 	{
 		serde::de::Deserializer::deserialize_map(self.de, visitor)
+	}
+}
+
+struct MapKey<'a, 'de> {
+	de: &'a mut Deserializer<'de>,
+}
+
+impl<'a, 'de> MapKey<'a, 'de> {
+	fn new(de: &'a mut Deserializer<'de>) -> Self {
+		MapKey { de }
+	}
+}
+
+impl<'a, 'de> serde::de::Deserializer<'de> for MapKey<'a, 'de> {
+	type Error = Err;
+
+	fn deserialize_any<V>(self, visitor: V) -> Result<V::Value, Self::Error>
+	where
+		V: serde::de::Visitor<'de>,
+	{
+		self.de.deserialize_any(visitor)
+	}
+
+	fn deserialize_str<V>(self, visitor: V) -> Result<V::Value, Self::Error>
+	where
+		V: serde::de::Visitor<'de>,
+	{
+		let peek = self.de.peek_whitespace()?;
+
+		match peek {
+			'"' => self.de.deserialize_str(visitor),
+			_ => self.de.deserialize_identifier(visitor),
+		}
+	}
+
+	fn deserialize_string<V>(self, visitor: V) -> Result<V::Value, Self::Error>
+	where
+		V: serde::de::Visitor<'de>,
+	{
+		self.deserialize_str(visitor)
+	}
+
+	forward_to_deserialize_any! {
+		bool i8 i16 i32 i64 u8 u16 u32 u64 f32 f64
+		char bytes byte_buf
+		option unit unit_struct newtype_struct
+		seq tuple tuple_struct map struct enum
+		identifier ignored_any
 	}
 }

@@ -1,4 +1,5 @@
 use serde_derive::Deserialize;
+use std::collections::HashMap;
 
 #[allow(dead_code)]
 #[derive(Debug, Deserialize)]
@@ -12,13 +13,21 @@ struct Txt {
 	abcd: f64,
 	test: Vec<u8>,
 	sub: Sub,
+	map: HashMap<String, u8>,
 }
 
 const TXT: &str = r#"
 abcd = 0.5
 test [ 1 2 3 ];
+
 sub {
 	nested = -123
+}
+
+map {
+	k0 = 0
+	k1 = 1
+	k2 = 0
 }
 "#;
 
