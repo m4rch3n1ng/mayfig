@@ -17,21 +17,65 @@ impl<'de> Read<'de> {
 		Ok(char)
 	}
 
-	// todo nope, that's an awful way to solve that
-	fn nth(&self, n: usize) -> Result<char, Err> {
-		let str = self.input.get(n..).ok_or(Err::Eof)?;
-		let ch = str.chars().next().ok_or(Err::Eof)?;
-		Ok(ch)
-	}
-
 	fn discard(&mut self) {
 		let _ = self.next();
 	}
 
-	fn slice(&mut self, end: usize) -> &'de str {
-		let slice = &self.input[..end];
-		self.input = &self.input[end..];
-		slice
+	fn num(&mut self) -> Result<&'de str, Err> {
+		let mut one = &self.input[0..0];
+		let mut two = self.input;
+
+		if let Some('-') = two.chars().next() {
+			let len = '-'.len_utf8();
+
+			one = &self.input[..len];
+			two = &self.input[len..];
+		}
+
+		loop {
+			let Some(nxt) = two.chars().next() else {
+				break;
+			};
+
+			if let '0'..='9' | '.' = nxt {
+				let len = one.len() + nxt.len_utf8();
+
+				one = &self.input[..len];
+				two = &self.input[len..];
+			} else if nxt.is_ascii_whitespace() || nxt.is_ascii_punctuation() {
+				break;
+			} else {
+				return Err(Err::UnexpectedChar(nxt, "[num] numeric"));
+			}
+		}
+
+		self.input = two;
+		Ok(one)
+	}
+
+	fn word(&mut self) -> Result<&'de str, Err> {
+		let mut one = &self.input[0..0];
+		let mut two = self.input;
+
+		loop {
+			let Some(nxt) = two.chars().next() else {
+				break;
+			};
+
+			if nxt.is_alphanumeric() || nxt == '_' {
+				let len = one.len() + nxt.len_utf8();
+
+				one = &self.input[..len];
+				two = &self.input[len..];
+			} else if nxt.is_ascii_whitespace() || nxt.is_ascii_punctuation() {
+				break;
+			} else {
+				return Err(Err::UnexpectedChar(nxt, "[word] alphanumeric"));
+			}
+		}
+
+		self.input = two;
+		Ok(one)
 	}
 }
 
@@ -84,50 +128,12 @@ impl<'de> Deserializer<'de> {
 
 	fn num(&mut self) -> Result<&'de str, Err> {
 		self.peek_whitespace()?;
-
-		let mut end = 0;
-		if let Ok('-') = self.read.nth(0) {
-			end += '-'.len_utf8();
-		}
-
-		loop {
-			let Ok(nxt) = self.read.nth(end) else {
-				break;
-			};
-
-			if let '0'..='9' | '.' = nxt {
-				end += nxt.len_utf8();
-			} else if nxt.is_ascii_whitespace() || nxt.is_ascii_punctuation() {
-				break;
-			} else {
-				return Err(Err::UnexpectedChar(nxt, "[num] numeric"));
-			}
-		}
-
-		let word = self.read.slice(end);
-		Ok(word)
+		self.read.num()
 	}
 
 	fn word(&mut self) -> Result<&'de str, Err> {
 		self.peek_whitespace()?;
-
-		let mut end = 0;
-		loop {
-			let Ok(nxt) = self.read.nth(end) else {
-				break;
-			};
-
-			if nxt.is_alphanumeric() || nxt == '_' {
-				end += nxt.len_utf8();
-			} else if nxt.is_ascii_whitespace() || nxt.is_ascii_punctuation() {
-				break;
-			} else {
-				return Err(Err::UnexpectedChar(nxt, "[word] alphanumeric"));
-			}
-		}
-
-		let word = self.read.slice(end);
-		Ok(word)
+		self.read.word()
 	}
 }
 
