@@ -98,9 +98,9 @@ impl<'de> Deserializer<'de> {
 			if let '0'..='9' | '.' = nxt {
 				end += nxt.len_utf8();
 			} else if nxt.is_ascii_whitespace() || nxt.is_ascii_punctuation() {
-				break
+				break;
 			} else {
-				return Err(Err::UnexpectedChar(nxt, "[num] numeric"))
+				return Err(Err::UnexpectedChar(nxt, "[num] numeric"));
 			}
 		}
 
@@ -165,7 +165,7 @@ impl<'de, 'a> serde::de::Deserializer<'de> for &'a mut Deserializer<'de> {
 		V: serde::de::Visitor<'de>,
 	{
 		let w = self.num()?;
-		let n = w.parse::<i8>().map_err(|_| Err::InvalidNum(w.to_owned()))?;
+		let n = w.parse::<i8>().map_err(|_| Err::InvalidNum(w.into()))?;
 		visitor.visit_i8(n)
 	}
 
@@ -174,7 +174,7 @@ impl<'de, 'a> serde::de::Deserializer<'de> for &'a mut Deserializer<'de> {
 		V: serde::de::Visitor<'de>,
 	{
 		let w = self.num()?;
-		let n = w.parse::<i16>().map_err(|_| Err::InvalidNum(w.to_owned()))?;
+		let n = w.parse::<i16>().map_err(|_| Err::InvalidNum(w.into()))?;
 		visitor.visit_i16(n)
 	}
 
@@ -183,7 +183,7 @@ impl<'de, 'a> serde::de::Deserializer<'de> for &'a mut Deserializer<'de> {
 		V: serde::de::Visitor<'de>,
 	{
 		let w = self.num()?;
-		let n = w.parse::<i32>().map_err(|_| Err::InvalidNum(w.to_owned()))?;
+		let n = w.parse::<i32>().map_err(|_| Err::InvalidNum(w.into()))?;
 		visitor.visit_i32(n)
 	}
 
@@ -192,7 +192,7 @@ impl<'de, 'a> serde::de::Deserializer<'de> for &'a mut Deserializer<'de> {
 		V: serde::de::Visitor<'de>,
 	{
 		let w = self.num()?;
-		let n = w.parse::<i64>().map_err(|_| Err::InvalidNum(w.to_owned()))?;
+		let n = w.parse::<i64>().map_err(|_| Err::InvalidNum(w.into()))?;
 		visitor.visit_i64(n)
 	}
 
@@ -208,7 +208,7 @@ impl<'de, 'a> serde::de::Deserializer<'de> for &'a mut Deserializer<'de> {
 		V: serde::de::Visitor<'de>,
 	{
 		let w = self.num()?;
-		let n = w.parse::<u8>().map_err(|_| Err::InvalidNum(w.to_owned()))?;
+		let n = w.parse::<u8>().map_err(|_| Err::InvalidNum(w.into()))?;
 		visitor.visit_u8(n)
 	}
 
@@ -217,7 +217,7 @@ impl<'de, 'a> serde::de::Deserializer<'de> for &'a mut Deserializer<'de> {
 		V: serde::de::Visitor<'de>,
 	{
 		let w = self.num()?;
-		let n = w.parse::<u16>().map_err(|_| Err::InvalidNum(w.to_owned()))?;
+		let n = w.parse::<u16>().map_err(|_| Err::InvalidNum(w.into()))?;
 		visitor.visit_u16(n)
 	}
 
@@ -226,7 +226,7 @@ impl<'de, 'a> serde::de::Deserializer<'de> for &'a mut Deserializer<'de> {
 		V: serde::de::Visitor<'de>,
 	{
 		let w = self.num()?;
-		let n = w.parse::<u32>().map_err(|_| Err::InvalidNum(w.to_owned()))?;
+		let n = w.parse::<u32>().map_err(|_| Err::InvalidNum(w.into()))?;
 		visitor.visit_u32(n)
 	}
 
@@ -235,7 +235,7 @@ impl<'de, 'a> serde::de::Deserializer<'de> for &'a mut Deserializer<'de> {
 		V: serde::de::Visitor<'de>,
 	{
 		let w = self.num()?;
-		let n = w.parse::<u64>().map_err(|_| Err::InvalidNum(w.to_owned()))?;
+		let n = w.parse::<u64>().map_err(|_| Err::InvalidNum(w.into()))?;
 		visitor.visit_u64(n)
 	}
 
@@ -251,7 +251,7 @@ impl<'de, 'a> serde::de::Deserializer<'de> for &'a mut Deserializer<'de> {
 		V: serde::de::Visitor<'de>,
 	{
 		let w = self.num()?;
-		let n = w.parse::<f32>().map_err(|_| Err::InvalidNum(w.to_owned()))?;
+		let n = w.parse::<f32>().map_err(|_| Err::InvalidNum(w.into()))?;
 		visitor.visit_f32(n)
 	}
 
@@ -260,7 +260,7 @@ impl<'de, 'a> serde::de::Deserializer<'de> for &'a mut Deserializer<'de> {
 		V: serde::de::Visitor<'de>,
 	{
 		let w = self.num()?;
-		let n = w.parse::<f64>().map_err(|_| Err::InvalidNum(w.to_owned()))?;
+		let n = w.parse::<f64>().map_err(|_| Err::InvalidNum(w.into()))?;
 		visitor.visit_f64(n)
 	}
 
@@ -495,7 +495,7 @@ impl<'a, 'de> MapAccess<'de> for TopMapAcc<'a, 'de> {
 
 		let next = self.de.peek_whitespace();
 		if next.is_err() {
-			return Ok(None)
+			return Ok(None);
 		}
 
 		seed.deserialize(&mut *self.de).map(Some)
