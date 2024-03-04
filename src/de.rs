@@ -1,22 +1,28 @@
 use self::{
 	access::{EnumAcc, MapAcc, SeqAcc, TopMapAcc},
-	read::StrRead,
+	read::{Read, StrRead},
 };
 use crate::error::Err;
 
 mod access;
 mod read;
 
-pub struct Deserializer<'de> {
-	read: StrRead<'de>,
+pub struct Deserializer<R> {
+	read: R,
 	indent: usize,
 }
 
-impl<'de> Deserializer<'de> {
+impl<'de, R: Read<'de>> Deserializer<R> {
+	fn new(read: R) -> Self {
+		Deserializer { read, indent: 0 }
+	}
+}
+
+impl<'de> Deserializer<StrRead<'de>> {
 	#[allow(clippy::should_implement_trait)]
 	pub fn from_str(input: &'de str) -> Self {
 		let read = StrRead::new(input);
-		Deserializer { read, indent: 0 }
+		Deserializer::new(read)
 	}
 }
 
@@ -29,7 +35,7 @@ where
 	t
 }
 
-impl<'de> Deserializer<'de> {
+impl<'de, R: Read<'de>> Deserializer<R> {
 	fn peek_whitespace(&mut self) -> Result<char, Err> {
 		loop {
 			match self.read.peek()? {
@@ -83,7 +89,7 @@ impl<'de> Deserializer<'de> {
 }
 
 #[allow(unused_variables)]
-impl<'de, 'a> serde::de::Deserializer<'de> for &'a mut Deserializer<'de> {
+impl<'de, 'a, R: Read<'de>> serde::de::Deserializer<'de> for &'a mut Deserializer<R> {
 	type Error = Err;
 	fn deserialize_any<V>(self, visitor: V) -> Result<V::Value, Self::Error>
 	where

@@ -1,21 +1,24 @@
-use super::Deserializer;
+use super::{read::Read, Deserializer};
 use crate::error::Err;
 use serde::{
 	de::{EnumAccess, MapAccess, SeqAccess, VariantAccess},
 	forward_to_deserialize_any,
 };
 
-pub struct TopMapAcc<'a, 'de> {
-	de: &'a mut Deserializer<'de>,
+pub struct TopMapAcc<'a, R> {
+	de: &'a mut Deserializer<R>,
 }
 
-impl<'a, 'de> TopMapAcc<'a, 'de> {
-	pub fn new(de: &'a mut Deserializer<'de>) -> Self {
+impl<'a, 'de, R: Read<'de>> TopMapAcc<'a, R> {
+	pub fn new(de: &'a mut Deserializer<R>) -> Self {
 		TopMapAcc { de }
 	}
 }
 
-impl<'a, 'de> MapAccess<'de> for TopMapAcc<'a, 'de> {
+impl<'a, 'de, R> MapAccess<'de> for TopMapAcc<'a, R>
+where
+	R: Read<'de>,
+{
 	type Error = Err;
 	fn next_key_seed<K>(&mut self, seed: K) -> Result<Option<K::Value>, Self::Error>
 	where
@@ -53,17 +56,17 @@ impl<'a, 'de> MapAccess<'de> for TopMapAcc<'a, 'de> {
 	}
 }
 
-pub struct MapAcc<'a, 'de> {
-	de: &'a mut Deserializer<'de>,
+pub struct MapAcc<'a, R> {
+	de: &'a mut Deserializer<R>,
 }
 
-impl<'a, 'de> MapAcc<'a, 'de> {
-	pub fn new(de: &'a mut Deserializer<'de>) -> Self {
+impl<'a, 'de, R: Read<'de>> MapAcc<'a, R> {
+	pub fn new(de: &'a mut Deserializer<R>) -> Self {
 		MapAcc { de }
 	}
 }
 
-impl<'a, 'de> MapAccess<'de> for MapAcc<'a, 'de> {
+impl<'a, 'de, R: Read<'de>> MapAccess<'de> for MapAcc<'a, R> {
 	type Error = Err;
 
 	fn next_key_seed<K>(&mut self, seed: K) -> Result<Option<K::Value>, Self::Error>
@@ -98,17 +101,17 @@ impl<'a, 'de> MapAccess<'de> for MapAcc<'a, 'de> {
 	}
 }
 
-pub struct SeqAcc<'a, 'de> {
-	de: &'a mut Deserializer<'de>,
+pub struct SeqAcc<'a, R> {
+	de: &'a mut Deserializer<R>,
 }
 
-impl<'a, 'de> SeqAcc<'a, 'de> {
-	pub fn new(de: &'a mut Deserializer<'de>) -> Self {
+impl<'a, 'de, R: Read<'de>> SeqAcc<'a, R> {
+	pub fn new(de: &'a mut Deserializer<R>) -> Self {
 		SeqAcc { de }
 	}
 }
 
-impl<'a, 'de> SeqAccess<'de> for SeqAcc<'a, 'de> {
+impl<'a, 'de, R: Read<'de>> SeqAccess<'de> for SeqAcc<'a, R> {
 	type Error = Err;
 
 	fn next_element_seed<T>(&mut self, seed: T) -> Result<Option<T::Value>, Self::Error>
@@ -128,17 +131,17 @@ impl<'a, 'de> SeqAccess<'de> for SeqAcc<'a, 'de> {
 	}
 }
 
-pub struct EnumAcc<'a, 'de> {
-	de: &'a mut Deserializer<'de>,
+pub struct EnumAcc<'a, R> {
+	de: &'a mut Deserializer<R>,
 }
 
-impl<'a, 'de> EnumAcc<'a, 'de> {
-	pub fn new(de: &'a mut Deserializer<'de>) -> Self {
+impl<'a, 'de, R: Read<'de>> EnumAcc<'a, R> {
+	pub fn new(de: &'a mut Deserializer<R>) -> Self {
 		EnumAcc { de }
 	}
 }
 
-impl<'a, 'de> EnumAccess<'de> for EnumAcc<'a, 'de> {
+impl<'a, 'de, R: Read<'de>> EnumAccess<'de> for EnumAcc<'a, R> {
 	type Error = Err;
 	type Variant = Self;
 
@@ -161,7 +164,7 @@ impl<'a, 'de> EnumAccess<'de> for EnumAcc<'a, 'de> {
 }
 
 #[allow(unused_variables)]
-impl<'a, 'de> VariantAccess<'de> for EnumAcc<'a, 'de> {
+impl<'a, 'de, R: Read<'de>> VariantAccess<'de> for EnumAcc<'a, R> {
 	type Error = Err;
 
 	fn unit_variant(self) -> Result<(), Self::Error> {
@@ -194,17 +197,17 @@ impl<'a, 'de> VariantAccess<'de> for EnumAcc<'a, 'de> {
 	}
 }
 
-struct MapKey<'a, 'de> {
-	de: &'a mut Deserializer<'de>,
+struct MapKey<'a, R> {
+	de: &'a mut Deserializer<R>,
 }
 
-impl<'a, 'de> MapKey<'a, 'de> {
-	fn new(de: &'a mut Deserializer<'de>) -> Self {
+impl<'a, 'de, R: Read<'de>> MapKey<'a, R> {
+	fn new(de: &'a mut Deserializer<R>) -> Self {
 		MapKey { de }
 	}
 }
 
-impl<'a, 'de> serde::de::Deserializer<'de> for MapKey<'a, 'de> {
+impl<'a, 'de, R: Read<'de>> serde::de::Deserializer<'de> for MapKey<'a, R> {
 	type Error = Err;
 
 	fn deserialize_any<V>(self, visitor: V) -> Result<V::Value, Self::Error>

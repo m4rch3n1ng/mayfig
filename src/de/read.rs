@@ -1,5 +1,17 @@
 use crate::error::Err;
 
+pub trait Read<'de> {
+	fn peek(&self) -> Result<char, Err>;
+
+	fn next(&mut self) -> Result<char, Err>;
+
+	fn discard(&mut self);
+
+	fn num(&mut self) -> Result<&'de str, Err>;
+
+	fn word(&mut self) -> Result<&'de str, Err>;
+}
+
 pub struct StrRead<'de> {
 	input: &'de str,
 }
@@ -8,23 +20,25 @@ impl<'de> StrRead<'de> {
 	pub fn new(input: &'de str) -> Self {
 		StrRead { input }
 	}
+}
 
-	pub fn peek(&self) -> Result<char, Err> {
+impl<'de> Read<'de> for StrRead<'de> {
+	fn peek(&self) -> Result<char, Err> {
 		self.input.chars().next().ok_or(Err::Eof)
 	}
 
-	pub fn next(&mut self) -> Result<char, Err> {
+	fn next(&mut self) -> Result<char, Err> {
 		let char = self.input.chars().next().ok_or(Err::Eof)?;
 		let len = char.len_utf8();
 		self.input = &self.input[len..];
 		Ok(char)
 	}
 
-	pub fn discard(&mut self) {
+	fn discard(&mut self) {
 		let _ = self.next();
 	}
 
-	pub fn num(&mut self) -> Result<&'de str, Err> {
+	fn num(&mut self) -> Result<&'de str, Err> {
 		let mut one = &self.input[0..0];
 		let mut two = self.input;
 
@@ -56,7 +70,7 @@ impl<'de> StrRead<'de> {
 		Ok(one)
 	}
 
-	pub fn word(&mut self) -> Result<&'de str, Err> {
+	fn word(&mut self) -> Result<&'de str, Err> {
 		let mut one = &self.input[0..0];
 		let mut two = self.input;
 
