@@ -2,8 +2,12 @@ use thiserror::Error;
 
 #[derive(Debug, Error)]
 pub enum Err {
-	#[error("invalid number")]
+	#[error("invalid boolean {0:?}")]
+	InvalidBool(String),
+	#[error("invalid number {0:?}")]
 	InvalidNum(String),
+	#[error("unexpected word {0:?}")]
+	UnexpectedWord(String),
 	#[error("expected {0:?}, got {1:?}")]
 	Expected(char, char),
 	#[error("unexpected char {0:?}, expected {1}")]

@@ -100,12 +100,17 @@ impl<'de, 'a, R: Read<'de>> serde::de::Deserializer<'de> for &'a mut Deserialize
 			self.deserialize_map(visitor)
 		} else if peek.is_alphabetic() {
 			self.deserialize_identifier(visitor)
-		} else if peek.is_numeric() || peek == '-' {
+		} else if let '0'..='9' | '.' | '-' = peek {
 			self.deserialize_number(visitor)
 		} else if peek == '"' {
 			self.deserialize_str(visitor)
 		} else {
-			todo!("any {}", peek)
+			let word = self.word()?;
+			if let Ok(b) = parse_bool(word) {
+				visitor.visit_bool(b)
+			} else {
+				Err(Err::UnexpectedWord(word.into()))
+			}
 		}
 	}
 
@@ -113,7 +118,9 @@ impl<'de, 'a, R: Read<'de>> serde::de::Deserializer<'de> for &'a mut Deserialize
 	where
 		V: serde::de::Visitor<'de>,
 	{
-		todo!()
+		let w = self.word()?;
+		let b = parse_bool(w)?;
+		visitor.visit_bool(b)
 	}
 
 	fn deserialize_i8<V>(self, visitor: V) -> Result<V::Value, Self::Error>
@@ -421,5 +428,13 @@ impl<'de, 'a, R: Read<'de>> serde::de::Deserializer<'de> for &'a mut Deserialize
 		V: serde::de::Visitor<'de>,
 	{
 		todo!()
+	}
+}
+
+fn parse_bool(string: &str) -> Result<bool, Err> {
+	match string {
+		"true" | "on" | "yes" => Ok(true),
+		"false" | "off" | "no" => Ok(false),
+		_ => Err(Err::InvalidBool(string.to_owned())),
 	}
 }
