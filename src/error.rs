@@ -2,6 +2,10 @@ use thiserror::Error;
 
 #[derive(Debug, Error)]
 pub enum Err {
+	#[error("unknown escape sequence {0:?}")]
+	UnknownEscape(char),
+	#[error("unescaped control character {0:?}")]
+	UnescapedControl(char),
 	#[error("invalid boolean {0:?}")]
 	InvalidBool(String),
 	#[error("invalid number {0:?}")]

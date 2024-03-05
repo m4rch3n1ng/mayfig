@@ -1,6 +1,6 @@
 use self::{
 	access::{EnumAcc, MapAcc, SeqAcc, TopMapAcc},
-	read::{Read, StrRead},
+	read::{Read, Ref, StrRead},
 };
 use crate::error::Err;
 
@@ -10,11 +10,16 @@ mod read;
 pub struct Deserializer<R> {
 	read: R,
 	indent: usize,
+	scratch: String,
 }
 
 impl<'de, R: Read<'de>> Deserializer<R> {
 	fn new(read: R) -> Self {
-		Deserializer { read, indent: 0 }
+		Deserializer {
+			read,
+			indent: 0,
+			scratch: String::new(),
+		}
 	}
 }
 
@@ -68,6 +73,11 @@ impl<'de, R: Read<'de>> Deserializer<R> {
 	fn word(&mut self) -> Result<&'de str, Err> {
 		self.peek_whitespace()?;
 		self.read.word()
+	}
+
+	fn str<'s>(&'s mut self) -> Result<Ref<'de, 's>, Err> {
+		self.peek_whitespace()?;
+		self.read.str(&mut self.scratch)
 	}
 
 	fn deserialize_number<'any, V>(&mut self, visitor: V) -> Result<V::Value, Err>
@@ -238,7 +248,11 @@ impl<'de, 'a, R: Read<'de>> serde::de::Deserializer<'de> for &'a mut Deserialize
 	where
 		V: serde::de::Visitor<'de>,
 	{
-		todo!("str")
+		let string = self.str()?;
+		match string {
+			Ref::Borrow(s) => visitor.visit_borrowed_str(s),
+			Ref::Scratch(s) => visitor.visit_str(s),
+		}
 	}
 
 	fn deserialize_string<V>(self, visitor: V) -> Result<V::Value, Self::Error>

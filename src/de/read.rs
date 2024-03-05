@@ -1,5 +1,11 @@
 use crate::error::Err;
 
+#[derive(Debug)]
+pub enum Ref<'de, 's> {
+	Borrow(&'de str),
+	Scratch(&'s str),
+}
+
 pub trait Read<'de> {
 	fn peek(&self) -> Result<char, Err>;
 
@@ -10,6 +16,8 @@ pub trait Read<'de> {
 	fn num(&mut self) -> Result<&'de str, Err>;
 
 	fn word(&mut self) -> Result<&'de str, Err>;
+
+	fn str<'s>(&'s mut self, scratch: &'s mut String) -> Result<Ref<'de, 's>, Err>;
 }
 
 pub struct StrRead<'de> {
@@ -94,4 +102,75 @@ impl<'de> Read<'de> for StrRead<'de> {
 		self.input = two;
 		Ok(one)
 	}
+
+	fn str<'s>(&'s mut self, scratch: &'s mut String) -> Result<Ref<'de, 's>, Err> {
+		let quote = self.next()?;
+		assert!(matches!(quote, '"' | '\''), "is {:?}", quote);
+
+		scratch.clear();
+
+		let mut one = &self.input[0..0];
+		let mut two = self.input;
+
+		loop {
+			let Some(nxt) = two.chars().next() else {
+				break;
+			};
+
+			if nxt == quote {
+				self.input = two;
+				self.discard();
+
+				break;
+			}
+
+			if nxt.is_control() {
+				return Err(Err::UnescapedControl(nxt));
+			} else if nxt == '\\' {
+				scratch.push_str(one);
+
+				self.input = two;
+				self.discard();
+
+				parse_escape(self, scratch)?;
+
+				one = &self.input[0..0];
+				two = self.input;
+			} else {
+				let len = one.len() + nxt.len_utf8();
+
+				one = &self.input[..len];
+				two = &self.input[len..];
+			}
+		}
+
+		if scratch.is_empty() {
+			Ok(Ref::Borrow(one))
+		} else {
+			scratch.push_str(one);
+			Ok(Ref::Scratch(scratch))
+		}
+	}
+}
+
+fn parse_escape<'de, 's, R: Read<'de>>(
+	read: &'s mut R,
+	scratch: &'s mut String,
+) -> Result<(), Err> {
+	let next = read.next()?;
+
+	match next {
+		'"' => scratch.push('"'),
+		'\\' => scratch.push('\\'),
+		'/' => scratch.push('/'),
+		'n' => scratch.push('\n'),
+		'r' => scratch.push('\r'),
+		't' => scratch.push('\t'),
+		'b' => scratch.push('\x08'),
+		'f' => scratch.push('\x0c'),
+		'u' => todo!("unicode escape"),
+		_ => return Err(Err::UnknownEscape(next)),
+	}
+
+	Ok(())
 }

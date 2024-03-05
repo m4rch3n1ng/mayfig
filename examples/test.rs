@@ -14,11 +14,13 @@ struct Txt {
 	test: Vec<u8>,
 	sub: Sub,
 	map: HashMap<String, u8>,
+	str: String,
 }
 
 const TXT: &str = r#"
 abcd = 0.5
 test [ 1 2 3 ];
+str = "t\\\"est"
 
 sub {
 	nested = -123
