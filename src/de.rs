@@ -280,7 +280,7 @@ impl<'de, 'a, R: Read<'de>> serde::de::Deserializer<'de> for &'a mut Deserialize
 	where
 		V: serde::de::Visitor<'de>,
 	{
-		todo!()
+		visitor.visit_some(self)
 	}
 
 	fn deserialize_unit<V>(self, visitor: V) -> Result<V::Value, Self::Error>
@@ -309,7 +309,7 @@ impl<'de, 'a, R: Read<'de>> serde::de::Deserializer<'de> for &'a mut Deserialize
 	where
 		V: serde::de::Visitor<'de>,
 	{
-		todo!()
+		visitor.visit_newtype_struct(self)
 	}
 
 	fn deserialize_seq<V>(self, visitor: V) -> Result<V::Value, Self::Error>
@@ -354,8 +354,8 @@ impl<'de, 'a, R: Read<'de>> serde::de::Deserializer<'de> for &'a mut Deserialize
 	where
 		V: serde::de::Visitor<'de>,
 	{
-		let peek = self.peek_whitespace()?;
-		let val = if peek == '{' {
+		let peek = self.peek_whitespace();
+		let val = if let Ok('{') = peek {
 			self.indent += 1;
 			self.read.discard();
 
@@ -366,7 +366,11 @@ impl<'de, 'a, R: Read<'de>> serde::de::Deserializer<'de> for &'a mut Deserialize
 
 			Ok(val)
 		} else if self.indent != 0 {
-			Err(Err::Expected('{', peek))
+			if let Ok(peek) = peek {
+				Err(Err::Expected('{', peek))
+			} else {
+				Err(Err::Eof)
+			}
 		} else {
 			self.indent += 1;
 

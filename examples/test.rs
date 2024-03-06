@@ -10,7 +10,7 @@ struct Sub {
 #[allow(dead_code)]
 #[derive(Debug, Deserialize)]
 struct Txt {
-	abcd: f64,
+	abcd: Option<f64>,
 	test: Vec<u8>,
 	sub: Sub,
 	map: HashMap<String, u8>,
@@ -18,7 +18,7 @@ struct Txt {
 }
 
 const TXT: &str = r#"
-abcd = 0.5
+abcd = 2.0
 test [ 1 2 3 ];
 str = "t\\\"est"
 
