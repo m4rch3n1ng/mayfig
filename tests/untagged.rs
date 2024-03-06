@@ -89,3 +89,41 @@ fn nested() {
 	let t9 = mayfig::from_str::<E>(T9);
 	assert!(t9.is_err())
 }
+
+#[derive(Debug, Deserialize)]
+struct S {
+	v: V,
+}
+
+#[derive(Debug, Deserialize)]
+#[serde(untagged)]
+enum V {
+	Seq(u64, u64),
+	Sin(u64)
+}
+
+const T10: &str = r#"
+v = 4
+"#;
+
+const T11: &str = r#"
+v [ 4, 5 ]
+"#;
+
+const T12: &str = r#"
+v [ 5 ]
+"#;
+
+#[test]
+fn tuple() {
+	let t10 = mayfig::from_str::<S>(T10);
+	let t10 = t10.unwrap();
+	assert!(matches!(t10.v, V::Sin(4)));
+
+	let t11 = mayfig::from_str::<S>(T11);
+	let t11 = t11.unwrap();
+	assert!(matches!(t11.v, V::Seq(4, 5)));
+
+	let t12 = mayfig::from_str::<S>(T12);
+	assert!(t12.is_err());
+}

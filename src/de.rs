@@ -108,6 +108,8 @@ impl<'de, 'a, R: Read<'de>> serde::de::Deserializer<'de> for &'a mut Deserialize
 		let peek = self.peek_whitespace()?;
 		if self.indent == 0 || peek == '{' {
 			self.deserialize_map(visitor)
+		} else if peek == '[' {
+			self.deserialize_seq(visitor)
 		} else if peek.is_alphabetic() {
 			self.deserialize_identifier(visitor)
 		} else if let '0'..='9' | '.' | '-' = peek {
