@@ -1,6 +1,10 @@
 use crate::error::Err;
 use serde::Serialize;
 
+use self::serializer::{MapKeySerializer, MapValSerializer};
+
+mod serializer;
+
 pub struct Serializer<'a> {
 	indent: usize,
 	writer: &'a mut String,
@@ -12,7 +16,7 @@ impl<'a> Serializer<'a> {
 	}
 }
 
-impl<'a> Serializer<'a> {
+impl<'ser> Serializer<'ser> {
 	fn indent(&mut self) -> Result<(), Err> {
 		for _ in 0..self.indent {
 			self.writer.push('\t');
@@ -23,7 +27,7 @@ impl<'a> Serializer<'a> {
 }
 
 #[allow(unused_variables)]
-impl<'a> serde::ser::Serializer for &mut Serializer<'a> {
+impl<'ser> serde::ser::Serializer for &mut Serializer<'ser> {
 	type Ok = ();
 	type Error = Err;
 
@@ -176,7 +180,12 @@ impl<'a> serde::ser::Serializer for &mut Serializer<'a> {
 	}
 
 	fn serialize_map(self, len: Option<usize>) -> Result<Self::SerializeMap, Self::Error> {
-		todo!()
+		if self.indent == 0 {
+			Ok(self)
+		} else {
+			self.writer.push_str(" {\n");
+			Ok(self)
+		}
 	}
 
 	fn serialize_struct(
@@ -184,11 +193,7 @@ impl<'a> serde::ser::Serializer for &mut Serializer<'a> {
 		name: &'static str,
 		len: usize,
 	) -> Result<Self::SerializeStruct, Self::Error> {
-		if self.indent == 0 {
-			Ok(self)
-		} else {
-			todo!()
-		}
+		self.serialize_map(Some(len))
 	}
 
 	fn serialize_struct_variant(
@@ -203,7 +208,7 @@ impl<'a> serde::ser::Serializer for &mut Serializer<'a> {
 }
 
 #[allow(unused_variables)]
-impl<'a> serde::ser::SerializeMap for &mut Serializer<'a> {
+impl<'ser> serde::ser::SerializeMap for &mut Serializer<'ser> {
 	type Ok = ();
 	type Error = Err;
 
@@ -241,13 +246,12 @@ impl<'a> serde::ser::SerializeSeq for &mut Serializer<'a> {
 
 	fn end(self) -> Result<Self::Ok, Self::Error> {
 		self.writer.push(']');
-		self.writer.push('\n');
 		Ok(())
 	}
 }
 
 #[allow(unused_variables)]
-impl<'a> serde::ser::SerializeStruct for &mut Serializer<'a> {
+impl<'ser> serde::ser::SerializeStruct for &mut Serializer<'ser> {
 	type Ok = ();
 	type Error = Err;
 
@@ -259,25 +263,31 @@ impl<'a> serde::ser::SerializeStruct for &mut Serializer<'a> {
 	where
 		T: Serialize,
 	{
-		if self.indent == 0 {
 			self.indent()?;
-			// todo map key str
-			key.serialize(&mut **self)?;
-			self.writer.push_str(" = ");
-			value.serialize(&mut **self)?;
+
+			let mapk = MapKeySerializer::new(self);
+			key.serialize(mapk)?;
+
+			let mapv = MapValSerializer::new(self);
+			value.serialize(mapv)?;
+
+			self.writer.push('\n');
 			Ok(())
-		} else {
-			todo!()
-		}
 	}
 
 	fn end(self) -> Result<Self::Ok, Self::Error> {
+		if let Some(indent) = self.indent.checked_sub(1) {
+			self.indent = indent;
+			self.indent()?;
+			self.writer.push_str("}\n");
+		}
+
 		Ok(())
 	}
 }
 
 #[allow(unused_variables)]
-impl<'a> serde::ser::SerializeStructVariant for &mut Serializer<'a> {
+impl<'ser> serde::ser::SerializeStructVariant for &mut Serializer<'ser> {
 	type Ok = ();
 	type Error = Err;
 
@@ -298,7 +308,7 @@ impl<'a> serde::ser::SerializeStructVariant for &mut Serializer<'a> {
 }
 
 #[allow(unused_variables)]
-impl<'a> serde::ser::SerializeTuple for &mut Serializer<'a> {
+impl<'ser> serde::ser::SerializeTuple for &mut Serializer<'ser> {
 	type Ok = ();
 	type Error = Err;
 
@@ -315,7 +325,7 @@ impl<'a> serde::ser::SerializeTuple for &mut Serializer<'a> {
 }
 
 #[allow(unused_variables)]
-impl<'a> serde::ser::SerializeTupleStruct for &mut Serializer<'a> {
+impl<'ser> serde::ser::SerializeTupleStruct for &mut Serializer<'ser> {
 	type Ok = ();
 	type Error = Err;
 
@@ -332,7 +342,7 @@ impl<'a> serde::ser::SerializeTupleStruct for &mut Serializer<'a> {
 }
 
 #[allow(unused_variables)]
-impl<'a> serde::ser::SerializeTupleVariant for &mut Serializer<'a> {
+impl<'ser> serde::ser::SerializeTupleVariant for &mut Serializer<'ser> {
 	type Ok = ();
 	type Error = Err;
 
