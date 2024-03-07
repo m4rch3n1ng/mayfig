@@ -33,3 +33,13 @@ impl serde::de::Error for Err {
 		Err::Custom(msg)
 	}
 }
+
+impl serde::ser::Error for Err {
+	fn custom<T>(msg: T) -> Self
+	where
+		T: std::fmt::Display,
+	{
+		let msg = msg.to_string();
+		Err::Custom(msg)
+	}
+}
