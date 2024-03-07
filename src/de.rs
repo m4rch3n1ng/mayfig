@@ -328,6 +328,13 @@ impl<'de, 'a, R: Read<'de>> serde::de::Deserializer<'de> for &'a mut Deserialize
 		let acc = SeqAcc::new(self);
 		let val = visitor.visit_seq(acc)?;
 
+		let peek = self.next_whitespace()?;
+		if peek == ']' {
+			self.read.discard();
+		} else {
+			return Err(Err::ExpectedSeqEnd);
+		}
+
 		self.indent -= 1;
 
 		Ok(val)
@@ -337,7 +344,7 @@ impl<'de, 'a, R: Read<'de>> serde::de::Deserializer<'de> for &'a mut Deserialize
 	where
 		V: serde::de::Visitor<'de>,
 	{
-		todo!()
+		self.deserialize_seq(visitor)
 	}
 
 	fn deserialize_tuple_struct<V>(
@@ -349,7 +356,7 @@ impl<'de, 'a, R: Read<'de>> serde::de::Deserializer<'de> for &'a mut Deserialize
 	where
 		V: serde::de::Visitor<'de>,
 	{
-		todo!()
+		self.deserialize_seq(visitor)
 	}
 
 	fn deserialize_map<V>(self, visitor: V) -> Result<V::Value, Self::Error>

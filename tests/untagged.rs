@@ -99,7 +99,7 @@ struct S {
 #[serde(untagged)]
 enum V {
 	Seq(u64, u64),
-	Sin(u64)
+	Sin(u64),
 }
 
 const T10: &str = r#"

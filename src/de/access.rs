@@ -123,7 +123,6 @@ impl<'a, 'de, R: Read<'de>> SeqAccess<'de> for SeqAcc<'a, R> {
 		}
 
 		if self.de.peek_whitespace()? == ']' {
-			self.de.read.discard();
 			return Ok(None);
 		}
 
