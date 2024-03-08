@@ -196,6 +196,63 @@ impl<'a, 'de, R: Read<'de>> VariantAccess<'de> for EnumAcc<'a, R> {
 	}
 }
 
+pub struct UnitEnumAcc<'a, R> {
+	de: &'a mut Deserializer<R>,
+}
+
+impl<'a, 'de, R: Read<'de>> UnitEnumAcc<'a, R> {
+	pub fn new(de: &'a mut Deserializer<R>) -> Self {
+		UnitEnumAcc { de }
+	}
+}
+
+impl<'a, 'de, R: Read<'de>> EnumAccess<'de> for UnitEnumAcc<'a, R> {
+	type Error = Err;
+	type Variant = Self;
+
+	fn variant_seed<V>(self, seed: V) -> Result<(V::Value, Self::Variant), Self::Error>
+	where
+		V: serde::de::DeserializeSeed<'de>,
+	{
+		let variant = seed.deserialize(&mut *self.de)?;
+		Ok((variant, self))
+	}
+}
+
+#[allow(unused_variables)]
+impl<'a, 'de, R: Read<'de>> VariantAccess<'de> for UnitEnumAcc<'a, R> {
+	type Error = Err;
+
+	fn unit_variant(self) -> Result<(), Self::Error> {
+		Ok(())
+	}
+
+	fn newtype_variant_seed<T>(self, seed: T) -> Result<T::Value, Self::Error>
+	where
+		T: serde::de::DeserializeSeed<'de>,
+	{
+		todo!()
+	}
+
+	fn tuple_variant<V>(self, len: usize, visitor: V) -> Result<V::Value, Self::Error>
+	where
+		V: serde::de::Visitor<'de>,
+	{
+		todo!()
+	}
+
+	fn struct_variant<V>(
+		self,
+		fields: &'static [&'static str],
+		visitor: V,
+	) -> Result<V::Value, Self::Error>
+	where
+		V: serde::de::Visitor<'de>,
+	{
+		todo!()
+	}
+}
+
 struct MapKey<'a, R> {
 	de: &'a mut Deserializer<R>,
 }

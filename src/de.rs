@@ -1,5 +1,5 @@
 use self::{
-	access::{EnumAcc, MapAcc, SeqAcc, TopMapAcc},
+	access::{EnumAcc, MapAcc, SeqAcc, TopMapAcc, UnitEnumAcc},
 	read::{Read, Ref, StrRead},
 };
 use crate::error::Err;
@@ -429,7 +429,8 @@ impl<'de, 'a, R: Read<'de>> serde::de::Deserializer<'de> for &'a mut Deserialize
 				Err(Err::Expected('}', next))
 			}
 		} else if peek == '"' {
-			todo!("unit enum")
+			let acc = UnitEnumAcc::new(self);
+			visitor.visit_enum(acc)
 		} else {
 			Err(Err::UnexpectedChar(peek, "[enum]"))
 		}
