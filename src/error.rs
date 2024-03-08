@@ -16,6 +16,8 @@ pub enum Err {
 	Expected(char, char),
 	#[error("unexpected char {0:?}, expected {1}")]
 	UnexpectedChar(char, &'static str),
+	#[error("unsupported none")]
+	UnsupportedNone,
 	#[error("expected end of sequence")]
 	ExpectedSeqEnd,
 	#[error("end of file")]

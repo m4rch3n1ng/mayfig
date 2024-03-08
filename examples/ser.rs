@@ -1,22 +1,15 @@
-use serde_derive::Serialize;
+use serde_derive::{Deserialize, Serialize};
 
-#[derive(Debug, Serialize)]
+#[derive(Debug, Deserialize, Serialize, PartialEq)]
 struct T {
-	t: u64,
 	v: Vec<u64>,
-	s: S,
-}
-
-#[derive(Debug, Serialize)]
-struct S {
-	s: u64,
+	s: String,
 }
 
 fn main() {
 	let t = T {
-		t: 20,
 		v: vec![1, 2, 4],
-		s: S { s: 5 }
+		s: "test".into(),
 	};
 
 	let t = mayfig::ser::to_string(&t);

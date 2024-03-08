@@ -214,35 +214,43 @@ impl<'a, 'ser> serde::ser::Serializer for MapValSerializer<'a, 'ser> {
 	type SerializeStructVariant = &'a mut Serializer<'ser>;
 
 	fn serialize_bool(self, v: bool) -> Result<Self::Ok, Self::Error> {
-		todo!()
+		self.ser.writer.push_str(" = ");
+		self.ser.serialize_bool(v)
 	}
 
 	fn serialize_i8(self, v: i8) -> Result<Self::Ok, Self::Error> {
-		todo!()
+		self.ser.writer.push_str(" = ");
+		self.ser.serialize_i8(v)
 	}
 
 	fn serialize_i16(self, v: i16) -> Result<Self::Ok, Self::Error> {
-		todo!()
+		self.ser.writer.push_str(" = ");
+		self.ser.serialize_i16(v)
 	}
 
 	fn serialize_i32(self, v: i32) -> Result<Self::Ok, Self::Error> {
-		todo!()
+		self.ser.writer.push_str(" = ");
+		self.ser.serialize_i32(v)
 	}
 
 	fn serialize_i64(self, v: i64) -> Result<Self::Ok, Self::Error> {
-		todo!()
+		self.ser.writer.push_str(" = ");
+		self.ser.serialize_i64(v)
 	}
 
 	fn serialize_u8(self, v: u8) -> Result<Self::Ok, Self::Error> {
-		todo!()
+		self.ser.writer.push_str(" = ");
+		self.ser.serialize_u8(v)
 	}
 
 	fn serialize_u16(self, v: u16) -> Result<Self::Ok, Self::Error> {
-		todo!()
+		self.ser.writer.push_str(" = ");
+		self.ser.serialize_u16(v)
 	}
 
 	fn serialize_u32(self, v: u32) -> Result<Self::Ok, Self::Error> {
-		todo!()
+		self.ser.writer.push_str(" = ");
+		self.ser.serialize_u32(v)
 	}
 
 	fn serialize_u64(self, v: u64) -> Result<Self::Ok, Self::Error> {
@@ -263,16 +271,8 @@ impl<'a, 'ser> serde::ser::Serializer for MapValSerializer<'a, 'ser> {
 	}
 
 	fn serialize_str(self, v: &str) -> Result<Self::Ok, Self::Error> {
-		let vv = v.chars().any(|ch| ch.is_alphanumeric())
-			&& v.chars().next().is_some_and(|ch| ch.is_alphabetic());
-		if vv {
-			let v = v.to_string();
-			self.ser.writer.push_str(&v);
-		} else {
-			self.ser.serialize_str(v)?;
-		}
-
-		Ok(())
+		self.ser.writer.push_str(" = ");
+		self.ser.serialize_str(v)
 	}
 
 	fn serialize_bytes(self, v: &[u8]) -> Result<Self::Ok, Self::Error> {
@@ -280,14 +280,14 @@ impl<'a, 'ser> serde::ser::Serializer for MapValSerializer<'a, 'ser> {
 	}
 
 	fn serialize_none(self) -> Result<Self::Ok, Self::Error> {
-		todo!()
+		Err(Err::UnsupportedNone)
 	}
 
 	fn serialize_some<T: ?Sized>(self, value: &T) -> Result<Self::Ok, Self::Error>
 	where
 		T: serde::Serialize,
 	{
-		todo!()
+		value.serialize(self)
 	}
 
 	fn serialize_unit(self) -> Result<Self::Ok, Self::Error> {
@@ -359,7 +359,8 @@ impl<'a, 'ser> serde::ser::Serializer for MapValSerializer<'a, 'ser> {
 	}
 
 	fn serialize_map(self, len: Option<usize>) -> Result<Self::SerializeMap, Self::Error> {
-		todo!()
+		self.ser.indent += 1;
+		self.ser.serialize_map(len)
 	}
 
 	fn serialize_struct(

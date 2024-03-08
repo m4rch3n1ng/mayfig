@@ -40,35 +40,39 @@ impl<'ser> serde::ser::Serializer for &mut Serializer<'ser> {
 	type SerializeTupleVariant = Self;
 
 	fn serialize_bool(self, v: bool) -> Result<Self::Ok, Self::Error> {
-		todo!()
+		let s = if v { "true" } else { "false" };
+		self.writer.push_str(s);
+		Ok(())
 	}
 
 	fn serialize_i8(self, v: i8) -> Result<Self::Ok, Self::Error> {
-		todo!()
+		self.serialize_i64(i64::from(v))
 	}
 
 	fn serialize_i16(self, v: i16) -> Result<Self::Ok, Self::Error> {
-		todo!()
+		self.serialize_i64(i64::from(v))
 	}
 
 	fn serialize_i32(self, v: i32) -> Result<Self::Ok, Self::Error> {
-		todo!()
+		self.serialize_i64(i64::from(v))
 	}
 
 	fn serialize_i64(self, v: i64) -> Result<Self::Ok, Self::Error> {
-		todo!()
+		let v = v.to_string();
+		self.writer.push_str(&v);
+		Ok(())
 	}
 
 	fn serialize_u8(self, v: u8) -> Result<Self::Ok, Self::Error> {
-		todo!()
+		self.serialize_u64(u64::from(v))
 	}
 
 	fn serialize_u16(self, v: u16) -> Result<Self::Ok, Self::Error> {
-		todo!()
+		self.serialize_u64(u64::from(v))
 	}
 
 	fn serialize_u32(self, v: u32) -> Result<Self::Ok, Self::Error> {
-		todo!()
+		self.serialize_u64(u64::from(v))
 	}
 
 	fn serialize_u64(self, v: u64) -> Result<Self::Ok, Self::Error> {
@@ -78,11 +82,13 @@ impl<'ser> serde::ser::Serializer for &mut Serializer<'ser> {
 	}
 
 	fn serialize_f32(self, v: f32) -> Result<Self::Ok, Self::Error> {
-		todo!()
+		self.serialize_f64(f64::from(v))
 	}
 
 	fn serialize_f64(self, v: f64) -> Result<Self::Ok, Self::Error> {
-		todo!()
+		let v = v.to_string();
+		self.writer.push_str(&v);
+		Ok(())
 	}
 
 	fn serialize_char(self, v: char) -> Result<Self::Ok, Self::Error> {
@@ -216,18 +222,25 @@ impl<'ser> serde::ser::SerializeMap for &mut Serializer<'ser> {
 	where
 		T: Serialize,
 	{
-		todo!()
+		self.indent()?;
+
+		let mapk = MapKeySerializer::new(self);
+		key.serialize(mapk)
 	}
 
 	fn serialize_value<T: ?Sized>(&mut self, value: &T) -> Result<(), Self::Error>
 	where
 		T: Serialize,
 	{
-		todo!()
+		let mapv = MapValSerializer::new(self);
+		value.serialize(mapv)?;
+
+		self.writer.push('\n');
+		Ok(())
 	}
 
 	fn end(self) -> Result<Self::Ok, Self::Error> {
-		todo!()
+		serde::ser::SerializeStruct::end(self)
 	}
 }
 
@@ -250,7 +263,6 @@ impl<'a> serde::ser::SerializeSeq for &mut Serializer<'a> {
 	}
 }
 
-#[allow(unused_variables)]
 impl<'ser> serde::ser::SerializeStruct for &mut Serializer<'ser> {
 	type Ok = ();
 	type Error = Err;
@@ -263,16 +275,16 @@ impl<'ser> serde::ser::SerializeStruct for &mut Serializer<'ser> {
 	where
 		T: Serialize,
 	{
-			self.indent()?;
+		self.indent()?;
 
-			let mapk = MapKeySerializer::new(self);
-			key.serialize(mapk)?;
+		let mapk = MapKeySerializer::new(self);
+		key.serialize(mapk)?;
 
-			let mapv = MapValSerializer::new(self);
-			value.serialize(mapv)?;
+		let mapv = MapValSerializer::new(self);
+		value.serialize(mapv)?;
 
-			self.writer.push('\n');
-			Ok(())
+		self.writer.push('\n');
+		Ok(())
 	}
 
 	fn end(self) -> Result<Self::Ok, Self::Error> {
@@ -307,7 +319,6 @@ impl<'ser> serde::ser::SerializeStructVariant for &mut Serializer<'ser> {
 	}
 }
 
-#[allow(unused_variables)]
 impl<'ser> serde::ser::SerializeTuple for &mut Serializer<'ser> {
 	type Ok = ();
 	type Error = Err;
@@ -316,11 +327,11 @@ impl<'ser> serde::ser::SerializeTuple for &mut Serializer<'ser> {
 	where
 		T: Serialize,
 	{
-		todo!()
+		serde::ser::SerializeSeq::serialize_element(self, value)
 	}
 
 	fn end(self) -> Result<Self::Ok, Self::Error> {
-		todo!()
+		serde::ser::SerializeSeq::end(self)
 	}
 }
 
