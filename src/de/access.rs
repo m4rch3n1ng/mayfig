@@ -174,14 +174,14 @@ impl<'a, 'de, R: Read<'de>> VariantAccess<'de> for EnumAcc<'a, R> {
 	where
 		T: serde::de::DeserializeSeed<'de>,
 	{
-		todo!()
+		seed.deserialize(self.de)
 	}
 
 	fn tuple_variant<V>(self, len: usize, visitor: V) -> Result<V::Value, Self::Error>
 	where
 		V: serde::de::Visitor<'de>,
 	{
-		todo!()
+		serde::de::Deserializer::deserialize_seq(self.de, visitor)
 	}
 
 	fn struct_variant<V>(

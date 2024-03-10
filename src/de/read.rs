@@ -156,6 +156,12 @@ impl<'de> Read<'de> for StrRead<'de> {
 			}
 		}
 
+		if let Ok(peek) = self.peek() {
+			if !is_delimiter(peek) {
+				return Err(Err::ExpectedDelimiter(peek));
+			}
+		}
+
 		if scratch.is_empty() {
 			Ok(Ref::Borrow(one))
 		} else {
@@ -173,6 +179,7 @@ fn parse_escape<'de, 's, R: Read<'de>>(
 
 	match next {
 		'"' => scratch.push('"'),
+		'\'' => scratch.push('\''),
 		'\\' => scratch.push('\\'),
 		'/' => scratch.push('/'),
 		'n' => scratch.push('\n'),
@@ -185,6 +192,17 @@ fn parse_escape<'de, 's, R: Read<'de>>(
 	}
 
 	Ok(())
+}
+
+fn is_delimiter(ch: char) -> bool {
+	ch.is_ascii_whitespace()
+		|| ch == '='
+		|| ch == ','
+		|| ch == ';'
+		|| ch == '{'
+		|| ch == '}'
+		|| ch == '['
+		|| ch == ']'
 }
 
 #[cfg(test)]

@@ -20,6 +20,8 @@ pub enum Err {
 	UnsupportedNone,
 	#[error("expected end of sequence")]
 	ExpectedSeqEnd,
+	#[error("expected delimiter after string, got {0:?}")]
+	ExpectedDelimiter(char),
 	#[error("end of file")]
 	Eof,
 	#[error("custom: {0}")]
