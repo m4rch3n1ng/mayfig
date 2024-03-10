@@ -329,9 +329,7 @@ impl<'de, 'a, R: Read<'de>> serde::de::Deserializer<'de> for &'a mut Deserialize
 		let val = visitor.visit_seq(acc)?;
 
 		let peek = self.next_whitespace()?;
-		if peek == ']' {
-			self.read.discard();
-		} else {
+		if peek != ']' {
 			return Err(Err::ExpectedSeqEnd);
 		}
 
