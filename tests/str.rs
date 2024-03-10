@@ -11,7 +11,7 @@ s = "test"t = 20
 "#;
 
 const S2: &str = r#"
-"s"="test";t=20
+"s"="test" t=20
 "#;
 
 #[derive(Debug, Deserialize)]

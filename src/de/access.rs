@@ -22,15 +22,6 @@ impl<'a, 'de, R: Read<'de>> MapAccess<'de> for TopMapAcc<'a, R> {
 		K: serde::de::DeserializeSeed<'de>,
 	{
 		let next = self.de.peek_whitespace()?;
-		let Some(next) = next else {
-			return Ok(None);
-		};
-
-		if next == b';' {
-			self.de.discard_all(b';');
-		}
-
-		let next = self.de.peek_whitespace()?;
 		if next.is_none() {
 			return Ok(None);
 		}
@@ -71,10 +62,6 @@ impl<'a, 'de, R: Read<'de>> MapAccess<'de> for MapAcc<'a, R> {
 	where
 		K: serde::de::DeserializeSeed<'de>,
 	{
-		if self.de.peek_whitespace()?.ok_or(Err::Eof)? == b';' {
-			self.de.discard_all(b';');
-		}
-
 		if self.de.peek_whitespace()?.ok_or(Err::Eof)? == b'}' {
 			self.de.read.discard();
 			return Ok(None);
