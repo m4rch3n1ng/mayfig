@@ -305,7 +305,7 @@ impl<'ser> serde::ser::SerializeStruct for &mut Serializer<'ser> {
 		if let Some(indent) = self.indent_level.checked_sub(1) {
 			self.indent_level = indent;
 			self.indent()?;
-			self.writer.push_str("}\n");
+			self.writer.push('}');
 		}
 
 		Ok(())

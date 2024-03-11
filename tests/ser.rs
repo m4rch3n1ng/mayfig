@@ -36,7 +36,6 @@ m {
 	k1 = 1
 	k2 = 2
 }
-
 "#;
 
 #[test]
@@ -63,7 +62,6 @@ const S3: &str = r#"m {
   1 = 1
   2 = 2
 }
-
 "#;
 
 #[test]
@@ -76,4 +74,38 @@ fn indent() {
 	s3.serialize(&mut ser).unwrap();
 
 	assert_eq!(S3, st)
+}
+
+#[derive(Debug, Deserialize, Serialize, PartialEq)]
+struct S4 {
+	s: String,
+	t: T4,
+}
+
+#[derive(Debug, Deserialize, Serialize, PartialEq)]
+struct T4 {
+	v: (u64, u64),
+	m: BTreeMap<u64, u64>,
+}
+
+const S4: &str = r#"s = "test"
+t {
+	v [ 1 2 ]
+	m {
+		0 = 0
+		1 = 1
+	}
+}
+"#;
+
+#[test]
+fn twolevel() {
+	let m = BTreeMap::from([(0, 0), (1, 1)]);
+	let t = T4 { v: (1, 2), m };
+	let s = S4 {
+		s: "test".to_owned(),
+		t,
+	};
+
+	twoway(s, S4);
 }
