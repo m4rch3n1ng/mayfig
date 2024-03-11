@@ -6,20 +6,34 @@ use self::serializer::{MapKeySerializer, MapValSerializer};
 mod serializer;
 
 pub struct Serializer<'a> {
-	indent: usize,
+	/// current indentation level
+	indent_level: usize,
+	indent: &'static str,
 	writer: &'a mut String,
 }
 
 impl<'a> Serializer<'a> {
-	fn new(writer: &'a mut String) -> Self {
-		Serializer { writer, indent: 0 }
+	pub fn new(writer: &'a mut String) -> Self {
+		Serializer {
+			writer,
+			indent: "\t",
+			indent_level: 0,
+		}
+	}
+
+	pub fn with_indent(writer: &'a mut String, indent: &'static str) -> Self {
+		Serializer {
+			writer,
+			indent,
+			indent_level: 0,
+		}
 	}
 }
 
 impl<'ser> Serializer<'ser> {
 	fn indent(&mut self) -> Result<(), Err> {
-		for _ in 0..self.indent {
-			self.writer.push('\t');
+		for _ in 0..self.indent_level {
+			self.writer.push_str(self.indent);
 		}
 
 		Ok(())
@@ -164,7 +178,7 @@ impl<'ser> serde::ser::Serializer for &mut Serializer<'ser> {
 	}
 
 	fn serialize_tuple(self, len: usize) -> Result<Self::SerializeTuple, Self::Error> {
-		todo!()
+		self.serialize_seq(Some(len))
 	}
 
 	fn serialize_tuple_struct(
@@ -172,7 +186,7 @@ impl<'ser> serde::ser::Serializer for &mut Serializer<'ser> {
 		name: &'static str,
 		len: usize,
 	) -> Result<Self::SerializeTupleStruct, Self::Error> {
-		todo!()
+		self.serialize_seq(Some(len))
 	}
 
 	fn serialize_tuple_variant(
@@ -186,7 +200,7 @@ impl<'ser> serde::ser::Serializer for &mut Serializer<'ser> {
 	}
 
 	fn serialize_map(self, len: Option<usize>) -> Result<Self::SerializeMap, Self::Error> {
-		if self.indent == 0 {
+		if self.indent_level == 0 {
 			Ok(self)
 		} else {
 			self.writer.push_str(" {\n");
@@ -288,8 +302,8 @@ impl<'ser> serde::ser::SerializeStruct for &mut Serializer<'ser> {
 	}
 
 	fn end(self) -> Result<Self::Ok, Self::Error> {
-		if let Some(indent) = self.indent.checked_sub(1) {
-			self.indent = indent;
+		if let Some(indent) = self.indent_level.checked_sub(1) {
+			self.indent_level = indent;
 			self.indent()?;
 			self.writer.push_str("}\n");
 		}

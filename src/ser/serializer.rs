@@ -57,7 +57,7 @@ impl<'a, 'ser> serde::ser::Serializer for MapKeySerializer<'a, 'ser> {
 	}
 
 	fn serialize_u64(self, v: u64) -> Result<Self::Ok, Self::Error> {
-		todo!()
+		self.ser.serialize_u64(v)
 	}
 
 	fn serialize_f32(self, v: f32) -> Result<Self::Ok, Self::Error> {
@@ -359,7 +359,7 @@ impl<'a, 'ser> serde::ser::Serializer for MapValSerializer<'a, 'ser> {
 	}
 
 	fn serialize_map(self, len: Option<usize>) -> Result<Self::SerializeMap, Self::Error> {
-		self.ser.indent += 1;
+		self.ser.indent_level += 1;
 		self.ser.serialize_map(len)
 	}
 
@@ -368,7 +368,7 @@ impl<'a, 'ser> serde::ser::Serializer for MapValSerializer<'a, 'ser> {
 		name: &'static str,
 		len: usize,
 	) -> Result<Self::SerializeStruct, Self::Error> {
-		self.ser.indent += 1;
+		self.ser.indent_level += 1;
 		self.ser.serialize_struct(name, len)
 	}
 

@@ -52,3 +52,28 @@ fn test() {
 	let s2 = S2 { v: (-1, 0, 1), m };
 	twoway(s2, S2);
 }
+
+#[derive(Debug, Serialize)]
+struct S3 {
+	m: BTreeMap<u64, u64>,
+}
+
+const S3: &str = r#"m {
+  0 = 0
+  1 = 1
+  2 = 2
+}
+
+"#;
+
+#[test]
+fn indent() {
+	let m = BTreeMap::from([(0, 0), (1, 1), (2, 2)]);
+	let s3 = S3 { m };
+
+	let mut st = String::new();
+	let mut ser = mayfig::ser::Serializer::with_indent(&mut st, "  ");
+	s3.serialize(&mut ser).unwrap();
+
+	assert_eq!(S3, st)
+}
