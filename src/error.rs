@@ -1,5 +1,6 @@
 use thiserror::Error;
 
+// todo better char conversion
 #[derive(Debug, Error)]
 pub enum Err {
 	#[error("unknown escape sequence {0:?}")]

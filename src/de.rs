@@ -10,7 +10,7 @@ mod read;
 pub struct Deserializer<R> {
 	read: R,
 	indent: usize,
-	scratch: String,
+	scratch: Vec<u8>,
 }
 
 impl<'de, R: Read<'de>> Deserializer<R> {
@@ -18,7 +18,7 @@ impl<'de, R: Read<'de>> Deserializer<R> {
 		Deserializer {
 			read,
 			indent: 0,
-			scratch: String::new(),
+			scratch: Vec::new(),
 		}
 	}
 }
@@ -41,25 +41,27 @@ where
 }
 
 impl<'de, R: Read<'de>> Deserializer<R> {
-	fn peek_whitespace(&mut self) -> Result<char, Err> {
+	fn peek_whitespace(&mut self) -> Result<u8, Err> {
 		loop {
-			match self.read.peek()? {
-				' ' | '\t' | '\r' | '\n' => self.read.discard(),
-				c => return Ok(c),
+			let peek = self.read.peek()?;
+			if read::is_whitespace(peek) {
+				self.read.discard();
+			} else {
+				return Ok(peek);
 			}
 		}
 	}
 
-	fn next_whitespace(&mut self) -> Result<char, Err> {
+	fn next_whitespace(&mut self) -> Result<u8, Err> {
 		loop {
-			match self.read.next()? {
-				' ' | '\t' | '\r' | '\n' => (),
-				c => return Ok(c),
+			let next = self.read.next()?;
+			if !read::is_whitespace(next) {
+				return Ok(next);
 			}
 		}
 	}
 
-	fn discard_all(&mut self, ch: char) {
+	fn discard_all(&mut self, ch: u8) {
 		while self.peek_whitespace().is_ok_and(|peek| peek == ch) {
 			self.read.discard();
 		}
@@ -106,15 +108,15 @@ impl<'de, 'a, R: Read<'de>> serde::de::Deserializer<'de> for &'a mut Deserialize
 		V: serde::de::Visitor<'de>,
 	{
 		let peek = self.peek_whitespace()?;
-		if self.indent == 0 || peek == '{' {
+		if self.indent == 0 || peek == b'{' {
 			self.deserialize_map(visitor)
-		} else if peek == '[' {
+		} else if peek == b'[' {
 			self.deserialize_seq(visitor)
-		} else if peek.is_alphabetic() {
+		} else if peek.is_ascii_alphabetic() {
 			self.deserialize_identifier(visitor)
-		} else if let '0'..='9' | '.' | '-' = peek {
+		} else if let b'0'..=b'9' | b'.' | b'-' = peek {
 			self.deserialize_number(visitor)
-		} else if peek == '"' {
+		} else if peek == b'"' {
 			self.deserialize_str(visitor)
 		} else {
 			let word = self.word()?;
@@ -321,15 +323,15 @@ impl<'de, 'a, R: Read<'de>> serde::de::Deserializer<'de> for &'a mut Deserialize
 		self.indent += 1;
 
 		let next = self.next_whitespace()?;
-		if next != '[' {
-			return Err(Err::Expected('[', next));
+		if next != b'[' {
+			return Err(Err::Expected('[', char::from(next)));
 		}
 
 		let acc = SeqAcc::new(self);
 		let val = visitor.visit_seq(acc)?;
 
 		let peek = self.next_whitespace()?;
-		if peek != ']' {
+		if peek != b']' {
 			return Err(Err::ExpectedSeqEnd);
 		}
 
@@ -362,7 +364,7 @@ impl<'de, 'a, R: Read<'de>> serde::de::Deserializer<'de> for &'a mut Deserialize
 		V: serde::de::Visitor<'de>,
 	{
 		let peek = self.peek_whitespace();
-		let val = if let Ok('{') = peek {
+		let val = if let Ok(b'{') = peek {
 			self.indent += 1;
 			self.read.discard();
 
@@ -374,7 +376,7 @@ impl<'de, 'a, R: Read<'de>> serde::de::Deserializer<'de> for &'a mut Deserialize
 			Ok(val)
 		} else if self.indent != 0 {
 			if let Ok(peek) = peek {
-				Err(Err::Expected('{', peek))
+				Err(Err::Expected('{', char::from(peek)))
 			} else {
 				Err(Err::Eof)
 			}
@@ -414,23 +416,23 @@ impl<'de, 'a, R: Read<'de>> serde::de::Deserializer<'de> for &'a mut Deserialize
 		V: serde::de::Visitor<'de>,
 	{
 		let peek = self.peek_whitespace()?;
-		if peek == '{' {
+		if peek == b'{' {
 			self.read.discard();
 
 			let acc = EnumAcc::new(self);
 			let val = visitor.visit_enum(acc)?;
 
 			let next = self.next_whitespace()?;
-			if next == '}' {
+			if next == b'}' {
 				Ok(val)
 			} else {
-				Err(Err::Expected('}', next))
+				Err(Err::Expected('}', char::from(next)))
 			}
-		} else if peek == '"' {
+		} else if peek == b'"' {
 			let acc = UnitEnumAcc::new(self);
 			visitor.visit_enum(acc)
 		} else {
-			Err(Err::UnexpectedChar(peek, "[enum]"))
+			Err(Err::UnexpectedChar(char::from(peek), "[enum]"))
 		}
 	}
 
@@ -439,10 +441,13 @@ impl<'de, 'a, R: Read<'de>> serde::de::Deserializer<'de> for &'a mut Deserialize
 		V: serde::de::Visitor<'de>,
 	{
 		let peek = self.peek_whitespace()?;
-		if peek == '"' || peek == '\'' {
+		if peek == b'"' || peek == b'\'' {
 			return self.deserialize_str(visitor);
 		} else if !peek.is_ascii_alphabetic() {
-			return Err(Err::UnexpectedChar(peek, "[ident] alphanumeric"));
+			return Err(Err::UnexpectedChar(
+				char::from(peek),
+				"[ident] alphanumeric",
+			));
 		}
 
 		let ident = self.word()?;

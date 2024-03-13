@@ -15,10 +15,7 @@ impl<'a, 'de, R: Read<'de>> TopMapAcc<'a, R> {
 	}
 }
 
-impl<'a, 'de, R> MapAccess<'de> for TopMapAcc<'a, R>
-where
-	R: Read<'de>,
-{
+impl<'a, 'de, R: Read<'de>> MapAccess<'de> for TopMapAcc<'a, R> {
 	type Error = Err;
 	fn next_key_seed<K>(&mut self, seed: K) -> Result<Option<K::Value>, Self::Error>
 	where
@@ -29,8 +26,8 @@ where
 			return Ok(None);
 		};
 
-		if next == ';' {
-			self.de.discard_all(';');
+		if next == b';' {
+			self.de.discard_all(b';');
 		}
 
 		let next = self.de.peek_whitespace();
@@ -46,10 +43,10 @@ where
 		V: serde::de::DeserializeSeed<'de>,
 	{
 		let peek = self.de.peek_whitespace()?;
-		if peek == '=' {
+		if peek == b'=' {
 			self.de.read.discard();
-		} else if peek != '{' && peek != '[' {
-			return Err(Err::Expected('=', peek));
+		} else if peek != b'{' && peek != b'[' {
+			return Err(Err::Expected('=', char::from(peek)));
 		}
 
 		seed.deserialize(&mut *self.de)
@@ -73,11 +70,11 @@ impl<'a, 'de, R: Read<'de>> MapAccess<'de> for MapAcc<'a, R> {
 	where
 		K: serde::de::DeserializeSeed<'de>,
 	{
-		if self.de.peek_whitespace()? == ';' {
-			self.de.discard_all(';');
+		if self.de.peek_whitespace()? == b';' {
+			self.de.discard_all(b';');
 		}
 
-		if self.de.peek_whitespace()? == '}' {
+		if self.de.peek_whitespace()? == b'}' {
 			self.de.read.discard();
 			return Ok(None);
 		}
@@ -91,10 +88,10 @@ impl<'a, 'de, R: Read<'de>> MapAccess<'de> for MapAcc<'a, R> {
 		V: serde::de::DeserializeSeed<'de>,
 	{
 		let peek = self.de.peek_whitespace()?;
-		if peek == '=' {
+		if peek == b'=' {
 			self.de.read.discard();
-		} else if peek != '{' && peek != '[' {
-			return Err(Err::Expected('=', peek));
+		} else if peek != b'{' && peek != b'[' {
+			return Err(Err::Expected('=', char::from(peek)));
 		}
 
 		seed.deserialize(&mut *self.de)
@@ -118,11 +115,11 @@ impl<'a, 'de, R: Read<'de>> SeqAccess<'de> for SeqAcc<'a, R> {
 	where
 		T: serde::de::DeserializeSeed<'de>,
 	{
-		if self.de.peek_whitespace()? == ',' {
-			self.de.discard_all(',');
+		if self.de.peek_whitespace()? == b',' {
+			self.de.discard_all(b',');
 		}
 
-		if self.de.peek_whitespace()? == ']' {
+		if self.de.peek_whitespace()? == b']' {
 			return Ok(None);
 		}
 
@@ -151,13 +148,13 @@ impl<'a, 'de, R: Read<'de>> EnumAccess<'de> for EnumAcc<'a, R> {
 		let val = seed.deserialize(&mut *self.de)?;
 
 		let peek = self.de.peek_whitespace()?;
-		if peek == '=' {
+		if peek == b'=' {
 			self.de.read.discard();
 			Ok((val, self))
-		} else if let '{' | '[' = peek {
+		} else if let b'{' | b'[' = peek {
 			Ok((val, self))
 		} else {
-			Err(Err::Expected('=', peek))
+			Err(Err::Expected('=', char::from(peek)))
 		}
 	}
 }
@@ -280,7 +277,7 @@ impl<'a, 'de, R: Read<'de>> serde::de::Deserializer<'de> for MapKey<'a, R> {
 		let peek = self.de.peek_whitespace()?;
 
 		match peek {
-			'"' => self.de.deserialize_str(visitor),
+			b'"' => self.de.deserialize_str(visitor),
 			_ => self.de.deserialize_identifier(visitor),
 		}
 	}
