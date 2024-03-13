@@ -96,5 +96,5 @@ fn tuple() {
 
 	let t5 = mayfig::from_str::<TT>(T5);
 	let t5 = t5.unwrap();
-	assert_eq!(t5.t, TS(2.4, false))
+	assert_eq!(t5.t, TS(2.4, false));
 }

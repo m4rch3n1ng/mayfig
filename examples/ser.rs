@@ -12,7 +12,7 @@ fn main() {
 		s: "test".into(),
 	};
 
-	let t = mayfig::ser::to_string(&t);
+	let t = mayfig::to_string(&t);
 	match t {
 		Ok(t) => println!("{}", t),
 		Err(e) => println!("{}", e),

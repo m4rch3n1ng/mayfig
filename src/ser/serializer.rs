@@ -73,11 +73,10 @@ impl<'a, 'ser> serde::ser::Serializer for MapKeySerializer<'a, 'ser> {
 	}
 
 	fn serialize_str(self, v: &str) -> Result<Self::Ok, Self::Error> {
-		let vv = v.chars().any(|ch| ch.is_alphanumeric())
-			&& v.chars().next().is_some_and(|ch| ch.is_alphabetic());
-		if vv {
-			let v = v.to_string();
-			self.ser.writer.push_str(&v);
+		let mut vit = v.chars();
+		let ident = vit.next().is_some_and(char::is_alphabetic) && vit.all(char::is_alphanumeric);
+		if ident {
+			self.ser.writer.push_str(v);
 		} else {
 			self.ser.serialize_str(v)?;
 		}

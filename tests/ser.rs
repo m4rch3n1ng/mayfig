@@ -3,7 +3,7 @@ use serde_derive::{Deserialize, Serialize};
 use std::{collections::BTreeMap, fmt::Debug};
 
 fn twoway<T: DeserializeOwned + Serialize + Debug + PartialEq>(t: T, s: &'static str) {
-	let ser = mayfig::ser::to_string(&t);
+	let ser = mayfig::to_string(&t);
 	let ser = ser.unwrap();
 	assert_eq!(s, ser);
 
@@ -70,7 +70,7 @@ fn indent() {
 	let s3 = S3 { m };
 
 	let mut st = String::new();
-	let mut ser = mayfig::ser::Serializer::with_indent(&mut st, "  ");
+	let mut ser = mayfig::Serializer::with_indent(&mut st, "  ");
 	s3.serialize(&mut ser).unwrap();
 
 	assert_eq!(S3, st)
