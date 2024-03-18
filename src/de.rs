@@ -75,16 +75,22 @@ impl<'de, R: Read<'de>> Deserializer<R> {
 
 	fn num<'s>(&'s mut self) -> Result<Ref<'de, 's>, Err> {
 		self.peek_whitespace()?.ok_or(Err::Eof)?;
+
+		self.scratch.clear();
 		self.read.num(&mut self.scratch)
 	}
 
 	fn word<'s>(&'s mut self) -> Result<Ref<'de, 's>, Err> {
 		self.peek_whitespace()?.ok_or(Err::Eof)?;
+
+		self.scratch.clear();
 		self.read.word(&mut self.scratch)
 	}
 
 	fn str<'s>(&'s mut self) -> Result<Ref<'de, 's>, Err> {
 		self.peek_whitespace()?;
+
+		self.scratch.clear();
 		self.read.str(&mut self.scratch)
 	}
 

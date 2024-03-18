@@ -121,8 +121,6 @@ impl<'de> Read<'de> for StrRead<'de> {
 		let quote = self.next()?.ok_or(Err::Eof)?;
 		assert!(matches!(quote, b'"' | b'\''), "is {:?}", quote);
 
-		scratch.clear();
-
 		let mut start = self.index;
 
 		let r#ref = loop {
@@ -227,18 +225,21 @@ mod test {
 		let s2 = String::from(r#""t\"e\"st""#);
 		let mut s2 = StrRead::new(&s2);
 
+		scratch.clear();
 		let p2 = s2.str(&mut scratch).unwrap();
 		assert_eq!(&*p2, r#"t"e"st"#);
 
 		let s3 = String::from(r#""t\tt""#);
 		let mut s3 = StrRead::new(&s3);
 
+		scratch.clear();
 		let p3 = s3.str(&mut scratch).unwrap();
 		assert_eq!(&*p3, "t\tt");
 
 		let s4 = String::from(r#""t\\\\\"\"\\\"t""#);
 		let mut s4 = StrRead::new(&s4);
 
+		scratch.clear();
 		let p4 = s4.str(&mut scratch).unwrap();
 		assert_eq!(&*p4, r#"t\\""\"t"#);
 	}
