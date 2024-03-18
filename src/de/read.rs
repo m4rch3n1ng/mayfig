@@ -17,6 +17,15 @@ impl<'de, 's> Deref for Ref<'de, 's> {
 	}
 }
 
+impl<'de, 's> From<Ref<'de, 's>> for String {
+	fn from(value: Ref<'de, 's>) -> Self {
+		match value {
+			Ref::Borrow(b) => b.to_owned(),
+			Ref::Scratch(s) => s.to_owned(),
+		}
+	}
+}
+
 pub trait Read<'de> {
 	fn peek(&self) -> Result<Option<u8>, Err>;
 
@@ -24,9 +33,9 @@ pub trait Read<'de> {
 
 	fn discard(&mut self);
 
-	fn num(&mut self) -> Result<&'de str, Err>;
+	fn num<'s>(&'s mut self, scratch: &'s mut Vec<u8>) -> Result<Ref<'de, 's>, Err>;
 
-	fn word(&mut self) -> Result<&'de str, Err>;
+	fn word<'s>(&'s mut self, scratch: &'s mut Vec<u8>) -> Result<Ref<'de, 's>, Err>;
 
 	fn str<'s>(&'s mut self, scratch: &'s mut Vec<u8>) -> Result<Ref<'de, 's>, Err>;
 }
@@ -60,7 +69,7 @@ impl<'de> Read<'de> for StrRead<'de> {
 		self.index += 1;
 	}
 
-	fn num(&mut self) -> Result<&'de str, Err> {
+	fn num<'s>(&'s mut self, _scratch: &'s mut Vec<u8>) -> Result<Ref<'de, 's>, Err> {
 		let start = self.index;
 
 		if let Some(b'-') = self.slice.get(start) {
@@ -82,10 +91,11 @@ impl<'de> Read<'de> for StrRead<'de> {
 		let borrow = &self.slice[start..self.index];
 		let num = std::str::from_utf8(borrow).expect("should never fail");
 
-		Ok(num)
+		let r#ref = Ref::Borrow(num);
+		Ok(r#ref)
 	}
 
-	fn word(&mut self) -> Result<&'de str, Err> {
+	fn word<'s>(&'s mut self, _scratch: &'s mut Vec<u8>) -> Result<Ref<'de, 's>, Err> {
 		let start = self.index;
 
 		loop {
@@ -103,7 +113,8 @@ impl<'de> Read<'de> for StrRead<'de> {
 		let borrow = &self.slice[start..self.index];
 		let ident = std::str::from_utf8(borrow).expect("should never fail");
 
-		Ok(ident)
+		let r#ref = Ref::Borrow(ident);
+		Ok(r#ref)
 	}
 
 	fn str<'s>(&'s mut self, scratch: &'s mut Vec<u8>) -> Result<Ref<'de, 's>, Err> {

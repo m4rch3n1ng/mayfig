@@ -73,14 +73,14 @@ impl<'de, R: Read<'de>> Deserializer<R> {
 		}
 	}
 
-	fn num(&mut self) -> Result<&'de str, Err> {
-		self.peek_whitespace()?;
-		self.read.num()
+	fn num<'s>(&'s mut self) -> Result<Ref<'de, 's>, Err> {
+		self.peek_whitespace()?.ok_or(Err::Eof)?;
+		self.read.num(&mut self.scratch)
 	}
 
-	fn word(&mut self) -> Result<&'de str, Err> {
-		self.peek_whitespace()?;
-		self.read.word()
+	fn word<'s>(&'s mut self) -> Result<Ref<'de, 's>, Err> {
+		self.peek_whitespace()?.ok_or(Err::Eof)?;
+		self.read.word(&mut self.scratch)
 	}
 
 	fn str<'s>(&'s mut self) -> Result<Ref<'de, 's>, Err> {
@@ -126,7 +126,7 @@ impl<'de, 'a, R: Read<'de>> serde::de::Deserializer<'de> for &'a mut Deserialize
 			self.deserialize_str(visitor)
 		} else {
 			let word = self.word()?;
-			if let Ok(b) = parse_bool(word) {
+			if let Ok(b) = parse_bool(&word) {
 				visitor.visit_bool(b)
 			} else {
 				Err(Err::UnexpectedWord(word.into()))
@@ -139,7 +139,7 @@ impl<'de, 'a, R: Read<'de>> serde::de::Deserializer<'de> for &'a mut Deserialize
 		V: serde::de::Visitor<'de>,
 	{
 		let w = self.word()?;
-		let b = parse_bool(w)?;
+		let b = parse_bool(&w)?;
 		visitor.visit_bool(b)
 	}
 
@@ -260,7 +260,7 @@ impl<'de, 'a, R: Read<'de>> serde::de::Deserializer<'de> for &'a mut Deserialize
 	{
 		let string = self.str()?;
 		match string {
-			Ref::Borrow(s) => visitor.visit_borrowed_str(s),
+			Ref::Borrow(b) => visitor.visit_borrowed_str(b),
 			Ref::Scratch(s) => visitor.visit_str(s),
 		}
 	}
@@ -457,7 +457,10 @@ impl<'de, 'a, R: Read<'de>> serde::de::Deserializer<'de> for &'a mut Deserialize
 		}
 
 		let ident = self.word()?;
-		visitor.visit_borrowed_str(ident)
+		match ident {
+			Ref::Borrow(b) => visitor.visit_borrowed_str(b),
+			Ref::Scratch(s) => visitor.visit_str(s),
+		}
 	}
 
 	fn deserialize_ignored_any<V>(self, visitor: V) -> Result<V::Value, Self::Error>
