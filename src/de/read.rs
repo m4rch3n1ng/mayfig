@@ -27,7 +27,7 @@ impl<'de, 's> From<Ref<'de, 's>> for String {
 }
 
 pub trait Read<'de> {
-	fn peek(&self) -> Result<Option<u8>, Err>;
+	fn peek(&mut self) -> Result<Option<u8>, Err>;
 
 	fn next(&mut self) -> Result<Option<u8>, Err>;
 
@@ -55,7 +55,7 @@ impl<'de> StrRead<'de> {
 }
 
 impl<'de> Read<'de> for StrRead<'de> {
-	fn peek(&self) -> Result<Option<u8>, Err> {
+	fn peek(&mut self) -> Result<Option<u8>, Err> {
 		Ok(self.slice.get(self.index).copied())
 	}
 
