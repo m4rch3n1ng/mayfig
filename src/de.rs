@@ -41,28 +41,34 @@ where
 }
 
 impl<'de, R: Read<'de>> Deserializer<R> {
-	fn peek_whitespace(&mut self) -> Result<u8, Err> {
+	fn peek_whitespace(&mut self) -> Result<Option<u8>, Err> {
 		loop {
-			let peek = self.read.peek()?;
+			let Some(peek) = self.read.peek()? else {
+				return Ok(None);
+			};
+
 			if read::is_whitespace(peek) {
 				self.read.discard();
 			} else {
-				return Ok(peek);
+				return Ok(Some(peek));
 			}
 		}
 	}
 
-	fn next_whitespace(&mut self) -> Result<u8, Err> {
+	fn next_whitespace(&mut self) -> Result<Option<u8>, Err> {
 		loop {
-			let next = self.read.next()?;
+			let Some(next) = self.read.next()? else {
+				return Ok(None);
+			};
+
 			if !read::is_whitespace(next) {
-				return Ok(next);
+				return Ok(Some(next));
 			}
 		}
 	}
 
 	fn discard_all(&mut self, ch: u8) {
-		while self.peek_whitespace().is_ok_and(|peek| peek == ch) {
+		while self.peek_whitespace().is_ok_and(|peek| peek == Some(ch)) {
 			self.read.discard();
 		}
 	}
@@ -107,7 +113,7 @@ impl<'de, 'a, R: Read<'de>> serde::de::Deserializer<'de> for &'a mut Deserialize
 	where
 		V: serde::de::Visitor<'de>,
 	{
-		let peek = self.peek_whitespace()?;
+		let peek = self.peek_whitespace()?.ok_or(Err::Eof)?;
 		if self.indent == 0 || peek == b'{' {
 			self.deserialize_map(visitor)
 		} else if peek == b'[' {
@@ -322,7 +328,7 @@ impl<'de, 'a, R: Read<'de>> serde::de::Deserializer<'de> for &'a mut Deserialize
 	{
 		self.indent += 1;
 
-		let next = self.next_whitespace()?;
+		let next = self.next_whitespace()?.ok_or(Err::Eof)?;
 		if next != b'[' {
 			return Err(Err::Expected('[', char::from(next)));
 		}
@@ -330,7 +336,7 @@ impl<'de, 'a, R: Read<'de>> serde::de::Deserializer<'de> for &'a mut Deserialize
 		let acc = SeqAcc::new(self);
 		let val = visitor.visit_seq(acc)?;
 
-		let peek = self.next_whitespace()?;
+		let peek = self.next_whitespace()?.ok_or(Err::Eof)?;
 		if peek != b']' {
 			return Err(Err::ExpectedSeqEnd);
 		}
@@ -363,8 +369,8 @@ impl<'de, 'a, R: Read<'de>> serde::de::Deserializer<'de> for &'a mut Deserialize
 	where
 		V: serde::de::Visitor<'de>,
 	{
-		let peek = self.peek_whitespace();
-		let val = if let Ok(b'{') = peek {
+		let peek = self.peek_whitespace()?;
+		let val = if let Some(b'{') = peek {
 			self.indent += 1;
 			self.read.discard();
 
@@ -375,7 +381,7 @@ impl<'de, 'a, R: Read<'de>> serde::de::Deserializer<'de> for &'a mut Deserialize
 
 			Ok(val)
 		} else if self.indent != 0 {
-			if let Ok(peek) = peek {
+			if let Some(peek) = peek {
 				Err(Err::Expected('{', char::from(peek)))
 			} else {
 				Err(Err::Eof)
@@ -415,14 +421,14 @@ impl<'de, 'a, R: Read<'de>> serde::de::Deserializer<'de> for &'a mut Deserialize
 	where
 		V: serde::de::Visitor<'de>,
 	{
-		let peek = self.peek_whitespace()?;
+		let peek = self.peek_whitespace()?.ok_or(Err::Eof)?;
 		if peek == b'{' {
 			self.read.discard();
 
 			let acc = EnumAcc::new(self);
 			let val = visitor.visit_enum(acc)?;
 
-			let next = self.next_whitespace()?;
+			let next = self.next_whitespace()?.ok_or(Err::Eof)?;
 			if next == b'}' {
 				Ok(val)
 			} else {
@@ -440,7 +446,7 @@ impl<'de, 'a, R: Read<'de>> serde::de::Deserializer<'de> for &'a mut Deserialize
 	where
 		V: serde::de::Visitor<'de>,
 	{
-		let peek = self.peek_whitespace()?;
+		let peek = self.peek_whitespace()?.ok_or(Err::Eof)?;
 		if peek == b'"' || peek == b'\'' {
 			return self.deserialize_str(visitor);
 		} else if !peek.is_ascii_alphabetic() {

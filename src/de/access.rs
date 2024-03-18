@@ -21,8 +21,8 @@ impl<'a, 'de, R: Read<'de>> MapAccess<'de> for TopMapAcc<'a, R> {
 	where
 		K: serde::de::DeserializeSeed<'de>,
 	{
-		let next = self.de.peek_whitespace();
-		let Ok(next) = next else {
+		let next = self.de.peek_whitespace()?;
+		let Some(next) = next else {
 			return Ok(None);
 		};
 
@@ -30,8 +30,8 @@ impl<'a, 'de, R: Read<'de>> MapAccess<'de> for TopMapAcc<'a, R> {
 			self.de.discard_all(b';');
 		}
 
-		let next = self.de.peek_whitespace();
-		if next.is_err() {
+		let next = self.de.peek_whitespace()?;
+		if next.is_none() {
 			return Ok(None);
 		}
 
@@ -42,7 +42,7 @@ impl<'a, 'de, R: Read<'de>> MapAccess<'de> for TopMapAcc<'a, R> {
 	where
 		V: serde::de::DeserializeSeed<'de>,
 	{
-		let peek = self.de.peek_whitespace()?;
+		let peek = self.de.peek_whitespace()?.ok_or(Err::Eof)?;
 		if peek == b'=' {
 			self.de.read.discard();
 		} else if peek != b'{' && peek != b'[' {
@@ -70,11 +70,11 @@ impl<'a, 'de, R: Read<'de>> MapAccess<'de> for MapAcc<'a, R> {
 	where
 		K: serde::de::DeserializeSeed<'de>,
 	{
-		if self.de.peek_whitespace()? == b';' {
+		if self.de.peek_whitespace()?.ok_or(Err::Eof)? == b';' {
 			self.de.discard_all(b';');
 		}
 
-		if self.de.peek_whitespace()? == b'}' {
+		if self.de.peek_whitespace()?.ok_or(Err::Eof)? == b'}' {
 			self.de.read.discard();
 			return Ok(None);
 		}
@@ -87,7 +87,7 @@ impl<'a, 'de, R: Read<'de>> MapAccess<'de> for MapAcc<'a, R> {
 	where
 		V: serde::de::DeserializeSeed<'de>,
 	{
-		let peek = self.de.peek_whitespace()?;
+		let peek = self.de.peek_whitespace()?.ok_or(Err::Eof)?;
 		if peek == b'=' {
 			self.de.read.discard();
 		} else if peek != b'{' && peek != b'[' {
@@ -115,11 +115,11 @@ impl<'a, 'de, R: Read<'de>> SeqAccess<'de> for SeqAcc<'a, R> {
 	where
 		T: serde::de::DeserializeSeed<'de>,
 	{
-		if self.de.peek_whitespace()? == b',' {
+		if self.de.peek_whitespace()?.ok_or(Err::Eof)? == b',' {
 			self.de.discard_all(b',');
 		}
 
-		if self.de.peek_whitespace()? == b']' {
+		if self.de.peek_whitespace()?.ok_or(Err::Eof)? == b']' {
 			return Ok(None);
 		}
 
@@ -147,7 +147,7 @@ impl<'a, 'de, R: Read<'de>> EnumAccess<'de> for EnumAcc<'a, R> {
 	{
 		let val = seed.deserialize(&mut *self.de)?;
 
-		let peek = self.de.peek_whitespace()?;
+		let peek = self.de.peek_whitespace()?.ok_or(Err::Eof)?;
 		if peek == b'=' {
 			self.de.read.discard();
 			Ok((val, self))
@@ -274,8 +274,7 @@ impl<'a, 'de, R: Read<'de>> serde::de::Deserializer<'de> for MapKey<'a, R> {
 	where
 		V: serde::de::Visitor<'de>,
 	{
-		let peek = self.de.peek_whitespace()?;
-
+		let peek = self.de.peek_whitespace()?.ok_or(Err::Eof)?;
 		match peek {
 			b'"' => self.de.deserialize_str(visitor),
 			_ => self.de.deserialize_identifier(visitor),

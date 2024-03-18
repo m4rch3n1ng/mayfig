@@ -18,9 +18,9 @@ impl<'de, 's> Deref for Ref<'de, 's> {
 }
 
 pub trait Read<'de> {
-	fn peek(&self) -> Result<u8, Err>;
+	fn peek(&self) -> Result<Option<u8>, Err>;
 
-	fn next(&mut self) -> Result<u8, Err>;
+	fn next(&mut self) -> Result<Option<u8>, Err>;
 
 	fn discard(&mut self);
 
@@ -46,12 +46,12 @@ impl<'de> StrRead<'de> {
 }
 
 impl<'de> Read<'de> for StrRead<'de> {
-	fn peek(&self) -> Result<u8, Err> {
-		self.slice.get(self.index).copied().ok_or(Err::Eof)
+	fn peek(&self) -> Result<Option<u8>, Err> {
+		Ok(self.slice.get(self.index).copied())
 	}
 
-	fn next(&mut self) -> Result<u8, Err> {
-		let ch = self.slice.get(self.index).copied().ok_or(Err::Eof)?;
+	fn next(&mut self) -> Result<Option<u8>, Err> {
+		let ch = self.slice.get(self.index).copied();
 		self.index += 1;
 		Ok(ch)
 	}
@@ -68,7 +68,7 @@ impl<'de> Read<'de> for StrRead<'de> {
 		}
 
 		loop {
-			let Ok(next) = self.peek() else { break };
+			let Some(next) = self.peek()? else { break };
 
 			if let b'0'..=b'9' | b'.' = next {
 				self.index += 1;
@@ -89,9 +89,7 @@ impl<'de> Read<'de> for StrRead<'de> {
 		let start = self.index;
 
 		loop {
-			let Ok(nxt) = self.peek() else {
-				break;
-			};
+			let Some(nxt) = self.peek()? else { break };
 
 			if nxt.is_ascii_alphanumeric() || nxt == b'_' {
 				self.index += 1;
@@ -109,7 +107,7 @@ impl<'de> Read<'de> for StrRead<'de> {
 	}
 
 	fn str<'s>(&'s mut self, scratch: &'s mut Vec<u8>) -> Result<Ref<'de, 's>, Err> {
-		let quote = self.next()?;
+		let quote = self.next()?.ok_or(Err::Eof)?;
 		assert!(matches!(quote, b'"' | b'\''), "is {:?}", quote);
 
 		scratch.clear();
@@ -117,7 +115,7 @@ impl<'de> Read<'de> for StrRead<'de> {
 		let mut start = self.index;
 
 		let r#ref = loop {
-			let nxt = self.peek()?;
+			let nxt = self.peek()?.ok_or(Err::Eof)?;
 
 			if nxt == quote {
 				if scratch.is_empty() {
@@ -153,7 +151,7 @@ impl<'de> Read<'de> for StrRead<'de> {
 			}
 		};
 
-		if let Ok(peek) = self.peek() {
+		if let Some(peek) = self.peek()? {
 			if !is_delimiter(peek) {
 				return Err(Err::ExpectedDelimiter(char::from(peek)));
 			}
@@ -167,7 +165,7 @@ fn parse_escape<'de, 's, R: Read<'de>>(
 	read: &'s mut R,
 	scratch: &'s mut Vec<u8>,
 ) -> Result<(), Err> {
-	let next = read.next()?;
+	let next = read.next()?.ok_or(Err::Eof)?;
 
 	match next {
 		b'"' => scratch.push(b'"'),
