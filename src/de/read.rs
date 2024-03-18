@@ -40,6 +40,127 @@ pub trait Read<'de> {
 	fn str<'s>(&'s mut self, scratch: &'s mut Vec<u8>) -> Result<Ref<'de, 's>, Err>;
 }
 
+pub struct IoRead<R: std::io::Read> {
+	read: std::io::Bytes<R>,
+	peek: Option<u8>,
+}
+
+impl<R: std::io::Read> IoRead<R> {
+	pub fn new(read: R) -> Self {
+		IoRead {
+			read: read.bytes(),
+			peek: None,
+		}
+	}
+}
+
+impl<'de, R> Read<'de> for IoRead<R>
+where
+	R: std::io::Read,
+{
+	fn peek(&mut self) -> Result<Option<u8>, Err> {
+		match self.peek {
+			peek @ Some(_) => Ok(peek),
+			None => match self.read.next() {
+				Some(Err(err)) => Err(Err::Io(err)),
+				Some(Ok(peek)) => {
+					self.peek = Some(peek);
+					Ok(Some(peek))
+				}
+				None => Ok(None),
+			},
+		}
+	}
+
+	fn next(&mut self) -> Result<Option<u8>, Err> {
+		match self.peek.take() {
+			next @ Some(_) => Ok(next),
+			None => match self.read.next() {
+				Some(Err(err)) => Err(Err::Io(err)),
+				Some(Ok(next)) => Ok(Some(next)),
+				None => Ok(None),
+			},
+		}
+	}
+
+	fn discard(&mut self) {
+		if self.peek.take().is_none() {
+			unreachable!()
+		}
+	}
+
+	fn num<'s>(&'s mut self, scratch: &'s mut Vec<u8>) -> Result<Ref<'de, 's>, Err> {
+		if let Some(peek @ b'-') = self.peek()? {
+			scratch.push(peek);
+			self.discard();
+		}
+
+		loop {
+			let Some(next) = self.next()? else { break };
+
+			if let b'0'..=b'9' | b'.' = next {
+				scratch.push(next);
+			} else if is_delimiter(next) {
+				break;
+			} else {
+				return Err(Err::UnexpectedChar(char::from(next), "[num] numeric"));
+			}
+		}
+
+		let scratch = std::str::from_utf8(scratch).map_err(|_| Err::InvalidUtf8)?;
+		let r#ref = Ref::Scratch(scratch);
+		Ok(r#ref)
+	}
+
+	fn word<'s>(&'s mut self, scratch: &'s mut Vec<u8>) -> Result<Ref<'de, 's>, Err> {
+		loop {
+			let Some(next) = self.next()? else { break };
+
+			if next.is_ascii_alphanumeric() || next == b'_' {
+				scratch.push(next);
+			} else if is_delimiter(next) {
+				break;
+			} else {
+				return Err(Err::UnexpectedChar(char::from(next), "[word] alphanumeric"));
+			}
+		}
+
+		let scratch = std::str::from_utf8(scratch).map_err(|_| Err::InvalidUtf8)?;
+		let r#ref = Ref::Scratch(scratch);
+		Ok(r#ref)
+	}
+
+	fn str<'s>(&'s mut self, scratch: &'s mut Vec<u8>) -> Result<Ref<'de, 's>, Err> {
+		let quote = self.next()?.ok_or(Err::Eof)?;
+		assert!(matches!(quote, b'"' | b'\''), "is {:?}", quote);
+
+		let r#ref = loop {
+			let next = self.next()?.ok_or(Err::Eof)?;
+
+			if next == quote {
+				let scratch = std::str::from_utf8(scratch).map_err(|_| Err::InvalidUtf8)?;
+				break Ref::Scratch(scratch);
+			}
+
+			if next.is_ascii_control() {
+				return Err(Err::UnescapedControl(char::from(next)));
+			} else if next == b'\\' {
+				parse_escape(self, scratch)?;
+			} else {
+				scratch.push(next);
+			}
+		};
+
+		if let Some(peek) = self.peek()? {
+			if !is_delimiter(peek) {
+				return Err(Err::ExpectedDelimiter(char::from(peek)));
+			}
+		}
+
+		Ok(r#ref)
+	}
+}
+
 pub struct StrRead<'de> {
 	slice: &'de [u8],
 	index: usize,

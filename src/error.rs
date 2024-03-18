@@ -3,6 +3,8 @@ use thiserror::Error;
 // todo better char conversion
 #[derive(Debug, Error)]
 pub enum Err {
+	#[error("io error")]
+	Io(#[source] std::io::Error),
 	#[error("unknown escape sequence {0:?}")]
 	UnknownEscape(char),
 	#[error("unescaped control character {0:?}")]
@@ -13,6 +15,8 @@ pub enum Err {
 	InvalidNum(String),
 	#[error("unexpected word {0:?}")]
 	UnexpectedWord(String),
+	#[error("invalid utf8")]
+	InvalidUtf8,
 	#[error("expected {0:?}, got {1:?}")]
 	Expected(char, char),
 	#[error("unexpected char {0:?}, expected {1}")]
