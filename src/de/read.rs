@@ -56,13 +56,22 @@ impl<'de> StrRead<'de> {
 
 impl<'de> Read<'de> for StrRead<'de> {
 	fn peek(&mut self) -> Result<Option<u8>, Err> {
-		Ok(self.slice.get(self.index).copied())
+		if self.index < self.slice.len() {
+			let ch = self.slice[self.index];
+			Ok(Some(ch))
+		} else {
+			Ok(None)
+		}
 	}
 
 	fn next(&mut self) -> Result<Option<u8>, Err> {
-		let ch = self.slice.get(self.index).copied();
-		self.index += 1;
-		Ok(ch)
+		if self.index < self.slice.len() {
+			let ch = self.slice[self.index];
+			self.index += 1;
+			Ok(Some(ch))
+		} else {
+			Ok(None)
+		}
 	}
 
 	fn discard(&mut self) {
@@ -99,14 +108,14 @@ impl<'de> Read<'de> for StrRead<'de> {
 		let start = self.index;
 
 		loop {
-			let Some(nxt) = self.peek()? else { break };
+			let Some(next) = self.peek()? else { break };
 
-			if nxt.is_ascii_alphanumeric() || nxt == b'_' {
+			if next.is_ascii_alphanumeric() || next == b'_' {
 				self.index += 1;
-			} else if is_delimiter(nxt) {
+			} else if is_delimiter(next) {
 				break;
 			} else {
-				return Err(Err::UnexpectedChar(char::from(nxt), "[word] alphanumeric"));
+				return Err(Err::UnexpectedChar(char::from(next), "[word] alphanumeric"));
 			}
 		}
 
@@ -124,9 +133,9 @@ impl<'de> Read<'de> for StrRead<'de> {
 		let mut start = self.index;
 
 		let r#ref = loop {
-			let nxt = self.peek()?.ok_or(Err::Eof)?;
+			let next = self.peek()?.ok_or(Err::Eof)?;
 
-			if nxt == quote {
+			if next == quote {
 				if scratch.is_empty() {
 					let borrow = &self.slice[start..self.index];
 					let borrow = std::str::from_utf8(borrow).expect("should never fail");
@@ -145,9 +154,9 @@ impl<'de> Read<'de> for StrRead<'de> {
 				}
 			}
 
-			if nxt.is_ascii_control() {
-				return Err(Err::UnescapedControl(char::from(nxt)));
-			} else if nxt == b'\\' {
+			if next.is_ascii_control() {
+				return Err(Err::UnescapedControl(char::from(next)));
+			} else if next == b'\\' {
 				let slice = &self.slice[start..self.index];
 				scratch.extend_from_slice(slice);
 				self.index += 1;
