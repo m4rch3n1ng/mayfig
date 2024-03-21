@@ -128,7 +128,7 @@ impl<'de> Read<'de> for StrRead<'de> {
 
 	fn str<'s>(&'s mut self, scratch: &'s mut Vec<u8>) -> Result<Ref<'de, 's>, Err> {
 		let quote = self.next()?.ok_or(Err::Eof)?;
-		assert!(matches!(quote, b'"' | b'\''), "is {:?}", quote);
+		assert!(matches!(quote, b'"' | b'\''), "is {:?}", quote as char);
 
 		let mut start = self.index;
 

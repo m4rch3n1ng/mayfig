@@ -126,7 +126,7 @@ impl<'de, 'a, R: Read<'de>> serde::de::Deserializer<'de> for &'a mut Deserialize
 			self.deserialize_seq(visitor)
 		} else if let b'0'..=b'9' | b'.' | b'-' = peek {
 			self.deserialize_number(visitor)
-		} else if peek == b'"' {
+		} else if peek == b'"' || peek == b'\'' {
 			self.deserialize_str(visitor)
 		} else {
 			let word = self.word()?;
@@ -264,10 +264,16 @@ impl<'de, 'a, R: Read<'de>> serde::de::Deserializer<'de> for &'a mut Deserialize
 	where
 		V: serde::de::Visitor<'de>,
 	{
-		let string = self.str()?;
-		match string {
-			Ref::Borrow(b) => visitor.visit_borrowed_str(b),
-			Ref::Scratch(s) => visitor.visit_str(s),
+		let peek = self.peek_whitespace()?.ok_or(Err::Eof)?;
+
+		if let b'"' | b'\'' = peek {
+			let string = self.str()?;
+			match string {
+				Ref::Borrow(b) => visitor.visit_borrowed_str(b),
+				Ref::Scratch(s) => visitor.visit_str(s),
+			}
+		} else {
+			Err(Err::Expected('"', char::from(peek)))
 		}
 	}
 
@@ -440,7 +446,7 @@ impl<'de, 'a, R: Read<'de>> serde::de::Deserializer<'de> for &'a mut Deserialize
 			} else {
 				Err(Err::Expected('}', char::from(next)))
 			}
-		} else if peek == b'"' {
+		} else if peek == b'"' || peek == b'\'' {
 			let acc = UnitEnumAcc::new(self);
 			visitor.visit_enum(acc)
 		} else {

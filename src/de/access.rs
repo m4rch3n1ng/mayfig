@@ -362,7 +362,7 @@ impl<'a, 'de, R: Read<'de>> serde::de::Deserializer<'de> for MapKey<'a, R> {
 	{
 		let peek = self.de.peek_whitespace()?.ok_or(Err::Eof)?;
 		match peek {
-			b'"' => self.de.deserialize_str(visitor),
+			b'"' | b'\'' => self.de.deserialize_str(visitor),
 			_ => self.de.deserialize_identifier(visitor),
 		}
 	}
