@@ -124,8 +124,6 @@ impl<'de, 'a, R: Read<'de>> serde::de::Deserializer<'de> for &'a mut Deserialize
 			self.deserialize_map(visitor)
 		} else if peek == b'[' {
 			self.deserialize_seq(visitor)
-		} else if peek.is_ascii_alphabetic() {
-			self.deserialize_identifier(visitor)
 		} else if let b'0'..=b'9' | b'.' | b'-' = peek {
 			self.deserialize_number(visitor)
 		} else if peek == b'"' {
@@ -134,6 +132,8 @@ impl<'de, 'a, R: Read<'de>> serde::de::Deserializer<'de> for &'a mut Deserialize
 			let word = self.word()?;
 			if let Ok(b) = parse_bool(&word) {
 				visitor.visit_bool(b)
+			} else if let Ok(f) = word.parse::<f64>() {
+				visitor.visit_f64(f)
 			} else {
 				Err(Err::UnexpectedWord(word.into()))
 			}
