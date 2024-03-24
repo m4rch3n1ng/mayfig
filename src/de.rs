@@ -1,6 +1,6 @@
 use self::{
 	access::{EnumAcc, MapAcc, SeqAcc, TopMapAcc, UnitEnumAcc},
-	read::{Read, Ref, StrRead},
+	read::{IoRead, Read, Ref, StrRead},
 };
 use crate::error::Err;
 
@@ -36,6 +36,23 @@ where
 	T: serde::de::Deserialize<'a>,
 {
 	let mut deserializer = Deserializer::from_str(input);
+	let t = T::deserialize(&mut deserializer);
+	t
+}
+
+impl<R: std::io::Read> Deserializer<IoRead<R>> {
+	fn from_reader(read: R) -> Self {
+		let read = IoRead::new(read);
+		Deserializer::new(read)
+	}
+}
+
+pub fn from_reader<R, T>(read: R) -> Result<T, Err>
+where
+	R: std::io::Read,
+	T: serde::de::DeserializeOwned,
+{
+	let mut deserializer = Deserializer::from_reader(read);
 	let t = T::deserialize(&mut deserializer);
 	t
 }

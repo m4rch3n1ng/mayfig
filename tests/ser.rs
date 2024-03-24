@@ -3,13 +3,20 @@ use serde_derive::{Deserialize, Serialize};
 use std::{collections::BTreeMap, fmt::Debug};
 
 fn twoway<T: DeserializeOwned + Serialize + Debug + PartialEq>(t: T, s: &'static str) {
+	// string ser
 	let ser = mayfig::to_string(&t);
 	let ser = ser.unwrap();
 	assert_eq!(s, ser);
 
+	// string de
 	let de = mayfig::from_str::<T>(&ser);
 	let de = de.unwrap();
 	assert_eq!(t, de);
+
+	// reader de
+	let de_r = mayfig::from_reader::<_, T>(s.as_bytes());
+	let de_r = de_r.unwrap();
+	assert_eq!(t, de_r);
 }
 
 #[derive(Debug, Deserialize, Serialize, PartialEq)]
