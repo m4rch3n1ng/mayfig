@@ -313,7 +313,7 @@ impl<'de, 'a, R: Read<'de>> serde::de::Deserializer<'de> for &'a mut Deserialize
 				Ref::Scratch(s) => visitor.visit_str(s),
 			}
 		} else {
-			Err(Err::Expected('"', char::from(peek)))
+			Err(Err::ExpectedQuote(char::from(peek)))
 		}
 	}
 
@@ -393,7 +393,7 @@ impl<'de, 'a, R: Read<'de>> serde::de::Deserializer<'de> for &'a mut Deserialize
 
 		let next = self.next_whitespace()?.ok_or(Err::Eof)?;
 		if next != b'[' {
-			return Err(Err::Expected('[', char::from(next)));
+			return Err(Err::ExpectedSeq(char::from(next)));
 		}
 
 		let acc = SeqAcc::new(self);
@@ -401,7 +401,7 @@ impl<'de, 'a, R: Read<'de>> serde::de::Deserializer<'de> for &'a mut Deserialize
 
 		let peek = self.next_whitespace()?.ok_or(Err::Eof)?;
 		if peek != b']' {
-			return Err(Err::ExpectedSeqEnd);
+			return Err(Err::ExpectedSeqEnd(char::from(peek)));
 		}
 
 		self.indent -= 1;
@@ -445,7 +445,7 @@ impl<'de, 'a, R: Read<'de>> serde::de::Deserializer<'de> for &'a mut Deserialize
 			Ok(val)
 		} else if self.indent != 0 {
 			if let Some(peek) = peek {
-				Err(Err::Expected('{', char::from(peek)))
+				Err(Err::ExpectedMap(char::from(peek)))
 			} else {
 				Err(Err::Eof)
 			}
@@ -495,13 +495,13 @@ impl<'de, 'a, R: Read<'de>> serde::de::Deserializer<'de> for &'a mut Deserialize
 			if next == b'}' {
 				Ok(val)
 			} else {
-				Err(Err::Expected('}', char::from(next)))
+				Err(Err::ExpectedMapEnd(char::from(next)))
 			}
 		} else if peek == b'"' || peek == b'\'' {
 			let acc = UnitEnumAcc::new(self);
 			visitor.visit_enum(acc)
 		} else {
-			Err(Err::UnexpectedChar(char::from(peek), "[enum]"))
+			Err(Err::ExpectedEnum(char::from(peek)))
 		}
 	}
 
@@ -513,10 +513,7 @@ impl<'de, 'a, R: Read<'de>> serde::de::Deserializer<'de> for &'a mut Deserialize
 		if peek == b'"' || peek == b'\'' {
 			return self.deserialize_str(visitor);
 		} else if !peek.is_ascii_alphabetic() {
-			return Err(Err::UnexpectedChar(
-				char::from(peek),
-				"[ident] alphanumeric",
-			));
+			return Err(Err::ExpectedAlphabetic(char::from(peek)));
 		}
 
 		let ident = self.word()?;

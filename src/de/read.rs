@@ -121,7 +121,7 @@ where
 			} else if is_delimiter(next) {
 				break;
 			} else {
-				return Err(Err::UnexpectedChar(char::from(next), "[num] numeric"));
+				return Err(Err::ExpectedNumeric(char::from(next)));
 			}
 		}
 
@@ -139,7 +139,7 @@ where
 			} else if is_delimiter(next) {
 				break;
 			} else {
-				return Err(Err::UnexpectedChar(char::from(next), "[word] alphanumeric"));
+				return Err(Err::ExpectedAlphaNumeric(char::from(next)));
 			}
 		}
 
@@ -228,7 +228,7 @@ impl<'de> Read<'de> for SliceRead<'de> {
 			} else if is_delimiter(next) {
 				break;
 			} else {
-				return Err(Err::UnexpectedChar(char::from(next), "[num] numeric"));
+				return Err(Err::ExpectedNumeric(char::from(next)));
 			}
 		}
 
@@ -250,7 +250,7 @@ impl<'de> Read<'de> for SliceRead<'de> {
 			} else if is_delimiter(next) {
 				break;
 			} else {
-				return Err(Err::UnexpectedChar(char::from(next), "[word] alphanumeric"));
+				return Err(Err::ExpectedAlphaNumeric(char::from(next)));
 			}
 		}
 

@@ -38,7 +38,7 @@ impl<'a, 'de, R: Read<'de>> MapAccess<'de> for TopMapAcc<'a, R> {
 		if peek == b'=' {
 			self.de.read.discard();
 		} else if peek != b'{' && peek != b'[' {
-			return Err(Err::Expected('=', char::from(peek)));
+			return Err(Err::ExpectedValue(char::from(peek)));
 		}
 
 		seed.deserialize(&mut *self.de)
@@ -79,7 +79,7 @@ impl<'a, 'de, R: Read<'de>> MapAccess<'de> for MapAcc<'a, R> {
 		if peek == b'=' {
 			self.de.read.discard();
 		} else if peek != b'{' && peek != b'[' {
-			return Err(Err::Expected('=', char::from(peek)));
+			return Err(Err::ExpectedValue(char::from(peek)));
 		}
 
 		seed.deserialize(&mut *self.de)
@@ -142,7 +142,7 @@ impl<'a, 'de, R: Read<'de>> EnumAccess<'de> for EnumAcc<'a, R> {
 		} else if let b'{' | b'[' = peek {
 			Ok((val, self))
 		} else {
-			Err(Err::Expected('=', char::from(peek)))
+			Err(Err::ExpectedValue(char::from(peek)))
 		}
 	}
 }
