@@ -76,11 +76,12 @@ fn indent() {
 	let m = BTreeMap::from([(0, 0), (1, 1), (2, 2)]);
 	let s3 = S3 { m };
 
-	let mut st = String::new();
-	let mut ser = mayfig::Serializer::with_indent(&mut st, "  ");
+	let mut vec = Vec::new();
+	let mut ser = mayfig::Serializer::with_indent(&mut vec, b"  ");
 	s3.serialize(&mut ser).unwrap();
+	let str = String::from_utf8(vec).unwrap();
 
-	assert_eq!(S3, st)
+	assert_eq!(S3, str)
 }
 
 #[derive(Debug, Deserialize, Serialize, PartialEq)]

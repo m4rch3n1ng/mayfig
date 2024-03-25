@@ -2,28 +2,28 @@ use super::Serializer;
 use crate::error::Err;
 use serde::Serialize;
 
-pub struct MapKeySerializer<'a, 'ser> {
-	ser: &'a mut Serializer<'ser>,
+pub struct MapKeySerializer<'a, W: std::io::Write> {
+	ser: &'a mut Serializer<W>,
 }
 
-impl<'a, 'ser> MapKeySerializer<'a, 'ser> {
-	pub fn new(ser: &'a mut Serializer<'ser>) -> Self {
+impl<'a, W: std::io::Write> MapKeySerializer<'a, W> {
+	pub fn new(ser: &'a mut Serializer<W>) -> Self {
 		MapKeySerializer { ser }
 	}
 }
 
 #[allow(unused_variables)]
-impl<'a, 'ser> serde::ser::Serializer for MapKeySerializer<'a, 'ser> {
+impl<'a, W: std::io::Write> serde::ser::Serializer for MapKeySerializer<'a, W> {
 	type Ok = ();
 	type Error = Err;
 
-	type SerializeMap = &'a mut Serializer<'ser>;
-	type SerializeSeq = &'a mut Serializer<'ser>;
-	type SerializeTuple = &'a mut Serializer<'ser>;
-	type SerializeTupleStruct = &'a mut Serializer<'ser>;
-	type SerializeTupleVariant = &'a mut Serializer<'ser>;
-	type SerializeStruct = &'a mut Serializer<'ser>;
-	type SerializeStructVariant = &'a mut Serializer<'ser>;
+	type SerializeMap = &'a mut Serializer<W>;
+	type SerializeSeq = &'a mut Serializer<W>;
+	type SerializeTuple = &'a mut Serializer<W>;
+	type SerializeTupleStruct = &'a mut Serializer<W>;
+	type SerializeTupleVariant = &'a mut Serializer<W>;
+	type SerializeStruct = &'a mut Serializer<W>;
+	type SerializeStructVariant = &'a mut Serializer<W>;
 
 	fn serialize_bool(self, v: bool) -> Result<Self::Ok, Self::Error> {
 		self.ser.serialize_bool(v)
@@ -77,7 +77,7 @@ impl<'a, 'ser> serde::ser::Serializer for MapKeySerializer<'a, 'ser> {
 		let mut vit = v.chars();
 		let ident = vit.next().is_some_and(char::is_alphabetic) && vit.all(char::is_alphanumeric);
 		if ident {
-			self.ser.writer.push_str(v);
+			self.ser.writer.write_all(v.as_bytes())?;
 		} else {
 			self.ser.serialize_str(v)?;
 		}
@@ -181,91 +181,91 @@ impl<'a, 'ser> serde::ser::Serializer for MapKeySerializer<'a, 'ser> {
 	}
 }
 
-pub struct MapValSerializer<'a, 'ser> {
-	ser: &'a mut Serializer<'ser>,
+pub struct MapValSerializer<'a, W: std::io::Write> {
+	ser: &'a mut Serializer<W>,
 }
 
-impl<'a, 'ser> MapValSerializer<'a, 'ser> {
-	pub fn new(ser: &'a mut Serializer<'ser>) -> Self {
+impl<'a, W: std::io::Write> MapValSerializer<'a, W> {
+	pub fn new(ser: &'a mut Serializer<W>) -> Self {
 		MapValSerializer { ser }
 	}
 }
 
 #[allow(unused_variables)]
-impl<'a, 'ser> serde::ser::Serializer for MapValSerializer<'a, 'ser> {
+impl<'a, W: std::io::Write> serde::ser::Serializer for MapValSerializer<'a, W> {
 	type Ok = ();
 	type Error = Err;
 
-	type SerializeMap = &'a mut Serializer<'ser>;
-	type SerializeSeq = &'a mut Serializer<'ser>;
-	type SerializeTuple = &'a mut Serializer<'ser>;
-	type SerializeTupleStruct = &'a mut Serializer<'ser>;
-	type SerializeTupleVariant = &'a mut Serializer<'ser>;
-	type SerializeStruct = &'a mut Serializer<'ser>;
-	type SerializeStructVariant = &'a mut Serializer<'ser>;
+	type SerializeMap = &'a mut Serializer<W>;
+	type SerializeSeq = &'a mut Serializer<W>;
+	type SerializeTuple = &'a mut Serializer<W>;
+	type SerializeTupleStruct = &'a mut Serializer<W>;
+	type SerializeTupleVariant = &'a mut Serializer<W>;
+	type SerializeStruct = &'a mut Serializer<W>;
+	type SerializeStructVariant = &'a mut Serializer<W>;
 
 	fn serialize_bool(self, v: bool) -> Result<Self::Ok, Self::Error> {
-		self.ser.writer.push_str(" = ");
+		self.ser.writer.write_all(b" = ")?;
 		self.ser.serialize_bool(v)
 	}
 
 	fn serialize_i8(self, v: i8) -> Result<Self::Ok, Self::Error> {
-		self.ser.writer.push_str(" = ");
+		self.ser.writer.write_all(b" = ")?;
 		self.ser.serialize_i8(v)
 	}
 
 	fn serialize_i16(self, v: i16) -> Result<Self::Ok, Self::Error> {
-		self.ser.writer.push_str(" = ");
+		self.ser.writer.write_all(b" = ")?;
 		self.ser.serialize_i16(v)
 	}
 
 	fn serialize_i32(self, v: i32) -> Result<Self::Ok, Self::Error> {
-		self.ser.writer.push_str(" = ");
+		self.ser.writer.write_all(b" = ")?;
 		self.ser.serialize_i32(v)
 	}
 
 	fn serialize_i64(self, v: i64) -> Result<Self::Ok, Self::Error> {
-		self.ser.writer.push_str(" = ");
+		self.ser.writer.write_all(b" = ")?;
 		self.ser.serialize_i64(v)
 	}
 
 	fn serialize_u8(self, v: u8) -> Result<Self::Ok, Self::Error> {
-		self.ser.writer.push_str(" = ");
+		self.ser.writer.write_all(b" = ")?;
 		self.ser.serialize_u8(v)
 	}
 
 	fn serialize_u16(self, v: u16) -> Result<Self::Ok, Self::Error> {
-		self.ser.writer.push_str(" = ");
+		self.ser.writer.write_all(b" = ")?;
 		self.ser.serialize_u16(v)
 	}
 
 	fn serialize_u32(self, v: u32) -> Result<Self::Ok, Self::Error> {
-		self.ser.writer.push_str(" = ");
+		self.ser.writer.write_all(b" = ")?;
 		self.ser.serialize_u32(v)
 	}
 
 	fn serialize_u64(self, v: u64) -> Result<Self::Ok, Self::Error> {
-		self.ser.writer.push_str(" = ");
+		self.ser.writer.write_all(b" = ")?;
 		self.ser.serialize_u64(v)
 	}
 
 	fn serialize_f32(self, v: f32) -> Result<Self::Ok, Self::Error> {
-		self.ser.writer.push_str(" = ");
+		self.ser.writer.write_all(b" = ")?;
 		self.ser.serialize_f32(v)
 	}
 
 	fn serialize_f64(self, v: f64) -> Result<Self::Ok, Self::Error> {
-		self.ser.writer.push_str(" = ");
+		self.ser.writer.write_all(b" = ")?;
 		self.ser.serialize_f64(v)
 	}
 
 	fn serialize_char(self, v: char) -> Result<Self::Ok, Self::Error> {
-		self.ser.writer.push_str(" = ");
+		self.ser.writer.write_all(b" = ")?;
 		self.ser.serialize_char(v)
 	}
 
 	fn serialize_str(self, v: &str) -> Result<Self::Ok, Self::Error> {
-		self.ser.writer.push_str(" = ");
+		self.ser.writer.write_all(b" = ")?;
 		self.ser.serialize_str(v)
 	}
 
@@ -317,7 +317,7 @@ impl<'a, 'ser> serde::ser::Serializer for MapValSerializer<'a, 'ser> {
 	}
 
 	fn serialize_seq(self, len: Option<usize>) -> Result<Self::SerializeSeq, Self::Error> {
-		self.ser.writer.push_str(" [ ");
+		self.ser.writer.write_all(b" [ ")?;
 		Ok(self.ser)
 	}
 

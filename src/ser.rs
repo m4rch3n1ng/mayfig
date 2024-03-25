@@ -4,23 +4,23 @@ use serde::Serialize;
 
 mod serializer;
 
-pub struct Serializer<'a> {
+pub struct Serializer<W:std::io::Write> {
 	/// current indentation level
 	indent_level: usize,
-	indent: &'static str,
-	writer: &'a mut String,
+	indent: &'static [u8],
+	writer: W,
 }
 
-impl<'a> Serializer<'a> {
-	pub fn new(writer: &'a mut String) -> Self {
+impl<W: std::io::Write> Serializer<W> {
+	pub fn new(writer: W) -> Self {
 		Serializer {
 			writer,
-			indent: "\t",
+			indent: b"\t",
 			indent_level: 0,
 		}
 	}
 
-	pub fn with_indent(writer: &'a mut String, indent: &'static str) -> Self {
+	pub fn with_indent(writer: W, indent: &'static [u8]) -> Self {
 		Serializer {
 			writer,
 			indent,
@@ -29,10 +29,10 @@ impl<'a> Serializer<'a> {
 	}
 }
 
-impl<'ser> Serializer<'ser> {
+impl<W: std::io::Write> Serializer<W> {
 	fn indent(&mut self) -> Result<(), Err> {
 		for _ in 0..self.indent_level {
-			self.writer.push_str(self.indent);
+			self.writer.write_all(self.indent)?;
 		}
 
 		Ok(())
@@ -40,7 +40,7 @@ impl<'ser> Serializer<'ser> {
 }
 
 #[allow(unused_variables)]
-impl<'ser> serde::ser::Serializer for &mut Serializer<'ser> {
+impl<W: std::io::Write> serde::ser::Serializer for &mut Serializer<W> {
 	type Ok = ();
 	type Error = Err;
 
@@ -53,78 +53,78 @@ impl<'ser> serde::ser::Serializer for &mut Serializer<'ser> {
 	type SerializeTupleVariant = Self;
 
 	fn serialize_bool(self, v: bool) -> Result<Self::Ok, Self::Error> {
-		let s = if v { "true" } else { "false" };
-		self.writer.push_str(s);
+		let s = if v { b"true" as &[u8] } else { b"false" };
+		self.writer.write_all(s)?;
 		Ok(())
 	}
 
 	fn serialize_i8(self, v: i8) -> Result<Self::Ok, Self::Error> {
 		let mut buffer = itoa::Buffer::new();
 		let s = buffer.format(v);
-		self.writer.push_str(s);
+		self.writer.write_all(s.as_bytes())?;
 		Ok(())
 	}
 
 	fn serialize_i16(self, v: i16) -> Result<Self::Ok, Self::Error> {
 		let mut buffer = itoa::Buffer::new();
 		let s = buffer.format(v);
-		self.writer.push_str(s);
+		self.writer.write_all(s.as_bytes())?;
 		Ok(())
 	}
 
 	fn serialize_i32(self, v: i32) -> Result<Self::Ok, Self::Error> {
 		let mut buffer = itoa::Buffer::new();
 		let s = buffer.format(v);
-		self.writer.push_str(s);
+		self.writer.write_all(s.as_bytes())?;
 		Ok(())
 	}
 
 	fn serialize_i64(self, v: i64) -> Result<Self::Ok, Self::Error> {
 		let mut buffer = itoa::Buffer::new();
 		let s = buffer.format(v);
-		self.writer.push_str(s);
+		self.writer.write_all(s.as_bytes())?;
 		Ok(())
 	}
 
 	fn serialize_u8(self, v: u8) -> Result<Self::Ok, Self::Error> {
 		let mut buffer = itoa::Buffer::new();
 		let s = buffer.format(v);
-		self.writer.push_str(s);
+		self.writer.write_all(s.as_bytes())?;
 		Ok(())
 	}
 
 	fn serialize_u16(self, v: u16) -> Result<Self::Ok, Self::Error> {
 		let mut buffer = itoa::Buffer::new();
 		let s = buffer.format(v);
-		self.writer.push_str(s);
+		self.writer.write_all(s.as_bytes())?;
 		Ok(())
 	}
 
 	fn serialize_u32(self, v: u32) -> Result<Self::Ok, Self::Error> {
 		let mut buffer = itoa::Buffer::new();
 		let s = buffer.format(v);
-		self.writer.push_str(s);
+		self.writer.write_all(s.as_bytes())?;
 		Ok(())
 	}
 
 	fn serialize_u64(self, v: u64) -> Result<Self::Ok, Self::Error> {
 		let mut buffer = itoa::Buffer::new();
 		let s = buffer.format(v);
-		self.writer.push_str(s);
+		self.writer.write_all(s.as_bytes())?;
 		Ok(())
 	}
 
 	fn serialize_f32(self, v: f32) -> Result<Self::Ok, Self::Error> {
 		let mut buffer = ryu::Buffer::new();
 		let s = buffer.format(v);
-		self.writer.push_str(s);
+		self.writer.write_all(s.as_bytes())?;
 		Ok(())
 	}
 
 	fn serialize_f64(self, v: f64) -> Result<Self::Ok, Self::Error> {
 		let mut buffer = ryu::Buffer::new();
 		let s = buffer.format(v);
-		self.writer.push_str(s);
+		self.writer.write_all(s.as_bytes())?;
 		Ok(())
 	}
 
@@ -136,7 +136,7 @@ impl<'ser> serde::ser::Serializer for &mut Serializer<'ser> {
 
 	fn serialize_str(self, v: &str) -> Result<Self::Ok, Self::Error> {
 		let v = format!("{:?}", v);
-		self.writer.push_str(&v);
+		self.writer.write_all(v.as_bytes())?;
 		Ok(())
 	}
 
@@ -188,8 +188,8 @@ impl<'ser> serde::ser::Serializer for &mut Serializer<'ser> {
 	}
 
 	fn serialize_seq(self, len: Option<usize>) -> Result<Self::SerializeSeq, Self::Error> {
-		self.writer.push('[');
-		self.writer.push(' ');
+		self.writer.write_all(b"[")?;
+		self.writer.write_all(b" ")?;
 		Ok(self)
 	}
 
@@ -219,7 +219,7 @@ impl<'ser> serde::ser::Serializer for &mut Serializer<'ser> {
 		if self.indent_level == 0 {
 			Ok(self)
 		} else {
-			self.writer.push_str(" {\n");
+			self.writer.write_all(b" {\n")?;
 			Ok(self)
 		}
 	}
@@ -244,7 +244,7 @@ impl<'ser> serde::ser::Serializer for &mut Serializer<'ser> {
 }
 
 #[allow(unused_variables)]
-impl<'ser> serde::ser::SerializeMap for &mut Serializer<'ser> {
+impl<W: std::io::Write> serde::ser::SerializeMap for &mut Serializer<W> {
 	type Ok = ();
 	type Error = Err;
 
@@ -259,7 +259,7 @@ impl<'ser> serde::ser::SerializeMap for &mut Serializer<'ser> {
 		let mapv = MapValSerializer::new(self);
 		value.serialize(mapv)?;
 
-		self.writer.push('\n');
+		self.writer.write_all(b"\n")?;
 		Ok(())
 	}
 
@@ -268,23 +268,23 @@ impl<'ser> serde::ser::SerializeMap for &mut Serializer<'ser> {
 	}
 }
 
-impl<'a> serde::ser::SerializeSeq for &mut Serializer<'a> {
+impl<W: std::io::Write> serde::ser::SerializeSeq for &mut Serializer<W> {
 	type Ok = ();
 	type Error = Err;
 
 	fn serialize_element<T: Serialize + ?Sized>(&mut self, value: &T) -> Result<(), Self::Error> {
 		value.serialize(&mut **self)?;
-		self.writer.push(' ');
+		self.writer.write_all(b" ")?;
 		Ok(())
 	}
 
 	fn end(self) -> Result<Self::Ok, Self::Error> {
-		self.writer.push(']');
+		self.writer.write_all(b"]")?;
 		Ok(())
 	}
 }
 
-impl<'ser> serde::ser::SerializeStruct for &mut Serializer<'ser> {
+impl<W: std::io::Write> serde::ser::SerializeStruct for &mut Serializer<W> {
 	type Ok = ();
 	type Error = Err;
 
@@ -301,7 +301,7 @@ impl<'ser> serde::ser::SerializeStruct for &mut Serializer<'ser> {
 		let mapv = MapValSerializer::new(self);
 		value.serialize(mapv)?;
 
-		self.writer.push('\n');
+		self.writer.write_all(b"\n")?;
 		Ok(())
 	}
 
@@ -309,7 +309,7 @@ impl<'ser> serde::ser::SerializeStruct for &mut Serializer<'ser> {
 		if let Some(indent) = self.indent_level.checked_sub(1) {
 			self.indent_level = indent;
 			self.indent()?;
-			self.writer.push('}');
+			self.writer.write_all(b"}")?;
 		}
 
 		Ok(())
@@ -317,7 +317,7 @@ impl<'ser> serde::ser::SerializeStruct for &mut Serializer<'ser> {
 }
 
 #[allow(unused_variables)]
-impl<'ser> serde::ser::SerializeStructVariant for &mut Serializer<'ser> {
+impl<W: std::io::Write> serde::ser::SerializeStructVariant for &mut Serializer<W> {
 	type Ok = ();
 	type Error = Err;
 
@@ -334,7 +334,7 @@ impl<'ser> serde::ser::SerializeStructVariant for &mut Serializer<'ser> {
 	}
 }
 
-impl<'ser> serde::ser::SerializeTuple for &mut Serializer<'ser> {
+impl<W: std::io::Write> serde::ser::SerializeTuple for &mut Serializer<W> {
 	type Ok = ();
 	type Error = Err;
 
@@ -348,7 +348,7 @@ impl<'ser> serde::ser::SerializeTuple for &mut Serializer<'ser> {
 }
 
 #[allow(unused_variables)]
-impl<'ser> serde::ser::SerializeTupleStruct for &mut Serializer<'ser> {
+impl<W: std::io::Write> serde::ser::SerializeTupleStruct for &mut Serializer<W> {
 	type Ok = ();
 	type Error = Err;
 
@@ -362,7 +362,7 @@ impl<'ser> serde::ser::SerializeTupleStruct for &mut Serializer<'ser> {
 }
 
 #[allow(unused_variables)]
-impl<'ser> serde::ser::SerializeTupleVariant for &mut Serializer<'ser> {
+impl<W: std::io::Write> serde::ser::SerializeTupleVariant for &mut Serializer<W> {
 	type Ok = ();
 	type Error = Err;
 
@@ -376,8 +376,11 @@ impl<'ser> serde::ser::SerializeTupleVariant for &mut Serializer<'ser> {
 }
 
 pub fn to_string<T: ?Sized + Serialize>(value: &T) -> Result<String, Err> {
-	let mut string = String::new();
-	let mut serializer = Serializer::new(&mut string);
+	let mut vec = Vec::new();
+
+	let mut serializer = Serializer::new(&mut vec);
 	value.serialize(&mut serializer)?;
+
+	let string = String::from_utf8(vec).expect("should never emit invalid utf8");
 	Ok(string)
 }

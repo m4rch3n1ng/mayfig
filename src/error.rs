@@ -4,7 +4,7 @@ use thiserror::Error;
 #[derive(Debug, Error)]
 pub enum Err {
 	#[error("io error")]
-	Io(#[source] std::io::Error),
+	Io(#[from] std::io::Error),
 	#[error("unknown escape sequence {0:?}")]
 	UnknownEscape(char),
 	#[error("unescaped control character {0:?}")]
