@@ -2,28 +2,28 @@ use super::Serializer;
 use crate::error::Err;
 use serde::Serialize;
 
-pub struct MapKeySerializer<'a, W: std::io::Write> {
-	ser: &'a mut Serializer<W>,
+pub struct MapKeySerializer<'a, 'id, W: std::io::Write> {
+	ser: &'a mut Serializer<'id, W>,
 }
 
-impl<'a, W: std::io::Write> MapKeySerializer<'a, W> {
-	pub fn new(ser: &'a mut Serializer<W>) -> Self {
+impl<'a, 'id, W: std::io::Write> MapKeySerializer<'a, 'id, W> {
+	pub fn new(ser: &'a mut Serializer<'id, W>) -> Self {
 		MapKeySerializer { ser }
 	}
 }
 
 #[allow(unused_variables)]
-impl<'a, W: std::io::Write> serde::ser::Serializer for MapKeySerializer<'a, W> {
+impl<'a, 'id, W: std::io::Write> serde::ser::Serializer for MapKeySerializer<'a, 'id, W> {
 	type Ok = ();
 	type Error = Err;
 
-	type SerializeMap = &'a mut Serializer<W>;
-	type SerializeSeq = &'a mut Serializer<W>;
-	type SerializeTuple = &'a mut Serializer<W>;
-	type SerializeTupleStruct = &'a mut Serializer<W>;
-	type SerializeTupleVariant = &'a mut Serializer<W>;
-	type SerializeStruct = &'a mut Serializer<W>;
-	type SerializeStructVariant = &'a mut Serializer<W>;
+	type SerializeMap = &'a mut Serializer<'id, W>;
+	type SerializeSeq = &'a mut Serializer<'id, W>;
+	type SerializeTuple = &'a mut Serializer<'id, W>;
+	type SerializeTupleStruct = &'a mut Serializer<'id, W>;
+	type SerializeTupleVariant = &'a mut Serializer<'id, W>;
+	type SerializeStruct = &'a mut Serializer<'id, W>;
+	type SerializeStructVariant = &'a mut Serializer<'id, W>;
 
 	fn serialize_bool(self, v: bool) -> Result<Self::Ok, Self::Error> {
 		self.ser.serialize_bool(v)
@@ -181,28 +181,28 @@ impl<'a, W: std::io::Write> serde::ser::Serializer for MapKeySerializer<'a, W> {
 	}
 }
 
-pub struct MapValSerializer<'a, W: std::io::Write> {
-	ser: &'a mut Serializer<W>,
+pub struct MapValSerializer<'a, 'id, W: std::io::Write> {
+	ser: &'a mut Serializer<'id, W>,
 }
 
-impl<'a, W: std::io::Write> MapValSerializer<'a, W> {
-	pub fn new(ser: &'a mut Serializer<W>) -> Self {
+impl<'a, 'id, W: std::io::Write> MapValSerializer<'a, 'id, W> {
+	pub fn new(ser: &'a mut Serializer<'id, W>) -> Self {
 		MapValSerializer { ser }
 	}
 }
 
 #[allow(unused_variables)]
-impl<'a, W: std::io::Write> serde::ser::Serializer for MapValSerializer<'a, W> {
+impl<'a, 'id, W: std::io::Write> serde::ser::Serializer for MapValSerializer<'a, 'id, W> {
 	type Ok = ();
 	type Error = Err;
 
-	type SerializeMap = &'a mut Serializer<W>;
-	type SerializeSeq = &'a mut Serializer<W>;
-	type SerializeTuple = &'a mut Serializer<W>;
-	type SerializeTupleStruct = &'a mut Serializer<W>;
-	type SerializeTupleVariant = &'a mut Serializer<W>;
-	type SerializeStruct = &'a mut Serializer<W>;
-	type SerializeStructVariant = &'a mut Serializer<W>;
+	type SerializeMap = &'a mut Serializer<'id, W>;
+	type SerializeSeq = &'a mut Serializer<'id, W>;
+	type SerializeTuple = &'a mut Serializer<'id, W>;
+	type SerializeTupleStruct = &'a mut Serializer<'id, W>;
+	type SerializeTupleVariant = &'a mut Serializer<'id, W>;
+	type SerializeStruct = &'a mut Serializer<'id, W>;
+	type SerializeStructVariant = &'a mut Serializer<'id, W>;
 
 	fn serialize_bool(self, v: bool) -> Result<Self::Ok, Self::Error> {
 		self.ser.writer.write_all(b" = ")?;
