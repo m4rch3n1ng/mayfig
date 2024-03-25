@@ -1,7 +1,6 @@
+use self::serializer::{MapKeySerializer, MapValSerializer};
 use crate::error::Err;
 use serde::Serialize;
-
-use self::serializer::{MapKeySerializer, MapValSerializer};
 
 mod serializer;
 
@@ -123,10 +122,7 @@ impl<'ser> serde::ser::Serializer for &mut Serializer<'ser> {
 		todo!()
 	}
 
-	fn serialize_some<T: ?Sized>(self, value: &T) -> Result<Self::Ok, Self::Error>
-	where
-		T: Serialize,
-	{
+	fn serialize_some<T: Serialize + ?Sized>(self, value: &T) -> Result<Self::Ok, Self::Error> {
 		todo!()
 	}
 
@@ -147,27 +143,21 @@ impl<'ser> serde::ser::Serializer for &mut Serializer<'ser> {
 		todo!()
 	}
 
-	fn serialize_newtype_struct<T: ?Sized>(
+	fn serialize_newtype_struct<T: Serialize + ?Sized>(
 		self,
 		name: &'static str,
 		value: &T,
-	) -> Result<Self::Ok, Self::Error>
-	where
-		T: Serialize,
-	{
+	) -> Result<Self::Ok, Self::Error> {
 		todo!()
 	}
 
-	fn serialize_newtype_variant<T: ?Sized>(
+	fn serialize_newtype_variant<T: Serialize + ?Sized>(
 		self,
 		name: &'static str,
 		variant_index: u32,
 		variant: &'static str,
 		value: &T,
-	) -> Result<Self::Ok, Self::Error>
-	where
-		T: Serialize,
-	{
+	) -> Result<Self::Ok, Self::Error> {
 		todo!()
 	}
 
@@ -232,20 +222,14 @@ impl<'ser> serde::ser::SerializeMap for &mut Serializer<'ser> {
 	type Ok = ();
 	type Error = Err;
 
-	fn serialize_key<T: ?Sized>(&mut self, key: &T) -> Result<(), Self::Error>
-	where
-		T: Serialize,
-	{
+	fn serialize_key<T: Serialize + ?Sized>(&mut self, key: &T) -> Result<(), Self::Error> {
 		self.indent()?;
 
 		let mapk = MapKeySerializer::new(self);
 		key.serialize(mapk)
 	}
 
-	fn serialize_value<T: ?Sized>(&mut self, value: &T) -> Result<(), Self::Error>
-	where
-		T: Serialize,
-	{
+	fn serialize_value<T: Serialize + ?Sized>(&mut self, value: &T) -> Result<(), Self::Error> {
 		let mapv = MapValSerializer::new(self);
 		value.serialize(mapv)?;
 
@@ -262,10 +246,7 @@ impl<'a> serde::ser::SerializeSeq for &mut Serializer<'a> {
 	type Ok = ();
 	type Error = Err;
 
-	fn serialize_element<T: ?Sized>(&mut self, value: &T) -> Result<(), Self::Error>
-	where
-		T: Serialize,
-	{
+	fn serialize_element<T: Serialize + ?Sized>(&mut self, value: &T) -> Result<(), Self::Error> {
 		value.serialize(&mut **self)?;
 		self.writer.push(' ');
 		Ok(())
@@ -281,14 +262,11 @@ impl<'ser> serde::ser::SerializeStruct for &mut Serializer<'ser> {
 	type Ok = ();
 	type Error = Err;
 
-	fn serialize_field<T: ?Sized>(
+	fn serialize_field<T: Serialize + ?Sized>(
 		&mut self,
 		key: &'static str,
 		value: &T,
-	) -> Result<(), Self::Error>
-	where
-		T: Serialize,
-	{
+	) -> Result<(), Self::Error> {
 		self.indent()?;
 
 		let mapk = MapKeySerializer::new(self);
@@ -317,14 +295,11 @@ impl<'ser> serde::ser::SerializeStructVariant for &mut Serializer<'ser> {
 	type Ok = ();
 	type Error = Err;
 
-	fn serialize_field<T: ?Sized>(
+	fn serialize_field<T: Serialize + ?Sized>(
 		&mut self,
 		key: &'static str,
 		value: &T,
-	) -> Result<(), Self::Error>
-	where
-		T: Serialize,
-	{
+	) -> Result<(), Self::Error> {
 		todo!()
 	}
 
@@ -337,10 +312,7 @@ impl<'ser> serde::ser::SerializeTuple for &mut Serializer<'ser> {
 	type Ok = ();
 	type Error = Err;
 
-	fn serialize_element<T: ?Sized>(&mut self, value: &T) -> Result<(), Self::Error>
-	where
-		T: Serialize,
-	{
+	fn serialize_element<T: Serialize + ?Sized>(&mut self, value: &T) -> Result<(), Self::Error> {
 		serde::ser::SerializeSeq::serialize_element(self, value)
 	}
 
@@ -354,10 +326,7 @@ impl<'ser> serde::ser::SerializeTupleStruct for &mut Serializer<'ser> {
 	type Ok = ();
 	type Error = Err;
 
-	fn serialize_field<T: ?Sized>(&mut self, value: &T) -> Result<(), Self::Error>
-	where
-		T: Serialize,
-	{
+	fn serialize_field<T: Serialize + ?Sized>(&mut self, value: &T) -> Result<(), Self::Error> {
 		todo!()
 	}
 
@@ -371,10 +340,7 @@ impl<'ser> serde::ser::SerializeTupleVariant for &mut Serializer<'ser> {
 	type Ok = ();
 	type Error = Err;
 
-	fn serialize_field<T: ?Sized>(&mut self, value: &T) -> Result<(), Self::Error>
-	where
-		T: Serialize,
-	{
+	fn serialize_field<T: Serialize + ?Sized>(&mut self, value: &T) -> Result<(), Self::Error> {
 		todo!()
 	}
 

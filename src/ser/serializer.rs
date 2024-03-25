@@ -1,5 +1,6 @@
 use super::Serializer;
 use crate::error::Err;
+use serde::Serialize;
 
 pub struct MapKeySerializer<'a, 'ser> {
 	ser: &'a mut Serializer<'ser>,
@@ -92,10 +93,7 @@ impl<'a, 'ser> serde::ser::Serializer for MapKeySerializer<'a, 'ser> {
 		todo!()
 	}
 
-	fn serialize_some<T: ?Sized>(self, value: &T) -> Result<Self::Ok, Self::Error>
-	where
-		T: serde::Serialize,
-	{
+	fn serialize_some<T: Serialize + ?Sized>(self, value: &T) -> Result<Self::Ok, Self::Error> {
 		todo!()
 	}
 
@@ -116,27 +114,21 @@ impl<'a, 'ser> serde::ser::Serializer for MapKeySerializer<'a, 'ser> {
 		todo!()
 	}
 
-	fn serialize_newtype_struct<T: ?Sized>(
+	fn serialize_newtype_struct<T: Serialize + ?Sized>(
 		self,
 		name: &'static str,
 		value: &T,
-	) -> Result<Self::Ok, Self::Error>
-	where
-		T: serde::Serialize,
-	{
+	) -> Result<Self::Ok, Self::Error> {
 		todo!()
 	}
 
-	fn serialize_newtype_variant<T: ?Sized>(
+	fn serialize_newtype_variant<T: Serialize + ?Sized>(
 		self,
 		name: &'static str,
 		variant_index: u32,
 		variant: &'static str,
 		value: &T,
-	) -> Result<Self::Ok, Self::Error>
-	where
-		T: serde::Serialize,
-	{
+	) -> Result<Self::Ok, Self::Error> {
 		todo!()
 	}
 
@@ -282,10 +274,7 @@ impl<'a, 'ser> serde::ser::Serializer for MapValSerializer<'a, 'ser> {
 		Err(Err::UnsupportedNone)
 	}
 
-	fn serialize_some<T: ?Sized>(self, value: &T) -> Result<Self::Ok, Self::Error>
-	where
-		T: serde::Serialize,
-	{
+	fn serialize_some<T: Serialize + ?Sized>(self, value: &T) -> Result<Self::Ok, Self::Error> {
 		value.serialize(self)
 	}
 
@@ -306,27 +295,21 @@ impl<'a, 'ser> serde::ser::Serializer for MapValSerializer<'a, 'ser> {
 		todo!()
 	}
 
-	fn serialize_newtype_struct<T: ?Sized>(
+	fn serialize_newtype_struct<T: Serialize + ?Sized>(
 		self,
 		name: &'static str,
 		value: &T,
-	) -> Result<Self::Ok, Self::Error>
-	where
-		T: serde::Serialize,
-	{
+	) -> Result<Self::Ok, Self::Error> {
 		todo!()
 	}
 
-	fn serialize_newtype_variant<T: ?Sized>(
+	fn serialize_newtype_variant<T: Serialize + ?Sized>(
 		self,
 		name: &'static str,
 		variant_index: u32,
 		variant: &'static str,
 		value: &T,
-	) -> Result<Self::Ok, Self::Error>
-	where
-		T: serde::Serialize,
-	{
+	) -> Result<Self::Ok, Self::Error> {
 		todo!()
 	}
 
