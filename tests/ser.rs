@@ -3,20 +3,20 @@ use serde_derive::{Deserialize, Serialize};
 use std::{collections::BTreeMap, fmt::Debug};
 
 fn twoway<T: DeserializeOwned + Serialize + Debug + PartialEq>(t: T, s: &'static str) {
+	// string de
+	let de = mayfig::from_str::<T>(s);
+	let de = de.unwrap();
+	assert_eq!(t, de);
+
 	// string ser
 	let ser = mayfig::to_string(&t);
 	let ser = ser.unwrap();
 	assert_eq!(s, ser);
 
-	// string de
-	let de = mayfig::from_str::<T>(&ser);
+	// reader de
+	let de = mayfig::from_reader::<_, T>(ser.as_bytes());
 	let de = de.unwrap();
 	assert_eq!(t, de);
-
-	// reader de
-	let de_r = mayfig::from_reader::<_, T>(s.as_bytes());
-	let de_r = de_r.unwrap();
-	assert_eq!(t, de_r);
 }
 
 #[derive(Debug, Deserialize, Serialize, PartialEq)]
@@ -33,11 +33,11 @@ s = "test"
 
 #[derive(Debug, Deserialize, Serialize, PartialEq)]
 struct S2 {
-	v: (i8, u8, u8),
+	v: (i8, u8, char),
 	m: BTreeMap<String, u64>,
 }
 
-const S2: &str = r#"v [ -1 0 1 ]
+const S2: &str = r#"v [ -1 0 "ª" ]
 m {
 	k0 = 0
 	k1 = 1
@@ -55,7 +55,7 @@ fn test() {
 	twoway(s1, S1);
 
 	let m = BTreeMap::from([("k0".into(), 0), ("k1".into(), 1), ("k2".into(), 2)]);
-	let s2 = S2 { v: (-1, 0, 1), m };
+	let s2 = S2 { v: (-1, 0, 'ª'), m };
 	twoway(s2, S2);
 }
 

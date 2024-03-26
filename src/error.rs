@@ -21,12 +21,16 @@ pub enum Err {
 	Expected(char, char),
 	#[error("unexpected char {0:?}, expected {1}")]
 	UnexpectedChar(char, &'static str),
-	#[error("unsupported none")]
-	UnsupportedNone,
 	#[error("expected end of sequence")]
 	ExpectedSeqEnd,
 	#[error("expected delimiter after string, got {0:?}")]
 	ExpectedDelimiter(char),
+	#[error("unsupported none")]
+	UnsupportedNone,
+	#[error("unsupported type {0}")]
+	UnsupportedType(&'static str),
+	#[error("unsupportet map key type {0}")]
+	UnsupportedMapKey(&'static str),
 	#[error("end of file")]
 	Eof,
 	#[error("custom: {0}")]

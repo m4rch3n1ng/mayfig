@@ -105,7 +105,9 @@ impl<'ser> serde::ser::Serializer for &mut Serializer<'ser> {
 	}
 
 	fn serialize_char(self, v: char) -> Result<Self::Ok, Self::Error> {
-		todo!()
+		let mut buf = [0; 4];
+		let v = v.encode_utf8(&mut buf);
+		self.serialize_str(v)
 	}
 
 	fn serialize_str(self, v: &str) -> Result<Self::Ok, Self::Error> {
@@ -119,19 +121,19 @@ impl<'ser> serde::ser::Serializer for &mut Serializer<'ser> {
 	}
 
 	fn serialize_none(self) -> Result<Self::Ok, Self::Error> {
-		todo!()
+		Err(Err::UnsupportedNone)
 	}
 
 	fn serialize_some<T: Serialize + ?Sized>(self, value: &T) -> Result<Self::Ok, Self::Error> {
-		todo!()
+		value.serialize(self)
 	}
 
 	fn serialize_unit(self) -> Result<Self::Ok, Self::Error> {
-		todo!()
+		Err(Err::UnsupportedType("unit"))
 	}
 
 	fn serialize_unit_struct(self, name: &'static str) -> Result<Self::Ok, Self::Error> {
-		todo!()
+		Err(Err::UnsupportedType(name))
 	}
 
 	fn serialize_unit_variant(
@@ -140,7 +142,7 @@ impl<'ser> serde::ser::Serializer for &mut Serializer<'ser> {
 		variant_index: u32,
 		variant: &'static str,
 	) -> Result<Self::Ok, Self::Error> {
-		todo!()
+		self.serialize_str(variant)
 	}
 
 	fn serialize_newtype_struct<T: Serialize + ?Sized>(
@@ -148,7 +150,7 @@ impl<'ser> serde::ser::Serializer for &mut Serializer<'ser> {
 		name: &'static str,
 		value: &T,
 	) -> Result<Self::Ok, Self::Error> {
-		todo!()
+		value.serialize(self)
 	}
 
 	fn serialize_newtype_variant<T: Serialize + ?Sized>(
