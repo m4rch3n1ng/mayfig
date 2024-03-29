@@ -1,7 +1,7 @@
 use super::{read::Read, Deserializer};
 use crate::error::Err;
 use serde::{
-	de::{EnumAccess, MapAccess, SeqAccess, VariantAccess},
+	de::{Deserializer as _, EnumAccess, MapAccess, SeqAccess, VariantAccess},
 	forward_to_deserialize_any,
 };
 
@@ -152,7 +152,7 @@ impl<'a, 'de, R: Read<'de>> VariantAccess<'de> for EnumAcc<'a, R> {
 	type Error = Err;
 
 	fn unit_variant(self) -> Result<(), Self::Error> {
-		todo!()
+		<() as serde::de::Deserialize>::deserialize(self.de)
 	}
 
 	fn newtype_variant_seed<T>(self, seed: T) -> Result<T::Value, Self::Error>
@@ -166,7 +166,7 @@ impl<'a, 'de, R: Read<'de>> VariantAccess<'de> for EnumAcc<'a, R> {
 	where
 		V: serde::de::Visitor<'de>,
 	{
-		serde::de::Deserializer::deserialize_seq(self.de, visitor)
+		self.de.deserialize_seq(visitor)
 	}
 
 	fn struct_variant<V>(
@@ -177,7 +177,7 @@ impl<'a, 'de, R: Read<'de>> VariantAccess<'de> for EnumAcc<'a, R> {
 	where
 		V: serde::de::Visitor<'de>,
 	{
-		serde::de::Deserializer::deserialize_map(self.de, visitor)
+		self.de.deserialize_map(visitor)
 	}
 }
 
@@ -216,14 +216,20 @@ impl<'a, 'de, R: Read<'de>> VariantAccess<'de> for UnitEnumAcc<'a, R> {
 	where
 		T: serde::de::DeserializeSeed<'de>,
 	{
-		todo!()
+		Err(serde::de::Error::invalid_type(
+			serde::de::Unexpected::UnitVariant,
+			&"newtype variant",
+		))
 	}
 
 	fn tuple_variant<V>(self, len: usize, visitor: V) -> Result<V::Value, Self::Error>
 	where
 		V: serde::de::Visitor<'de>,
 	{
-		todo!()
+		Err(serde::de::Error::invalid_type(
+			serde::de::Unexpected::UnitVariant,
+			&"tuple variant",
+		))
 	}
 
 	fn struct_variant<V>(
@@ -234,7 +240,10 @@ impl<'a, 'de, R: Read<'de>> VariantAccess<'de> for UnitEnumAcc<'a, R> {
 	where
 		V: serde::de::Visitor<'de>,
 	{
-		todo!()
+		Err(serde::de::Error::invalid_type(
+			serde::de::Unexpected::UnitVariant,
+			&"struct variant",
+		))
 	}
 }
 
@@ -256,7 +265,13 @@ impl<'a, 'de, R: Read<'de>> serde::de::Deserializer<'de> for MapKey<'a, R> {
 	where
 		V: serde::de::Visitor<'de>,
 	{
-		self.deserialize_str(visitor)
+		let peek = self.de.peek_whitespace()?.ok_or(Err::Eof)?;
+		match peek {
+			b'[' => self.deserialize_seq(visitor),
+			b'{' => self.deserialize_map(visitor),
+			b'0'..=b'9' | b'-' | b'.' => self.de.deserialize_number(visitor),
+			_ => self.deserialize_str(visitor),
+		}
 	}
 
 	fn deserialize_bool<V>(self, visitor: V) -> Result<V::Value, Self::Error>
@@ -386,7 +401,7 @@ impl<'a, 'de, R: Read<'de>> serde::de::Deserializer<'de> for MapKey<'a, R> {
 	where
 		V: serde::de::Visitor<'de>,
 	{
-		todo!()
+		Err(Err::UnsupportedNone)
 	}
 
 	fn deserialize_unit_struct<V>(
@@ -397,7 +412,7 @@ impl<'a, 'de, R: Read<'de>> serde::de::Deserializer<'de> for MapKey<'a, R> {
 	where
 		V: serde::de::Visitor<'de>,
 	{
-		todo!()
+		Err(Err::UnsupportedType(name))
 	}
 
 	fn deserialize_newtype_struct<V>(
@@ -415,14 +430,14 @@ impl<'a, 'de, R: Read<'de>> serde::de::Deserializer<'de> for MapKey<'a, R> {
 	where
 		V: serde::de::Visitor<'de>,
 	{
-		todo!("error")
+		Err(Err::UnsupportedMapKey("seq"))
 	}
 
 	fn deserialize_tuple<V>(self, len: usize, visitor: V) -> Result<V::Value, Self::Error>
 	where
 		V: serde::de::Visitor<'de>,
 	{
-		todo!("error")
+		Err(Err::UnsupportedMapKey("tuple"))
 	}
 
 	fn deserialize_tuple_struct<V>(
@@ -434,14 +449,14 @@ impl<'a, 'de, R: Read<'de>> serde::de::Deserializer<'de> for MapKey<'a, R> {
 	where
 		V: serde::de::Visitor<'de>,
 	{
-		todo!("error")
+		Err(Err::UnsupportedMapKey("tuple"))
 	}
 
 	fn deserialize_map<V>(self, visitor: V) -> Result<V::Value, Self::Error>
 	where
 		V: serde::de::Visitor<'de>,
 	{
-		todo!("error")
+		Err(Err::UnsupportedMapKey("map"))
 	}
 
 	fn deserialize_struct<V>(
@@ -453,7 +468,7 @@ impl<'a, 'de, R: Read<'de>> serde::de::Deserializer<'de> for MapKey<'a, R> {
 	where
 		V: serde::de::Visitor<'de>,
 	{
-		todo!("error")
+		Err(Err::UnsupportedMapKey("struct"))
 	}
 
 	fn deserialize_enum<V>(
@@ -465,7 +480,7 @@ impl<'a, 'de, R: Read<'de>> serde::de::Deserializer<'de> for MapKey<'a, R> {
 	where
 		V: serde::de::Visitor<'de>,
 	{
-		todo!("error")
+		Err(Err::UnsupportedMapKey("struct"))
 	}
 
 	fn deserialize_identifier<V>(self, visitor: V) -> Result<V::Value, Self::Error>

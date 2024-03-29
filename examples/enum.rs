@@ -3,8 +3,8 @@ use serde_derive::Deserialize;
 #[derive(Debug, Deserialize)]
 #[allow(dead_code)]
 enum E {
-	Id { id: u64 },
-	St { st: u64 },
+	Id(u64),
+	St,
 }
 
 #[derive(Debug, Deserialize)]
@@ -15,9 +15,7 @@ struct T {
 
 const TXT: &str = r#"
 e {
-	Id {
-		id = 4
-	}
+	Id = 4
 }
 "#;
 

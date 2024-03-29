@@ -4,7 +4,7 @@ use serde::Serialize;
 
 mod serializer;
 
-pub struct Serializer<'id, W:std::io::Write> {
+pub struct Serializer<'id, W: std::io::Write> {
 	/// current indentation level
 	indent_level: usize,
 	indent: &'id [u8],

@@ -326,7 +326,7 @@ impl<'de, 'a, R: Read<'de>> serde::de::Deserializer<'de> for &'a mut Deserialize
 	where
 		V: serde::de::Visitor<'de>,
 	{
-		todo!()
+		Err(Err::UnsupportedType("unit"))
 	}
 
 	fn deserialize_unit_struct<V>(
@@ -337,7 +337,7 @@ impl<'de, 'a, R: Read<'de>> serde::de::Deserializer<'de> for &'a mut Deserialize
 	where
 		V: serde::de::Visitor<'de>,
 	{
-		todo!()
+		Err(Err::UnsupportedType("unit"))
 	}
 
 	fn deserialize_newtype_struct<V>(

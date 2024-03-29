@@ -23,6 +23,12 @@ const U3: &str = r#"
 u = "two"
 "#;
 
+const U4: &str = r#"
+u {
+	Two = []
+}
+"#;
+
 #[test]
 fn unit() {
 	let u1 = mayfig::from_str::<UnitS>(U1);
@@ -34,7 +40,10 @@ fn unit() {
 	assert_eq!(u2.u, Unit::Two);
 
 	let u3 = mayfig::from_str::<UnitS>(U3);
-	assert!(u3.is_err())
+	assert!(u3.is_err());
+
+	let u4 = mayfig::from_str::<UnitS>(U4);
+	assert!(u4.is_err());
 }
 
 #[derive(Debug, Deserialize, PartialEq)]
@@ -114,4 +123,68 @@ fn internal() {
 			msg: "ok".into()
 		}
 	)
+}
+
+#[derive(Debug, Deserialize)]
+struct Norm<'a> {
+	#[serde(borrow)]
+	n: Normal<'a>,
+}
+
+#[derive(Debug, Deserialize)]
+enum Normal<'a> {
+	Id(&'a str),
+	St { code: u64 },
+	Un,
+}
+
+const N1: &str = r#"
+n {
+	Id = "one"
+}
+"#;
+
+const N2: &str = r#"
+n {
+	St {
+		code = 200
+	}
+}
+"#;
+
+const N3: &str = r#"
+n = "Un"
+"#;
+
+const N4: &str = r#"
+n = "St"
+"#;
+
+const N5: &str = r#"
+n {
+	Id {
+		code = 200
+	}
+}
+"#;
+
+#[test]
+fn normal() {
+	let n1 = mayfig::from_str::<Norm>(N1);
+	let n1 = n1.unwrap();
+	assert!(matches!(n1.n, Normal::Id("one")));
+
+	let n2 = mayfig::from_str::<Norm>(N2);
+	let n2 = n2.unwrap();
+	assert!(matches!(n2.n, Normal::St { code: 200 }));
+
+	let n3 = mayfig::from_str::<Norm>(N3);
+	let n3 = n3.unwrap();
+	assert!(matches!(n3.n, Normal::Un));
+
+	let n4 = mayfig::from_str::<Norm>(N4);
+	assert!(n4.is_err());
+
+	let n5 = mayfig::from_str::<Norm>(N5);
+	assert!(n5.is_err());
 }

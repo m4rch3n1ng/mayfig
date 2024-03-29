@@ -55,7 +55,9 @@ fn test() {
 	twoway(s1, S1);
 
 	let m = BTreeMap::from([("k0".into(), 0), ("k1".into(), 1), ("k2".into(), 2)]);
-	let s2 = S2 { v: (-1, 0, 'ª'), m };
+	let s2 = S2 {
+		v: (-1, 0, 'ª'), m
+	};
 	twoway(s2, S2);
 }
 

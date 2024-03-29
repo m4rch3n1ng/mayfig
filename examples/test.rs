@@ -19,7 +19,7 @@ struct Txt {
 
 const TXT: &str = r#"
 abcd = 2.0
-test [ 1 2 3 ];
+test = [ 1 2 3 ]
 str = "t\\\"est"
 
 sub {
