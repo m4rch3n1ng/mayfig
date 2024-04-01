@@ -380,14 +380,14 @@ impl<'a, 'de, R: Read<'de>> serde::de::Deserializer<'de> for MapKey<'a, R> {
 	where
 		V: serde::de::Visitor<'de>,
 	{
-		self.de.deserialize_bytes(visitor)
+		Err(Err::UnsupportedMapKey("bytes"))
 	}
 
 	fn deserialize_byte_buf<V>(self, visitor: V) -> Result<V::Value, Self::Error>
 	where
 		V: serde::de::Visitor<'de>,
 	{
-		self.de.deserialize_byte_buf(visitor)
+		Err(Err::UnsupportedMapKey("byte_buf"))
 	}
 
 	fn deserialize_option<V>(self, visitor: V) -> Result<V::Value, Self::Error>

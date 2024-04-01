@@ -1,5 +1,5 @@
 use serde_derive::Deserialize;
-use std::collections::HashMap;
+use std::{borrow::Cow, collections::HashMap};
 
 #[allow(dead_code)]
 #[derive(Debug, Deserialize)]
@@ -9,18 +9,21 @@ struct Sub {
 
 #[allow(dead_code)]
 #[derive(Debug, Deserialize)]
-struct Txt {
+struct Txt<'a> {
 	abcd: Option<f64>,
+	#[serde(with = "serde_bytes")]
 	test: Vec<u8>,
 	sub: Sub,
 	map: HashMap<String, u8>,
-	str: String,
+	#[serde(with = "serde_bytes")]
+	#[serde(borrow)]
+	str: Cow<'a, [u8]>,
 }
 
 const TXT: &str = r#"
 abcd = 2.0
 test = [ 1 2 3 ]
-str = "t\\\"est"
+str = "test"
 
 sub {
 	nested = -123

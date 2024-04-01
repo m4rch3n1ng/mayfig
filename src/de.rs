@@ -90,25 +90,32 @@ impl<'de, R: Read<'de>> Deserializer<R> {
 		}
 	}
 
-	fn num<'s>(&'s mut self) -> Result<Ref<'de, 's>, Err> {
+	fn num<'s>(&'s mut self) -> Result<Ref<'de, 's, str>, Err> {
 		self.peek_whitespace()?.ok_or(Err::Eof)?;
 
 		self.scratch.clear();
 		self.read.num(&mut self.scratch)
 	}
 
-	fn word<'s>(&'s mut self) -> Result<Ref<'de, 's>, Err> {
+	fn word<'s>(&'s mut self) -> Result<Ref<'de, 's, str>, Err> {
 		self.peek_whitespace()?.ok_or(Err::Eof)?;
 
 		self.scratch.clear();
 		self.read.word(&mut self.scratch)
 	}
 
-	fn str<'s>(&'s mut self) -> Result<Ref<'de, 's>, Err> {
+	fn str<'s>(&'s mut self) -> Result<Ref<'de, 's, str>, Err> {
 		self.peek_whitespace()?;
 
 		self.scratch.clear();
 		self.read.str(&mut self.scratch)
+	}
+
+	fn str_bytes<'s>(&'s mut self) -> Result<Ref<'de, 's, [u8]>, Err> {
+		self.peek_whitespace()?;
+
+		self.scratch.clear();
+		self.read.str_bytes(&mut self.scratch)
 	}
 
 	fn deserialize_number<'any, V>(&mut self, visitor: V) -> Result<V::Value, Err>
@@ -305,14 +312,25 @@ impl<'de, 'a, R: Read<'de>> serde::de::Deserializer<'de> for &'a mut Deserialize
 	where
 		V: serde::de::Visitor<'de>,
 	{
-		todo!()
+		let peek = self.peek_whitespace()?.ok_or(Err::Eof)?;
+		match peek {
+			b'"' | b'\'' => {
+				let r#ref = self.str_bytes()?;
+				match r#ref {
+					Ref::Borrow(b) => visitor.visit_borrowed_bytes(b),
+					Ref::Scratch(s) => visitor.visit_bytes(s),
+				}
+			}
+			b'[' => self.deserialize_seq(visitor),
+			_ => Err(Err::InvalidType),
+		}
 	}
 
 	fn deserialize_byte_buf<V>(self, visitor: V) -> Result<V::Value, Self::Error>
 	where
 		V: serde::de::Visitor<'de>,
 	{
-		todo!()
+		self.deserialize_bytes(visitor)
 	}
 
 	fn deserialize_option<V>(self, visitor: V) -> Result<V::Value, Self::Error>

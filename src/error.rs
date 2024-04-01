@@ -13,6 +13,8 @@ pub enum Err {
 	InvalidBool(String),
 	#[error("invalid number {0:?}")]
 	InvalidNum(String),
+	#[error("invalid type")]
+	InvalidType,
 	#[error("unexpected word {0:?}")]
 	UnexpectedWord(String),
 	#[error("invalid utf8")]

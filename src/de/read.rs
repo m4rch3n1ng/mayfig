@@ -2,13 +2,19 @@ use crate::error::Err;
 use std::ops::Deref;
 
 #[derive(Debug)]
-pub enum Ref<'de, 's> {
-	Borrow(&'de str),
-	Scratch(&'s str),
+pub enum Ref<'de, 's, T>
+where
+	T: ?Sized,
+{
+	Borrow(&'de T),
+	Scratch(&'s T),
 }
 
-impl<'de, 's> Deref for Ref<'de, 's> {
-	type Target = str;
+impl<'de, 's, T> Deref for Ref<'de, 's, T>
+where
+	T: ?Sized,
+{
+	type Target = T;
 	fn deref(&self) -> &Self::Target {
 		match self {
 			Ref::Borrow(b) => b,
@@ -17,8 +23,8 @@ impl<'de, 's> Deref for Ref<'de, 's> {
 	}
 }
 
-impl<'de, 's> From<Ref<'de, 's>> for String {
-	fn from(value: Ref<'de, 's>) -> Self {
+impl<'de, 's> From<Ref<'de, 's, str>> for String {
+	fn from(value: Ref<'de, 's, str>) -> Self {
 		match value {
 			Ref::Borrow(b) => b.to_owned(),
 			Ref::Scratch(s) => s.to_owned(),
@@ -33,11 +39,23 @@ pub trait Read<'de> {
 
 	fn discard(&mut self);
 
-	fn num<'s>(&'s mut self, scratch: &'s mut Vec<u8>) -> Result<Ref<'de, 's>, Err>;
+	fn num<'s>(&'s mut self, scratch: &'s mut Vec<u8>) -> Result<Ref<'de, 's, str>, Err>;
 
-	fn word<'s>(&'s mut self, scratch: &'s mut Vec<u8>) -> Result<Ref<'de, 's>, Err>;
+	fn word<'s>(&'s mut self, scratch: &'s mut Vec<u8>) -> Result<Ref<'de, 's, str>, Err>;
 
-	fn str<'s>(&'s mut self, scratch: &'s mut Vec<u8>) -> Result<Ref<'de, 's>, Err>;
+	fn str<'s>(&'s mut self, scratch: &'s mut Vec<u8>) -> Result<Ref<'de, 's, str>, Err> {
+		let r#ref = self.str_bytes(scratch)?;
+		match r#ref {
+			Ref::Borrow(v) => std::str::from_utf8(v)
+				.map(Ref::Borrow)
+				.map_err(|_| Err::InvalidUtf8),
+			Ref::Scratch(v) => std::str::from_utf8(v)
+				.map(Ref::Scratch)
+				.map_err(|_| Err::InvalidUtf8),
+		}
+	}
+
+	fn str_bytes<'s>(&'s mut self, scratch: &'s mut Vec<u8>) -> Result<Ref<'de, 's, [u8]>, Err>;
 }
 
 pub struct IoRead<R: std::io::Read> {
@@ -89,7 +107,7 @@ where
 		}
 	}
 
-	fn num<'s>(&'s mut self, scratch: &'s mut Vec<u8>) -> Result<Ref<'de, 's>, Err> {
+	fn num<'s>(&'s mut self, scratch: &'s mut Vec<u8>) -> Result<Ref<'de, 's, str>, Err> {
 		if let Some(peek @ b'-') = self.peek()? {
 			scratch.push(peek);
 			self.discard();
@@ -112,7 +130,7 @@ where
 		Ok(r#ref)
 	}
 
-	fn word<'s>(&'s mut self, scratch: &'s mut Vec<u8>) -> Result<Ref<'de, 's>, Err> {
+	fn word<'s>(&'s mut self, scratch: &'s mut Vec<u8>) -> Result<Ref<'de, 's, str>, Err> {
 		loop {
 			let Some(next) = self.next()? else { break };
 
@@ -130,15 +148,14 @@ where
 		Ok(r#ref)
 	}
 
-	fn str<'s>(&'s mut self, scratch: &'s mut Vec<u8>) -> Result<Ref<'de, 's>, Err> {
+	fn str_bytes<'s>(&'s mut self, scratch: &'s mut Vec<u8>) -> Result<Ref<'de, 's, [u8]>, Err> {
 		let quote = self.next()?.ok_or(Err::Eof)?;
 		assert!(matches!(quote, b'"' | b'\''), "is {:?}", quote);
 
-		let r#ref = loop {
+		let r#ref: Ref<'de, 's, [u8]> = loop {
 			let next = self.next()?.ok_or(Err::Eof)?;
 
 			if next == quote {
-				let scratch = std::str::from_utf8(scratch).map_err(|_| Err::InvalidUtf8)?;
 				break Ref::Scratch(scratch);
 			}
 
@@ -199,7 +216,7 @@ impl<'de> Read<'de> for StrRead<'de> {
 		self.index += 1;
 	}
 
-	fn num<'s>(&'s mut self, _scratch: &'s mut Vec<u8>) -> Result<Ref<'de, 's>, Err> {
+	fn num<'s>(&'s mut self, _scratch: &'s mut Vec<u8>) -> Result<Ref<'de, 's, str>, Err> {
 		let start = self.index;
 
 		if let Some(b'-') = self.slice.get(start) {
@@ -225,7 +242,7 @@ impl<'de> Read<'de> for StrRead<'de> {
 		Ok(r#ref)
 	}
 
-	fn word<'s>(&'s mut self, _scratch: &'s mut Vec<u8>) -> Result<Ref<'de, 's>, Err> {
+	fn word<'s>(&'s mut self, _scratch: &'s mut Vec<u8>) -> Result<Ref<'de, 's, str>, Err> {
 		let start = self.index;
 
 		loop {
@@ -247,7 +264,7 @@ impl<'de> Read<'de> for StrRead<'de> {
 		Ok(r#ref)
 	}
 
-	fn str<'s>(&'s mut self, scratch: &'s mut Vec<u8>) -> Result<Ref<'de, 's>, Err> {
+	fn str_bytes<'s>(&'s mut self, scratch: &'s mut Vec<u8>) -> Result<Ref<'de, 's, [u8]>, Err> {
 		let quote = self.next()?.ok_or(Err::Eof)?;
 		assert!(matches!(quote, b'"' | b'\''), "is {:?}", quote as char);
 
@@ -259,18 +276,12 @@ impl<'de> Read<'de> for StrRead<'de> {
 			if next == quote {
 				if scratch.is_empty() {
 					let borrow = &self.slice[start..self.index];
-					let borrow = std::str::from_utf8(borrow).expect("should never fail");
-
 					self.index += 1;
-
 					break Ref::Borrow(borrow);
 				} else {
 					let slice = &self.slice[start..self.index];
 					scratch.extend_from_slice(slice);
-					let scratch = std::str::from_utf8(scratch).expect("should never fail");
-
 					self.index += 1;
-
 					break Ref::Scratch(scratch);
 				}
 			}
