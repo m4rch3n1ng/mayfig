@@ -36,9 +36,10 @@ fn bytes() {
 }
 
 #[derive(Debug, Deserialize)]
-struct Wtf {
+struct Wtf<'a> {
 	#[serde(with = "serde_bytes")]
-	uh: Vec<u8>,
+	#[serde(borrow)]
+	uh: Cow<'a, [u8]>,
 }
 
 const WTF: &[u8] = &[
@@ -50,7 +51,8 @@ const WTF: &[u8] = &[
 fn fucked() {
 	assert!(std::str::from_utf8(WTF).is_err());
 
-	let wtf = mayfig::from_reader::<_, Wtf>(WTF);
+	let wtf = mayfig::from_slice::<Wtf>(WTF);
 	let wtf = wtf.unwrap();
-	assert_eq!(wtf.uh, &[255, 255, 128, 255]);
+	assert_eq!(&*wtf.uh, &[255, 255, 128, 255]);
+	assert!(matches!(wtf.uh, Cow::Borrowed(_)));
 }

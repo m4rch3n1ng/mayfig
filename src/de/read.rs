@@ -178,21 +178,18 @@ where
 	}
 }
 
-pub struct StrRead<'de> {
+pub struct SliceRead<'de> {
 	slice: &'de [u8],
 	index: usize,
 }
 
-impl<'de> StrRead<'de> {
-	pub fn new(input: &'de str) -> Self {
-		StrRead {
-			slice: input.as_bytes(),
-			index: 0,
-		}
+impl<'de> SliceRead<'de> {
+	pub fn new(slice: &'de [u8]) -> Self {
+		SliceRead { slice, index: 0 }
 	}
 }
 
-impl<'de> Read<'de> for StrRead<'de> {
+impl<'de> Read<'de> for SliceRead<'de> {
 	fn peek(&mut self) -> Result<Option<u8>, Err> {
 		if self.index < self.slice.len() {
 			let ch = self.slice[self.index];
@@ -308,6 +305,41 @@ impl<'de> Read<'de> for StrRead<'de> {
 		}
 
 		Ok(r#ref)
+	}
+}
+
+pub struct StrRead<'de>(SliceRead<'de>);
+
+impl<'de> StrRead<'de> {
+	pub fn new(input: &'de str) -> Self {
+		let slice = SliceRead::new(input.as_bytes());
+		StrRead(slice)
+	}
+}
+
+impl<'de> Read<'de> for StrRead<'de> {
+	fn peek(&mut self) -> Result<Option<u8>, Err> {
+		self.0.peek()
+	}
+
+	fn next(&mut self) -> Result<Option<u8>, Err> {
+		self.0.next()
+	}
+
+	fn discard(&mut self) {
+		self.0.discard()
+	}
+
+	fn num<'s>(&'s mut self, scratch: &'s mut Vec<u8>) -> Result<Ref<'de, 's, str>, Err> {
+		self.0.num(scratch)
+	}
+
+	fn word<'s>(&'s mut self, scratch: &'s mut Vec<u8>) -> Result<Ref<'de, 's, str>, Err> {
+		self.0.word(scratch)
+	}
+
+	fn str_bytes<'s>(&'s mut self, scratch: &'s mut Vec<u8>) -> Result<Ref<'de, 's, [u8]>, Err> {
+		self.0.str_bytes(scratch)
 	}
 }
 

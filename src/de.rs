@@ -1,6 +1,6 @@
 use self::{
 	access::{EnumAcc, MapAcc, SeqAcc, TopMapAcc, UnitEnumAcc},
-	read::{IoRead, Read, Ref, StrRead},
+	read::{IoRead, Read, Ref, SliceRead, StrRead},
 };
 use crate::error::Err;
 
@@ -36,6 +36,22 @@ where
 	T: serde::de::Deserialize<'a>,
 {
 	let mut deserializer = Deserializer::from_str(input);
+	let t = T::deserialize(&mut deserializer);
+	t
+}
+
+impl<'de> Deserializer<SliceRead<'de>> {
+	pub fn from_slice(input: &'de [u8]) -> Self {
+		let read = SliceRead::new(input);
+		Deserializer::new(read)
+	}
+}
+
+pub fn from_slice<'a, T>(input: &'a [u8]) -> Result<T, Err>
+where
+	T: serde::de::Deserialize<'a>,
+{
+	let mut deserializer = Deserializer::from_slice(input);
 	let t = T::deserialize(&mut deserializer);
 	t
 }
