@@ -39,11 +39,11 @@ pub trait Read<'de> {
 
 	fn discard(&mut self);
 
-	fn num<'s>(&'s mut self, scratch: &'s mut Vec<u8>) -> Result<Ref<'de, 's, str>, Err>;
+	fn num<'s>(&mut self, scratch: &'s mut Vec<u8>) -> Result<Ref<'de, 's, str>, Err>;
 
-	fn word<'s>(&'s mut self, scratch: &'s mut Vec<u8>) -> Result<Ref<'de, 's, str>, Err>;
+	fn word<'s>(&mut self, scratch: &'s mut Vec<u8>) -> Result<Ref<'de, 's, str>, Err>;
 
-	fn str<'s>(&'s mut self, scratch: &'s mut Vec<u8>) -> Result<Ref<'de, 's, str>, Err> {
+	fn str<'s>(&mut self, scratch: &'s mut Vec<u8>) -> Result<Ref<'de, 's, str>, Err> {
 		let r#ref = self.str_bytes(scratch)?;
 		match r#ref {
 			Ref::Borrow(v) => std::str::from_utf8(v)
@@ -55,7 +55,7 @@ pub trait Read<'de> {
 		}
 	}
 
-	fn str_bytes<'s>(&'s mut self, scratch: &'s mut Vec<u8>) -> Result<Ref<'de, 's, [u8]>, Err>;
+	fn str_bytes<'s>(&mut self, scratch: &'s mut Vec<u8>) -> Result<Ref<'de, 's, [u8]>, Err>;
 }
 
 pub struct IoRead<R: std::io::Read> {
@@ -107,7 +107,7 @@ where
 		}
 	}
 
-	fn num<'s>(&'s mut self, scratch: &'s mut Vec<u8>) -> Result<Ref<'de, 's, str>, Err> {
+	fn num<'s>(&mut self, scratch: &'s mut Vec<u8>) -> Result<Ref<'de, 's, str>, Err> {
 		if let Some(peek @ b'-') = self.peek()? {
 			scratch.push(peek);
 			self.discard();
@@ -130,7 +130,7 @@ where
 		Ok(r#ref)
 	}
 
-	fn word<'s>(&'s mut self, scratch: &'s mut Vec<u8>) -> Result<Ref<'de, 's, str>, Err> {
+	fn word<'s>(&mut self, scratch: &'s mut Vec<u8>) -> Result<Ref<'de, 's, str>, Err> {
 		loop {
 			let Some(next) = self.next()? else { break };
 
@@ -148,7 +148,7 @@ where
 		Ok(r#ref)
 	}
 
-	fn str_bytes<'s>(&'s mut self, scratch: &'s mut Vec<u8>) -> Result<Ref<'de, 's, [u8]>, Err> {
+	fn str_bytes<'s>(&mut self, scratch: &'s mut Vec<u8>) -> Result<Ref<'de, 's, [u8]>, Err> {
 		let quote = self.next()?.ok_or(Err::Eof)?;
 		assert!(matches!(quote, b'"' | b'\''), "is {:?}", quote);
 
@@ -213,7 +213,7 @@ impl<'de> Read<'de> for SliceRead<'de> {
 		self.index += 1;
 	}
 
-	fn num<'s>(&'s mut self, _scratch: &'s mut Vec<u8>) -> Result<Ref<'de, 's, str>, Err> {
+	fn num<'s>(&mut self, _scratch: &'s mut Vec<u8>) -> Result<Ref<'de, 's, str>, Err> {
 		let start = self.index;
 
 		if let Some(b'-') = self.slice.get(start) {
@@ -239,7 +239,7 @@ impl<'de> Read<'de> for SliceRead<'de> {
 		Ok(r#ref)
 	}
 
-	fn word<'s>(&'s mut self, _scratch: &'s mut Vec<u8>) -> Result<Ref<'de, 's, str>, Err> {
+	fn word<'s>(&mut self, _scratch: &'s mut Vec<u8>) -> Result<Ref<'de, 's, str>, Err> {
 		let start = self.index;
 
 		loop {
@@ -261,7 +261,7 @@ impl<'de> Read<'de> for SliceRead<'de> {
 		Ok(r#ref)
 	}
 
-	fn str_bytes<'s>(&'s mut self, scratch: &'s mut Vec<u8>) -> Result<Ref<'de, 's, [u8]>, Err> {
+	fn str_bytes<'s>(&mut self, scratch: &'s mut Vec<u8>) -> Result<Ref<'de, 's, [u8]>, Err> {
 		let quote = self.next()?.ok_or(Err::Eof)?;
 		assert!(matches!(quote, b'"' | b'\''), "is {:?}", quote as char);
 
@@ -330,23 +330,20 @@ impl<'de> Read<'de> for StrRead<'de> {
 		self.0.discard()
 	}
 
-	fn num<'s>(&'s mut self, scratch: &'s mut Vec<u8>) -> Result<Ref<'de, 's, str>, Err> {
+	fn num<'s>(&mut self, scratch: &'s mut Vec<u8>) -> Result<Ref<'de, 's, str>, Err> {
 		self.0.num(scratch)
 	}
 
-	fn word<'s>(&'s mut self, scratch: &'s mut Vec<u8>) -> Result<Ref<'de, 's, str>, Err> {
+	fn word<'s>(&mut self, scratch: &'s mut Vec<u8>) -> Result<Ref<'de, 's, str>, Err> {
 		self.0.word(scratch)
 	}
 
-	fn str_bytes<'s>(&'s mut self, scratch: &'s mut Vec<u8>) -> Result<Ref<'de, 's, [u8]>, Err> {
+	fn str_bytes<'s>(&mut self, scratch: &'s mut Vec<u8>) -> Result<Ref<'de, 's, [u8]>, Err> {
 		self.0.str_bytes(scratch)
 	}
 }
 
-fn parse_escape<'de, 's, R: Read<'de>>(
-	read: &'s mut R,
-	scratch: &'s mut Vec<u8>,
-) -> Result<(), Err> {
+fn parse_escape<'de, R: Read<'de>>(read: &mut R, scratch: &mut Vec<u8>) -> Result<(), Err> {
 	let next = read.next()?.ok_or(Err::Eof)?;
 
 	match next {
