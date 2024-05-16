@@ -4,11 +4,12 @@ use serde::de::MapAccess;
 
 pub struct TopMapAcc<'a, R> {
 	de: &'a mut Deserializer<R>,
+	is_first: bool,
 }
 
 impl<'a, 'de, R: Read<'de>> TopMapAcc<'a, R> {
 	pub fn new(de: &'a mut Deserializer<R>) -> Self {
-		TopMapAcc { de }
+		TopMapAcc { de, is_first: true }
 	}
 }
 
@@ -19,9 +20,15 @@ impl<'a, 'de, R: Read<'de>> MapAccess<'de> for TopMapAcc<'a, R> {
 	where
 		K: serde::de::DeserializeSeed<'de>,
 	{
-		let Some(_) = self.de.peek_any() else {
-			return Ok(None);
+		let peek = if self.is_first {
+			self.is_first = false;
+			self.de.peek_any()
+		} else {
+			self.de.peek_newline()?
 		};
+		if peek.is_none() {
+			return Ok(None);
+		}
 
 		seed.deserialize(&mut *self.de).map(Some)
 	}
@@ -30,7 +37,7 @@ impl<'a, 'de, R: Read<'de>> MapAccess<'de> for TopMapAcc<'a, R> {
 	where
 		V: serde::de::DeserializeSeed<'de>,
 	{
-		let peek = self.de.peek_line()?;
+		let peek = self.de.peek_line()?.ok_or(Error::Eof)?;
 
 		if peek == b'=' {
 			self.de.read.discard();

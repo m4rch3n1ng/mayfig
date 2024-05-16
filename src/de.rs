@@ -52,15 +52,38 @@ impl<'de, R: Read<'de>> Deserializer<R> {
 		}
 	}
 
-	fn peek_line(&mut self) -> Result<u8, Error> {
+	fn peek_line(&mut self) -> Result<Option<u8>, Error> {
 		loop {
-			let peek = self.read.peek().ok_or(Error::Eof)?;
+			let Some(peek) = self.read.peek() else {
+				return Ok(None);
+			};
+
 			if read::is_whitespace_line(peek) {
 				self.read.discard();
 			} else if peek == b'\n' {
 				return Err(Error::UnexpectedNewline);
 			} else {
-				return Ok(peek);
+				return Ok(Some(peek));
+			}
+		}
+	}
+
+	fn peek_newline(&mut self) -> Result<Option<u8>, Error> {
+		let mut is_newline = false;
+		loop {
+			let Some(peek) = self.read.peek() else {
+				return Ok(None);
+			};
+
+			if read::is_whitespace_line(peek) {
+				self.read.discard()
+			} else if peek == b'\n' {
+				is_newline = true;
+				self.read.discard();
+			} else if is_newline {
+				return Ok(Some(peek));
+			} else {
+				return Err(Error::ExpectedNewline);
 			}
 		}
 	}

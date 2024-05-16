@@ -5,6 +5,8 @@ pub enum Error {
 	#[error("end of file")]
 	Eof,
 
+	#[error("expected newline")]
+	ExpectedNewline,
 	#[error("unexpected newline")]
 	UnexpectedNewline,
 
