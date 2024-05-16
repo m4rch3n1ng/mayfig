@@ -42,6 +42,20 @@ pub trait Read<'de> {
 	fn num<'s>(&mut self, scratch: &'s mut Vec<u8>) -> Result<Ref<'de, 's, str>, Error>;
 
 	fn word<'s>(&mut self, scratch: &'s mut Vec<u8>) -> Result<Ref<'de, 's, str>, Error>;
+
+	fn str<'s>(&mut self, scratch: &'s mut Vec<u8>) -> Result<Ref<'de, 's, str>, Error> {
+		let r#ref = self.str_bytes(scratch)?;
+		match r#ref {
+			Ref::Borrow(v) => std::str::from_utf8(v)
+				.map(Ref::Borrow)
+				.map_err(|_| Error::InvalidUtf8),
+			Ref::Scratch(v) => std::str::from_utf8(v)
+				.map(Ref::Scratch)
+				.map_err(|_| Error::InvalidUtf8),
+		}
+	}
+
+	fn str_bytes<'s>(&mut self, scratch: &'s mut Vec<u8>) -> Result<Ref<'de, 's, [u8]>, Error>;
 }
 
 pub struct StrRead<'de> {
@@ -127,6 +141,37 @@ impl<'de> Read<'de> for StrRead<'de> {
 		let borrow = std::str::from_utf8(borrow).expect("should never fail");
 
 		let r#ref = Ref::Borrow(borrow);
+		Ok(r#ref)
+	}
+
+	fn str_bytes<'s>(&mut self, scratch: &'s mut Vec<u8>) -> Result<Ref<'de, 's, [u8]>, Error> {
+		let quote = self.next().ok_or(Error::Eof)?;
+		assert!(matches!(quote, b'"' | b'\''), "is {:?}", quote as char);
+
+		let start = self.index;
+
+		let r#ref = loop {
+			let peek = self.peek().ok_or(Error::Eof)?;
+
+			if peek == quote {
+				if scratch.is_empty() {
+					let borrow = &self.slice[start..self.index];
+					self.index += 1;
+					break Ref::Borrow(borrow);
+				} else {
+					todo!();
+				}
+			}
+
+			if peek.is_ascii_control() {
+				return Err(Error::UnescapedControl(peek as char));
+			} else if peek == b'\\' {
+				todo!()
+			} else {
+				self.index += 1;
+			}
+		};
+
 		Ok(r#ref)
 	}
 }

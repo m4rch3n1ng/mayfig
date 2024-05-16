@@ -4,6 +4,11 @@ use thiserror::Error;
 pub enum Error {
 	#[error("end of file")]
 	Eof,
+	#[error("invalid utf8")]
+	InvalidUtf8,
+
+	#[error("unescaped control character {0:?}")]
+	UnescapedControl(char),
 
 	#[error("expected newline")]
 	ExpectedNewline,
@@ -13,8 +18,11 @@ pub enum Error {
 	#[error("invalid number {0:?}")]
 	InvalidNum(String),
 
+	#[error("expected quote \" or ', got {0:?}")]
+	ExpectedQuote(char),
 	#[error("expected value assignment '=', '{{', got {0:?}")]
 	ExpectedValue(char),
+
 	#[error("expected numeric, got {0:?}")]
 	ExpectedNumeric(char),
 	#[error("expected alphabetic, got {0:?}")]

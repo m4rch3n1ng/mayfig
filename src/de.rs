@@ -89,8 +89,6 @@ impl<'de, R: Read<'de>> Deserializer<R> {
 	}
 
 	fn num<'s>(&'s mut self) -> Result<Ref<'de, 's, str>, Error> {
-		self.peek_line()?;
-
 		self.scratch.clear();
 		self.read.num(&mut self.scratch)
 	}
@@ -98,6 +96,16 @@ impl<'de, R: Read<'de>> Deserializer<R> {
 	fn word<'s>(&'s mut self) -> Result<Ref<'de, 's, str>, Error> {
 		self.scratch.clear();
 		self.read.word(&mut self.scratch)
+	}
+
+	fn str<'s>(&'s mut self) -> Result<Ref<'de, 's, str>, Error> {
+		let peek = self.read.peek().ok_or(Error::Eof)?;
+		if peek != b'"' && peek != b'\'' {
+			return Err(Error::ExpectedQuote(peek as char));
+		}
+
+		self.scratch.clear();
+		self.read.str(&mut self.scratch)
 	}
 }
 
@@ -220,14 +228,18 @@ impl<'de, 'a, R: Read<'de>> serde::Deserializer<'de> for &'a mut Deserializer<R>
 	where
 		V: serde::de::Visitor<'de>,
 	{
-		todo!()
+		let r#str = self.str()?;
+		match r#str {
+			Ref::Borrow(b) => visitor.visit_borrowed_str(b),
+			Ref::Scratch(s) => visitor.visit_str(s),
+		}
 	}
 
 	fn deserialize_string<V>(self, visitor: V) -> Result<V::Value, Self::Error>
 	where
 		V: serde::de::Visitor<'de>,
 	{
-		todo!()
+		self.deserialize_str(visitor)
 	}
 
 	fn deserialize_bytes<V>(self, visitor: V) -> Result<V::Value, Self::Error>

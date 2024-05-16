@@ -45,6 +45,7 @@ impl<'a, 'de, R: Read<'de>> MapAccess<'de> for TopMapAcc<'a, R> {
 			return Err(Error::ExpectedValue(peek as char));
 		}
 
+		let _ = self.de.peek_line()?.ok_or(Error::Eof)?;
 		seed.deserialize(&mut *self.de)
 	}
 }
