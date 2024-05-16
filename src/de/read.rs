@@ -148,7 +148,7 @@ impl<'de> Read<'de> for StrRead<'de> {
 		let quote = self.next().ok_or(Error::Eof)?;
 		assert!(matches!(quote, b'"' | b'\''), "is {:?}", quote as char);
 
-		let start = self.index;
+		let mut start = self.index;
 
 		let r#ref = loop {
 			let peek = self.peek().ok_or(Error::Eof)?;
@@ -159,14 +159,24 @@ impl<'de> Read<'de> for StrRead<'de> {
 					self.index += 1;
 					break Ref::Borrow(borrow);
 				} else {
-					todo!();
+					let slice = &self.slice[start..self.index];
+					scratch.extend_from_slice(slice);
+					self.index += 1;
+					break Ref::Scratch(scratch);
 				}
 			}
 
 			if peek.is_ascii_control() {
 				return Err(Error::UnescapedControl(peek as char));
 			} else if peek == b'\\' {
-				todo!()
+				let slice = &self.slice[start..self.index];
+				scratch.extend_from_slice(slice);
+
+				self.index += 1;
+
+				parse_escape(self, scratch)?;
+
+				start = self.index;
 			} else {
 				self.index += 1;
 			}
@@ -174,6 +184,26 @@ impl<'de> Read<'de> for StrRead<'de> {
 
 		Ok(r#ref)
 	}
+}
+
+fn parse_escape<'de, R: Read<'de>>(read: &mut R, scratch: &mut Vec<u8>) -> Result<(), Error> {
+	let next = read.next().ok_or(Error::Eof)?;
+
+	match next {
+		b'"' => scratch.push(b'"'),
+		b'\'' => scratch.push(b'\''),
+		b'\\' => scratch.push(b'\\'),
+		b'/' => scratch.push(b'/'),
+		b'n' => scratch.push(b'\n'),
+		b'r' => scratch.push(b'\r'),
+		b't' => scratch.push(b'\t'),
+		b'b' => scratch.push(b'\x08'),
+		b'f' => scratch.push(b'\x0c'),
+		b'u' => todo!("unicode escape"),
+		_ => return Err(Error::UnknownEscape(next as char)),
+	}
+
+	Ok(())
 }
 
 fn is_delimiter(ch: u8) -> bool {
@@ -192,4 +222,41 @@ pub fn is_whitespace(ch: u8) -> bool {
 
 pub fn is_whitespace_line(ch: u8) -> bool {
 	matches!(ch, b' ' | b'\t' | b'\r')
+}
+
+#[cfg(test)]
+mod test {
+	use super::{Read, StrRead};
+
+	#[test]
+	fn str() {
+		let mut scratch = Vec::new();
+
+		let s1 = String::from(r#""test""#);
+		let mut s1 = StrRead::new(&s1);
+
+		let p1 = s1.str(&mut scratch).unwrap();
+		assert_eq!(&*p1, "test");
+
+		let s2 = String::from(r#""t\"e\"st""#);
+		let mut s2 = StrRead::new(&s2);
+
+		scratch.clear();
+		let p2 = s2.str(&mut scratch).unwrap();
+		assert_eq!(&*p2, r#"t"e"st"#);
+
+		let s3 = String::from(r#""t\tt""#);
+		let mut s3 = StrRead::new(&s3);
+
+		scratch.clear();
+		let p3 = s3.str(&mut scratch).unwrap();
+		assert_eq!(&*p3, "t\tt");
+
+		let s4 = String::from(r#""t\\\\\"\"\\\"t""#);
+		let mut s4 = StrRead::new(&s4);
+
+		scratch.clear();
+		let p4 = s4.str(&mut scratch).unwrap();
+		assert_eq!(&*p4, r#"t\\""\"t"#);
+	}
 }

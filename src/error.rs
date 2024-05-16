@@ -7,6 +7,8 @@ pub enum Error {
 	#[error("invalid utf8")]
 	InvalidUtf8,
 
+	#[error("unknown escpae sequence \"\\{0}\"")]
+	UnknownEscape(char),
 	#[error("unescaped control character {0:?}")]
 	UnescapedControl(char),
 
