@@ -4,12 +4,12 @@ use serde_derive::Deserialize;
 #[allow(dead_code)]
 struct Txt {
 	test: u32,
-	stuf: String,
+	stuf: Vec<u32>,
 }
 
 const TXT: &str = r#"
 test = 20
-stuf = "test"
+stuf = [ ,, 20 ,,, 40 ,, ]
 "#;
 
 fn main() {

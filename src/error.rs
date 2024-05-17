@@ -24,6 +24,10 @@ pub enum Error {
 	ExpectedQuote(char),
 	#[error("expected value assignment '=', '{{', got {0:?}")]
 	ExpectedValue(char),
+	#[error("expected seq '[', got {0:?}")]
+	ExpectedSeq(char),
+	#[error("expected end of seq ']', got {0:?}")]
+	ExpectedSeqEnd(char),
 
 	#[error("expected numeric, got {0:?}")]
 	ExpectedNumeric(char),

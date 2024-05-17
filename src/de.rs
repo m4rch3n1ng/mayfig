@@ -2,7 +2,7 @@ use self::{
 	access::TopMapAcc,
 	read::{Read, Ref, StrRead},
 };
-use crate::error::Error;
+use crate::{de::access::SeqAcc, error::Error};
 
 mod access;
 mod read;
@@ -85,6 +85,12 @@ impl<'de, R: Read<'de>> Deserializer<R> {
 			} else {
 				return Err(Error::ExpectedNewline);
 			}
+		}
+	}
+
+	fn discard_commata(&mut self) {
+		while self.peek_any().is_some_and(|peek| peek == b',') {
+			self.read.discard();
 		}
 	}
 
@@ -296,26 +302,46 @@ impl<'de, 'a, R: Read<'de>> serde::Deserializer<'de> for &'a mut Deserializer<R>
 	where
 		V: serde::de::Visitor<'de>,
 	{
-		todo!()
+		self.indent += 1;
+
+		let next = self.read.next().ok_or(Error::Eof)?;
+		if next != b'[' {
+			return Err(Error::ExpectedSeq(next as char));
+		}
+
+		let seq = SeqAcc::new(self);
+		let val = visitor.visit_seq(seq)?;
+
+		self.discard_commata();
+		let next = self.peek_any().ok_or(Error::Eof)?;
+		self.read.discard();
+
+		if next != b']' {
+			return Err(Error::ExpectedSeqEnd(next as char));
+		}
+
+		self.indent -= 1;
+
+		Ok(val)
 	}
 
-	fn deserialize_tuple<V>(self, len: usize, visitor: V) -> Result<V::Value, Self::Error>
+	fn deserialize_tuple<V>(self, _len: usize, visitor: V) -> Result<V::Value, Self::Error>
 	where
 		V: serde::de::Visitor<'de>,
 	{
-		todo!()
+		self.deserialize_seq(visitor)
 	}
 
 	fn deserialize_tuple_struct<V>(
 		self,
-		name: &'static str,
-		len: usize,
+		_name: &'static str,
+		_len: usize,
 		visitor: V,
 	) -> Result<V::Value, Self::Error>
 	where
 		V: serde::de::Visitor<'de>,
 	{
-		todo!()
+		self.deserialize_seq(visitor)
 	}
 
 	fn deserialize_map<V>(self, visitor: V) -> Result<V::Value, Self::Error>

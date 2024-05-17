@@ -1,6 +1,32 @@
 use super::read::Read;
 use crate::{error::Error, Deserializer};
-use serde::de::MapAccess;
+use serde::de::{MapAccess, SeqAccess};
+
+pub struct SeqAcc<'a, R> {
+	de: &'a mut Deserializer<R>,
+}
+
+impl<'a, 'de, R: Read<'de>> SeqAcc<'a, R> {
+	pub fn new(de: &'a mut Deserializer<R>) -> Self {
+		SeqAcc { de }
+	}
+}
+
+impl<'a, 'de, R: Read<'de>> SeqAccess<'de> for SeqAcc<'a, R> {
+	type Error = Error;
+
+	fn next_element_seed<T>(&mut self, seed: T) -> Result<Option<T::Value>, Self::Error>
+	where
+		T: serde::de::DeserializeSeed<'de>,
+	{
+		self.de.discard_commata();
+		if self.de.peek_any().ok_or(Error::Eof)? == b']' {
+			return Ok(None);
+		}
+
+		seed.deserialize(&mut *self.de).map(Some)
+	}
+}
 
 pub struct TopMapAcc<'a, R> {
 	de: &'a mut Deserializer<R>,
