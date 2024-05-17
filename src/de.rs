@@ -2,7 +2,10 @@ use self::{
 	access::TopMapAcc,
 	read::{Read, Ref, StrRead},
 };
-use crate::{de::access::SeqAcc, error::Error};
+use crate::{
+	de::access::{MapAcc, SeqAcc},
+	error::Error,
+};
 
 mod access;
 mod read;
@@ -357,18 +360,27 @@ impl<'de, 'a, R: Read<'de>> serde::Deserializer<'de> for &'a mut Deserializer<R>
 	{
 		let peek = self.peek_any();
 		let value = if let Some(b'{') = peek {
-			todo!()
+			self.indent += 1;
+			self.read.discard();
+
+			let map_acc = MapAcc::new(self);
+			let val = visitor.visit_map(map_acc)?;
+
+			self.indent -= 1;
+
+			Ok(val)
 		} else if self.indent != 0 {
-			todo!()
+			let peek = peek.ok_or(Error::Eof)?;
+			return Err(Error::ExpectedMap(peek as char));
 		} else {
 			self.indent += 1;
 
 			let top_map_acc = TopMapAcc::new(self);
-			let value = visitor.visit_map(top_map_acc);
+			let val = visitor.visit_map(top_map_acc)?;
 
 			self.indent -= 1;
 
-			value
+			Ok(val)
 		};
 
 		value

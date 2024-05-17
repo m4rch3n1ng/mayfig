@@ -3,13 +3,19 @@ use serde_derive::Deserialize;
 #[derive(Debug, Deserialize)]
 #[allow(dead_code)]
 struct Txt {
-	test: u32,
-	stuf: Vec<u32>,
+	n: Nested,
+}
+
+#[allow(dead_code)]
+#[derive(Debug, Deserialize)]
+struct Nested {
+	t: u32,
 }
 
 const TXT: &str = r#"
-test = 20
-stuf = [ ,, 20 ,,, 40 ,, ]
+n {
+	t = 20
+}
 "#;
 
 fn main() {
