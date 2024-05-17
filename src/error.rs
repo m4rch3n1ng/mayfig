@@ -29,6 +29,9 @@ pub enum Error {
 	#[error("expected end of seq ']', got {0:?}")]
 	ExpectedSeqEnd(char),
 
+	#[error("expected delimiter after string, got {0:?}")]
+	ExpectedDelimiter(char),
+
 	#[error("expected numeric, got {0:?}")]
 	ExpectedNumeric(char),
 	#[error("expected alphabetic, got {0:?}")]

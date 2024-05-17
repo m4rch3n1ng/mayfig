@@ -182,6 +182,12 @@ impl<'de> Read<'de> for StrRead<'de> {
 			}
 		};
 
+		if let Some(peek) = self.peek() {
+			if !is_delimiter(peek) {
+				return Err(Error::ExpectedDelimiter(char::from(peek)));
+			}
+		}
+
 		Ok(r#ref)
 	}
 }

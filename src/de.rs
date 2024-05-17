@@ -41,6 +41,7 @@ where
 }
 
 impl<'de, R: Read<'de>> Deserializer<R> {
+	/// peek next character that isn't a whitespace
 	fn peek_any(&mut self) -> Option<u8> {
 		loop {
 			let peek = self.read.peek()?;
@@ -52,6 +53,9 @@ impl<'de, R: Read<'de>> Deserializer<R> {
 		}
 	}
 
+	/// peek next character on the current line, that isn't whitespace.
+	///
+	/// returns an [`Error::UnexpectedNewline`] error if nothing is found before a new line
 	fn peek_line(&mut self) -> Result<Option<u8>, Error> {
 		loop {
 			let Some(peek) = self.read.peek() else {
@@ -68,6 +72,9 @@ impl<'de, R: Read<'de>> Deserializer<R> {
 		}
 	}
 
+	/// peek next character on the next line, that isn't whitespace.
+	///
+	/// returns an [`Error::ExpectedNewline`] error if something was found before the linebreak
 	fn peek_newline(&mut self) -> Result<Option<u8>, Error> {
 		let mut is_newline = false;
 		loop {
