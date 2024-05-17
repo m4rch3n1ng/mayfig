@@ -45,6 +45,8 @@ pub enum Error {
 
 	#[error("unsupported unit type")]
 	UnsupportedUnit,
+	#[error("unsupported map key type {0}")]
+	UnsupportedMapKey(&'static str),
 
 	#[error("custom: {0}")]
 	Custom(String),

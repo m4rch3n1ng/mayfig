@@ -1,20 +1,16 @@
 use serde_derive::Deserialize;
+use std::collections::HashMap;
 
 #[derive(Debug, Deserialize)]
 #[allow(dead_code)]
 struct Txt {
-	n: Nested,
-}
-
-#[allow(dead_code)]
-#[derive(Debug, Deserialize)]
-struct Nested {
-	t: u32,
+	m: HashMap<String, u32>,
 }
 
 const TXT: &str = r#"
-n {
+m {
 	t = 20
+	v = 40
 }
 "#;
 

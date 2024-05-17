@@ -1,4 +1,4 @@
-use super::read::Read;
+use super::{map::MapKey, read::Read};
 use crate::{error::Error, Deserializer};
 use serde::de::{MapAccess, SeqAccess};
 
@@ -56,7 +56,8 @@ impl<'a, 'de, R: Read<'de>> MapAccess<'de> for TopMapAcc<'a, R> {
 			return Ok(None);
 		}
 
-		seed.deserialize(&mut *self.de).map(Some)
+		let map_key = MapKey::new(self.de);
+		seed.deserialize(map_key).map(Some)
 	}
 
 	fn next_value_seed<V>(&mut self, seed: V) -> Result<V::Value, Self::Error>
@@ -106,7 +107,8 @@ impl<'a, 'de, R: Read<'de>> MapAccess<'de> for MapAcc<'a, R> {
 			return Ok(None);
 		}
 
-		seed.deserialize(&mut *self.de).map(Some)
+		let map_key = MapKey::new(self.de);
+		seed.deserialize(map_key).map(Some)
 	}
 
 	fn next_value_seed<V>(&mut self, seed: V) -> Result<V::Value, Self::Error>

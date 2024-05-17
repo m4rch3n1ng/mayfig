@@ -8,6 +8,7 @@ use crate::{
 };
 
 mod access;
+mod map;
 mod read;
 
 pub struct Deserializer<R> {
