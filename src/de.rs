@@ -276,14 +276,14 @@ impl<'de, 'a, R: Read<'de>> serde::Deserializer<'de> for &'a mut Deserializer<R>
 	where
 		V: serde::de::Visitor<'de>,
 	{
-		todo!()
+		visitor.visit_some(self)
 	}
 
 	fn deserialize_unit<V>(self, visitor: V) -> Result<V::Value, Self::Error>
 	where
 		V: serde::de::Visitor<'de>,
 	{
-		todo!()
+		Err(Error::UnsupportedUnit)
 	}
 
 	fn deserialize_unit_struct<V>(
@@ -294,7 +294,7 @@ impl<'de, 'a, R: Read<'de>> serde::Deserializer<'de> for &'a mut Deserializer<R>
 	where
 		V: serde::de::Visitor<'de>,
 	{
-		todo!()
+		Err(Error::UnsupportedUnit)
 	}
 
 	fn deserialize_newtype_struct<V>(
@@ -305,7 +305,7 @@ impl<'de, 'a, R: Read<'de>> serde::Deserializer<'de> for &'a mut Deserializer<R>
 	where
 		V: serde::de::Visitor<'de>,
 	{
-		todo!()
+		visitor.visit_newtype_struct(self)
 	}
 
 	fn deserialize_seq<V>(self, visitor: V) -> Result<V::Value, Self::Error>

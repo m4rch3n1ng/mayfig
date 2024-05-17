@@ -43,6 +43,9 @@ pub enum Error {
 	#[error("expected alphanumeric, got {0:?}")]
 	ExpectedAlphaNumeric(char),
 
+	#[error("unsupported unit type")]
+	UnsupportedUnit,
+
 	#[error("custom: {0}")]
 	Custom(String),
 }
