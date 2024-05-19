@@ -18,8 +18,7 @@ n {
 "#;
 
 const T2: &str = r#"{
-	n { t = 20
-	}
+	n { t = 20 }
 }"#;
 
 const T3: &str = r#"

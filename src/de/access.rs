@@ -95,6 +95,11 @@ impl<'a, 'de, R: Read<'de>> MapAccess<'de> for MapAcc<'a, R> {
 	where
 		K: serde::de::DeserializeSeed<'de>,
 	{
+		if let Ok(Some(b'}')) = self.de.peek_line() {
+			self.de.read.discard();
+			return Ok(None);
+		}
+
 		let peek = if self.is_first {
 			self.is_first = false;
 			self.de.peek_any()
