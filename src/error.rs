@@ -17,6 +17,8 @@ pub enum Error {
 	#[error("unexpected newline")]
 	UnexpectedNewline,
 
+	#[error("invalid boolean {0:?}")]
+	InvalidBool(String),
 	#[error("invalid number {0:?}")]
 	InvalidNum(String),
 

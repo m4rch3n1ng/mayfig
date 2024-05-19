@@ -120,7 +120,7 @@ impl<'a, 'de, R: Read<'de>> serde::de::Deserializer<'de> for MapKey<'a, R> {
 	where
 		V: serde::de::Visitor<'de>,
 	{
-		todo!()
+		self.deserialize_str(visitor)
 	}
 
 	fn deserialize_str<V>(self, visitor: V) -> Result<V::Value, Self::Error>
@@ -137,14 +137,14 @@ impl<'a, 'de, R: Read<'de>> serde::de::Deserializer<'de> for MapKey<'a, R> {
 		self.deserialize_str(visitor)
 	}
 
-	fn deserialize_bytes<V>(self, visitor: V) -> Result<V::Value, Self::Error>
+	fn deserialize_bytes<V>(self, _visitor: V) -> Result<V::Value, Self::Error>
 	where
 		V: serde::de::Visitor<'de>,
 	{
 		Err(Error::UnsupportedMapKey("bytes"))
 	}
 
-	fn deserialize_byte_buf<V>(self, visitor: V) -> Result<V::Value, Self::Error>
+	fn deserialize_byte_buf<V>(self, _visitor: V) -> Result<V::Value, Self::Error>
 	where
 		V: serde::de::Visitor<'de>,
 	{
@@ -159,7 +159,7 @@ impl<'a, 'de, R: Read<'de>> serde::de::Deserializer<'de> for MapKey<'a, R> {
 		visitor.visit_some(self)
 	}
 
-	fn deserialize_unit<V>(self, visitor: V) -> Result<V::Value, Self::Error>
+	fn deserialize_unit<V>(self, _visitor: V) -> Result<V::Value, Self::Error>
 	where
 		V: serde::de::Visitor<'de>,
 	{
@@ -168,8 +168,8 @@ impl<'a, 'de, R: Read<'de>> serde::de::Deserializer<'de> for MapKey<'a, R> {
 
 	fn deserialize_unit_struct<V>(
 		self,
-		name: &'static str,
-		visitor: V,
+		_name: &'static str,
+		_visitor: V,
 	) -> Result<V::Value, Self::Error>
 	where
 		V: serde::de::Visitor<'de>,
@@ -179,7 +179,7 @@ impl<'a, 'de, R: Read<'de>> serde::de::Deserializer<'de> for MapKey<'a, R> {
 
 	fn deserialize_newtype_struct<V>(
 		self,
-		name: &'static str,
+		_name: &'static str,
 		visitor: V,
 	) -> Result<V::Value, Self::Error>
 	where
@@ -214,7 +214,7 @@ impl<'a, 'de, R: Read<'de>> serde::de::Deserializer<'de> for MapKey<'a, R> {
 		todo!()
 	}
 
-	fn deserialize_map<V>(self, visitor: V) -> Result<V::Value, Self::Error>
+	fn deserialize_map<V>(self, _visitor: V) -> Result<V::Value, Self::Error>
 	where
 		V: serde::de::Visitor<'de>,
 	{
@@ -223,9 +223,9 @@ impl<'a, 'de, R: Read<'de>> serde::de::Deserializer<'de> for MapKey<'a, R> {
 
 	fn deserialize_struct<V>(
 		self,
-		name: &'static str,
-		fields: &'static [&'static str],
-		visitor: V,
+		_name: &'static str,
+		_fields: &'static [&'static str],
+		_visitor: V,
 	) -> Result<V::Value, Self::Error>
 	where
 		V: serde::de::Visitor<'de>,

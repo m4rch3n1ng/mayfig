@@ -141,7 +141,9 @@ impl<'de, 'a, R: Read<'de>> serde::Deserializer<'de> for &'a mut Deserializer<R>
 	where
 		V: serde::de::Visitor<'de>,
 	{
-		todo!()
+		let w = self.word()?;
+		let b = read::parse_bool(&w)?;
+		visitor.visit_bool(b)
 	}
 
 	fn deserialize_u8<V>(self, visitor: V) -> Result<V::Value, Self::Error>
@@ -238,7 +240,7 @@ impl<'de, 'a, R: Read<'de>> serde::Deserializer<'de> for &'a mut Deserializer<R>
 	where
 		V: serde::de::Visitor<'de>,
 	{
-		todo!()
+		self.deserialize_str(visitor)
 	}
 
 	fn deserialize_str<V>(self, visitor: V) -> Result<V::Value, Self::Error>
@@ -270,7 +272,7 @@ impl<'de, 'a, R: Read<'de>> serde::Deserializer<'de> for &'a mut Deserializer<R>
 	where
 		V: serde::de::Visitor<'de>,
 	{
-		todo!()
+		self.deserialize_bytes(visitor)
 	}
 
 	fn deserialize_option<V>(self, visitor: V) -> Result<V::Value, Self::Error>
@@ -280,7 +282,7 @@ impl<'de, 'a, R: Read<'de>> serde::Deserializer<'de> for &'a mut Deserializer<R>
 		visitor.visit_some(self)
 	}
 
-	fn deserialize_unit<V>(self, visitor: V) -> Result<V::Value, Self::Error>
+	fn deserialize_unit<V>(self, _visitor: V) -> Result<V::Value, Self::Error>
 	where
 		V: serde::de::Visitor<'de>,
 	{
@@ -289,8 +291,8 @@ impl<'de, 'a, R: Read<'de>> serde::Deserializer<'de> for &'a mut Deserializer<R>
 
 	fn deserialize_unit_struct<V>(
 		self,
-		name: &'static str,
-		visitor: V,
+		_name: &'static str,
+		_visitor: V,
 	) -> Result<V::Value, Self::Error>
 	where
 		V: serde::de::Visitor<'de>,
@@ -300,7 +302,7 @@ impl<'de, 'a, R: Read<'de>> serde::Deserializer<'de> for &'a mut Deserializer<R>
 
 	fn deserialize_newtype_struct<V>(
 		self,
-		name: &'static str,
+		_name: &'static str,
 		visitor: V,
 	) -> Result<V::Value, Self::Error>
 	where

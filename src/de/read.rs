@@ -222,6 +222,16 @@ fn is_delimiter(ch: u8) -> bool {
 		|| ch == b']'
 }
 
+pub fn parse_bool(word: &str) -> Result<bool, Error> {
+	if word.eq_ignore_ascii_case("true") {
+		Ok(true)
+	} else if word.eq_ignore_ascii_case("false") {
+		Ok(false)
+	} else {
+		Err(Error::InvalidBool(word.to_owned()))
+	}
+}
+
 pub fn is_whitespace(ch: u8) -> bool {
 	matches!(ch, b' ' | b'\t' | b'\r' | b'\n')
 }
