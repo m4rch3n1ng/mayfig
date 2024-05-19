@@ -1,5 +1,5 @@
 use serde_derive::Deserialize;
-use std::collections::HashMap;
+use std::collections::{BTreeMap, HashMap};
 
 #[derive(Debug, Deserialize)]
 struct T {
@@ -80,4 +80,40 @@ fn map() {
 	assert_eq!(m2.m.get("v"), Some(&"one"));
 	assert_eq!(m2.m.get("t"), Some(&"two"));
 	assert_eq!(m2.m.get("f"), Some(&"three"));
+}
+
+#[derive(Debug, Deserialize)]
+struct S<'a> {
+	t: HashMap<(u8, u8), (u8, u8)>,
+	#[serde(borrow)]
+	v: BTreeMap<Vec<&'a str>, Vec<&'a str>>,
+}
+
+const S: &str = r#"
+t {
+	[ 0 0 ] = [ 1 1 ]
+	[ 0 1 ] = [ 1 0 ]
+}
+
+v {
+	[ "ctrl" "tab" ] = [ "switch" ]
+	[ "ctrl" "shift" "t" ] = [ "exec" "terminal" ]
+}
+"#;
+
+#[test]
+fn weird_keys() {
+	let m2 = mayfig::from_str::<S>(S);
+	let m2 = m2.unwrap();
+
+	assert_eq!(m2.t.len(), 2);
+	assert_eq!(m2.t.get(&(0, 0)), Some(&(1, 1)));
+	assert_eq!(m2.t.get(&(0, 1)), Some(&(1, 0)));
+
+	assert_eq!(m2.v.len(), 2);
+	assert_eq!(m2.v.get(&["ctrl", "tab"] as &[_]), Some(&vec!["switch"]));
+	assert_eq!(
+		m2.v.get(&["ctrl", "shift", "t"] as &[_]),
+		Some(&vec!["exec", "terminal"])
+	);
 }

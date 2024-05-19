@@ -192,26 +192,26 @@ impl<'a, 'de, R: Read<'de>> serde::de::Deserializer<'de> for MapKey<'a, R> {
 	where
 		V: serde::de::Visitor<'de>,
 	{
-		todo!()
+		self.de.deserialize_seq(visitor)
 	}
 
-	fn deserialize_tuple<V>(self, len: usize, visitor: V) -> Result<V::Value, Self::Error>
+	fn deserialize_tuple<V>(self, _len: usize, visitor: V) -> Result<V::Value, Self::Error>
 	where
 		V: serde::de::Visitor<'de>,
 	{
-		todo!()
+		self.deserialize_seq(visitor)
 	}
 
 	fn deserialize_tuple_struct<V>(
 		self,
-		name: &'static str,
-		len: usize,
+		_name: &'static str,
+		_len: usize,
 		visitor: V,
 	) -> Result<V::Value, Self::Error>
 	where
 		V: serde::de::Visitor<'de>,
 	{
-		todo!()
+		self.deserialize_seq(visitor)
 	}
 
 	fn deserialize_map<V>(self, _visitor: V) -> Result<V::Value, Self::Error>
