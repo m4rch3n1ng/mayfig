@@ -41,7 +41,7 @@ two =
 fn is_not_newline() {
 	let t1 = mayfig::from_str::<Tst>(NO1);
 	let e2 = t1.unwrap_err();
-	assert!(matches!(e2, Error::ExpectedNewline));
+	assert!(matches!(e2, Error::ExpectedNewline(_)));
 
 	let t2 = mayfig::from_str::<Tst>(NO2);
 	let e2 = t2.unwrap_err();

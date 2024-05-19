@@ -1,5 +1,6 @@
 use self::{
 	access::TopMapAcc,
+	r#enum::TaggedEnumAcc,
 	read::{Read, Ref, SliceRead, StrRead},
 };
 use crate::{
@@ -8,6 +9,7 @@ use crate::{
 };
 
 mod access;
+mod r#enum;
 mod map;
 mod read;
 
@@ -108,7 +110,7 @@ impl<'de, R: Read<'de>> Deserializer<R> {
 			} else if is_newline {
 				return Ok(Some(peek));
 			} else {
-				return Err(Error::ExpectedNewline);
+				return Err(Error::ExpectedNewline(peek as char));
 			}
 		}
 	}
@@ -121,7 +123,14 @@ impl<'de, R: Read<'de>> Deserializer<R> {
 
 	fn num<'s>(&'s mut self) -> Result<Ref<'de, 's, str>, Error> {
 		self.scratch.clear();
-		self.read.num(&mut self.scratch)
+
+		let r#ref = self.read.num(&mut self.scratch)?;
+		if r#ref.is_empty() {
+			let peek = self.read.peek().ok_or(Error::Eof)?;
+			Err(Error::ExpectedNumeric(peek as char))
+		} else {
+			Ok(r#ref)
+		}
 	}
 
 	fn word<'s>(&'s mut self) -> Result<Ref<'de, 's, str>, Error> {
@@ -294,7 +303,7 @@ impl<'de, 'a, R: Read<'de>> serde::Deserializer<'de> for &'a mut Deserializer<R>
 				}
 			}
 			b'[' => self.deserialize_seq(visitor),
-			_ => Err(Error::ExpectedBytes(peek as char))
+			_ => Err(Error::ExpectedBytes(peek as char)),
 		}
 	}
 
@@ -440,7 +449,16 @@ impl<'de, 'a, R: Read<'de>> serde::Deserializer<'de> for &'a mut Deserializer<R>
 	where
 		V: serde::de::Visitor<'de>,
 	{
-		todo!()
+		let peek = self.read.peek().ok_or(Error::Eof)?;
+
+		if peek == b'{' {
+			todo!()
+		} else if peek == b'"' || peek == b'\'' {
+			let acc = TaggedEnumAcc::new(self);
+			visitor.visit_enum(acc)
+		} else {
+			todo!()
+		}
 	}
 
 	fn deserialize_identifier<V>(self, visitor: V) -> Result<V::Value, Self::Error>

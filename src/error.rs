@@ -12,8 +12,8 @@ pub enum Error {
 	#[error("unescaped control character {0:?}")]
 	UnescapedControl(char),
 
-	#[error("expected newline")]
-	ExpectedNewline,
+	#[error("expected newline, found {0:?} first")]
+	ExpectedNewline(char),
 	#[error("unexpected newline")]
 	UnexpectedNewline,
 
