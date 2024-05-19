@@ -7,7 +7,7 @@ pub enum Error {
 	#[error("invalid utf8")]
 	InvalidUtf8,
 
-	#[error("unknown escpae sequence \"\\{0}\"")]
+	#[error("unknown escape sequence {0:?}")]
 	UnknownEscape(char),
 	#[error("unescaped control character {0:?}")]
 	UnescapedControl(char),
@@ -34,6 +34,8 @@ pub enum Error {
 	ExpectedSeq(char),
 	#[error("expected end of seq ']', got {0:?}")]
 	ExpectedSeqEnd(char),
+	#[error("expected quote ', \" or seq, got {0:?}")]
+	ExpectedBytes(char),
 
 	#[error("expected delimiter after string, got {0:?}")]
 	ExpectedDelimiter(char),

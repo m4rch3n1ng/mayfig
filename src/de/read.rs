@@ -58,21 +58,21 @@ pub trait Read<'de> {
 	fn str_bytes<'s>(&mut self, scratch: &'s mut Vec<u8>) -> Result<Ref<'de, 's, [u8]>, Error>;
 }
 
-pub struct StrRead<'de> {
+pub struct SliceRead<'de> {
 	slice: &'de [u8],
 	index: usize,
 }
 
-impl<'de> StrRead<'de> {
-	pub fn new(input: &'de str) -> Self {
-		StrRead {
-			slice: input.as_bytes(),
+impl<'de> SliceRead<'de> {
+	pub fn new(input: &'de [u8]) -> Self {
+		SliceRead {
+			slice: input,
 			index: 0,
 		}
 	}
 }
 
-impl<'de> Read<'de> for StrRead<'de> {
+impl<'de> Read<'de> for SliceRead<'de> {
 	fn peek(&mut self) -> Option<u8> {
 		if self.index < self.slice.len() {
 			let ch = self.slice[self.index];
@@ -184,11 +184,46 @@ impl<'de> Read<'de> for StrRead<'de> {
 
 		if let Some(peek) = self.peek() {
 			if !is_delimiter(peek) {
-				return Err(Error::ExpectedDelimiter(char::from(peek)));
+				return Err(Error::ExpectedDelimiter(peek as char));
 			}
 		}
 
 		Ok(r#ref)
+	}
+}
+
+pub struct StrRead<'de>(SliceRead<'de>);
+
+impl<'de> StrRead<'de> {
+	pub fn new(input: &'de str) -> Self {
+		let slice = SliceRead::new(input.as_bytes());
+		StrRead(slice)
+	}
+}
+
+impl<'de> Read<'de> for StrRead<'de> {
+	fn peek(&mut self) -> Option<u8> {
+		self.0.peek()
+	}
+
+	fn next(&mut self) -> Option<u8> {
+		self.0.next()
+	}
+
+	fn discard(&mut self) {
+		self.0.discard();
+	}
+
+	fn num<'s>(&mut self, scratch: &'s mut Vec<u8>) -> Result<Ref<'de, 's, str>, Error> {
+		self.0.num(scratch)
+	}
+
+	fn word<'s>(&mut self, scratch: &'s mut Vec<u8>) -> Result<Ref<'de, 's, str>, Error> {
+		self.0.word(scratch)
+	}
+
+	fn str_bytes<'s>(&mut self, scratch: &'s mut Vec<u8>) -> Result<Ref<'de, 's, [u8]>, Error> {
+		self.0.str_bytes(scratch)
 	}
 }
 

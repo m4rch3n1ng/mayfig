@@ -2,4 +2,4 @@ pub mod de;
 pub mod error;
 
 #[doc(inline)]
-pub use de::{from_str, Deserializer};
+pub use de::{from_str, from_slice, Deserializer};

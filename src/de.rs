@@ -1,6 +1,6 @@
 use self::{
 	access::TopMapAcc,
-	read::{Read, Ref, StrRead},
+	read::{Read, Ref, SliceRead, StrRead},
 };
 use crate::{
 	de::access::{MapAcc, SeqAcc},
@@ -40,8 +40,22 @@ where
 	T: serde::de::Deserialize<'a>,
 {
 	let mut deserializer = Deserializer::from_str(input);
-	let t = T::deserialize(&mut deserializer);
-	t
+	T::deserialize(&mut deserializer)
+}
+
+impl<'de> Deserializer<SliceRead<'de>> {
+	fn from_slice(input: &'de [u8]) -> Self {
+		let read = SliceRead::new(input);
+		Deserializer::new(read)
+	}
+}
+
+pub fn from_slice<'a, T>(input: &'a [u8]) -> Result<T, Error>
+where
+	T: serde::de::Deserialize<'a>,
+{
+	let mut deserializer = Deserializer::from_slice(input);
+	T::deserialize(&mut deserializer)
 }
 
 impl<'de, R: Read<'de>> Deserializer<R> {
@@ -123,6 +137,11 @@ impl<'de, R: Read<'de>> Deserializer<R> {
 
 		self.scratch.clear();
 		self.read.str(&mut self.scratch)
+	}
+
+	fn str_bytes<'s>(&'s mut self) -> Result<Ref<'de, 's, [u8]>, Error> {
+		self.scratch.clear();
+		self.read.str_bytes(&mut self.scratch)
 	}
 }
 
@@ -265,7 +284,18 @@ impl<'de, 'a, R: Read<'de>> serde::Deserializer<'de> for &'a mut Deserializer<R>
 	where
 		V: serde::de::Visitor<'de>,
 	{
-		todo!()
+		let peek = self.read.peek().ok_or(Error::Eof)?;
+		match peek {
+			b'"' | b'\'' => {
+				let r#ref = self.str_bytes()?;
+				match r#ref {
+					Ref::Borrow(b) => visitor.visit_borrowed_bytes(b),
+					Ref::Scratch(s) => visitor.visit_bytes(s),
+				}
+			}
+			b'[' => self.deserialize_seq(visitor),
+			_ => Err(Error::ExpectedBytes(peek as char))
+		}
 	}
 
 	fn deserialize_byte_buf<V>(self, visitor: V) -> Result<V::Value, Self::Error>
