@@ -117,9 +117,7 @@ enum V {
 	Unit,
 	New(u32),
 	Val(u32, u32),
-	Str {
-		val: u32,
-	},
+	Str { val: u32 },
 }
 
 #[derive(Debug, Deserialize, PartialEq, Eq, Hash)]
