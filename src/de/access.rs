@@ -56,8 +56,8 @@ impl<'a, 'de, R: Read<'de>> MapAccess<'de> for TopMapAcc<'a, R> {
 			return Ok(None);
 		}
 
-		let map_key = MapKey::new(self.de);
-		seed.deserialize(map_key).map(Some)
+		let mut map_key = MapKey::new(self.de);
+		seed.deserialize(&mut map_key).map(Some)
 	}
 
 	fn next_value_seed<V>(&mut self, seed: V) -> Result<V::Value, Self::Error>
@@ -112,8 +112,8 @@ impl<'a, 'de, R: Read<'de>> MapAccess<'de> for MapAcc<'a, R> {
 			return Ok(None);
 		}
 
-		let map_key = MapKey::new(self.de);
-		seed.deserialize(map_key).map(Some)
+		let mut map_key = MapKey::new(&mut *self.de);
+		seed.deserialize(&mut map_key).map(Some)
 	}
 
 	fn next_value_seed<V>(&mut self, seed: V) -> Result<V::Value, Self::Error>

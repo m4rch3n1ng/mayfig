@@ -1,5 +1,6 @@
 use mayfig::error::Error;
 use serde_derive::Deserialize;
+use std::collections::HashMap;
 
 #[derive(Debug, Deserialize)]
 struct Tag<'a> {
@@ -108,4 +109,57 @@ fn tagged() {
 	let t9 = mayfig::from_str::<Tag>(T9);
 	let t9 = t9.unwrap();
 	assert_eq!(t9.t, Tagged::Ws(4));
+}
+
+#[derive(Debug, Deserialize, PartialEq, Eq, Hash)]
+#[serde(rename_all = "snake_case")]
+enum V {
+	Unit,
+	New(u32),
+	Val(u32, u32),
+	Str {
+		val: u32,
+	},
+}
+
+#[derive(Debug, Deserialize, PartialEq, Eq, Hash)]
+#[serde(rename_all = "snake_case")]
+enum M<'a> {
+	Tag,
+	#[serde(borrow)]
+	Key(&'a str),
+	Val(i32, u32),
+	Seq(Vec<&'a str>),
+}
+
+#[derive(Debug, Deserialize)]
+#[allow(dead_code)]
+struct Map<'a> {
+	#[serde(borrow)]
+	map: HashMap<M<'a>, V>,
+}
+
+const M1: &str = r#"
+map {
+	tag = "val" [ 20 40 ]
+	key [ "test" ] = "str" { val = 20 }
+	val [ -2 2 ] = "unit"
+	seq [ "one" "two" "three" ] = "new" [ 4 ]
+	seq [] = "unit"
+}
+"#;
+
+#[test]
+fn map() {
+	let m1 = mayfig::from_str::<Map>(M1);
+	let m1 = m1.unwrap();
+	assert_eq!(m1.map.len(), 5);
+	assert_eq!(m1.map.get(&M::Tag), Some(&V::Val(20, 40)));
+	assert_eq!(m1.map.get(&M::Key("test")), Some(&V::Str { val: 20 }));
+	assert_eq!(m1.map.get(&M::Val(-2, 2)), Some(&V::Unit));
+	assert_eq!(
+		m1.map.get(&M::Seq(vec!["one", "two", "three"])),
+		Some(&V::New(4))
+	);
+	assert_eq!(m1.map.get(&M::Seq(vec![])), Some(&V::Unit));
 }

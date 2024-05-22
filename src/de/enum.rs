@@ -1,21 +1,24 @@
-use super::{access::SeqAcc, read::Read};
+use super::{
+	access::SeqAcc,
+	read::{Read, Ref},
+};
 use crate::{error::Error, Deserializer};
 use serde::{
 	de::{Deserializer as _, EnumAccess, VariantAccess},
 	forward_to_deserialize_any,
 };
 
-pub struct TaggedEnumAcc<'a, R> {
+pub struct TaggedEnumValueAcc<'a, R> {
 	de: &'a mut Deserializer<R>,
 }
 
-impl<'a, 'de, R: Read<'de>> TaggedEnumAcc<'a, R> {
+impl<'a, 'de, R: Read<'de>> TaggedEnumValueAcc<'a, R> {
 	pub fn new(de: &'a mut Deserializer<R>) -> Self {
-		TaggedEnumAcc { de }
+		TaggedEnumValueAcc { de }
 	}
 }
 
-impl<'a, 'de, R: Read<'de>> EnumAccess<'de> for TaggedEnumAcc<'a, R> {
+impl<'a, 'de, R: Read<'de>> EnumAccess<'de> for TaggedEnumValueAcc<'a, R> {
 	type Error = Error;
 	type Variant = Self;
 
@@ -28,7 +31,7 @@ impl<'a, 'de, R: Read<'de>> EnumAccess<'de> for TaggedEnumAcc<'a, R> {
 	}
 }
 
-impl<'a, 'de, R: Read<'de>> VariantAccess<'de> for TaggedEnumAcc<'a, R> {
+impl<'a, 'de, R: Read<'de>> VariantAccess<'de> for TaggedEnumValueAcc<'a, R> {
 	type Error = Error;
 
 	fn unit_variant(self) -> Result<(), Self::Error> {
@@ -253,12 +256,24 @@ impl<'a, 'de, R: Read<'de>> serde::de::Deserializer<'de> for &mut TaggedVariant<
 		self.deserialize_str(visitor)
 	}
 
-	#[allow(unused_variables)]
 	fn deserialize_bytes<V>(self, visitor: V) -> Result<V::Value, Self::Error>
 	where
 		V: serde::de::Visitor<'de>,
 	{
-		todo!()
+		self.assert_bracket()?;
+		let peek = self.de.peek_any().ok_or(Error::Eof)?;
+		match peek {
+			b'"' | b'\'' => {
+				let r#ref = self.de.str_bytes()?;
+				match r#ref {
+					Ref::Borrow(b) => visitor.visit_borrowed_bytes(b),
+					Ref::Scratch(s) => visitor.visit_bytes(s),
+				}
+			}
+			b'0'..=b'9' => self.deserialize_seq(visitor),
+			b']' => visitor.visit_borrowed_bytes(&[]),
+			_ => Err(Error::ExpectedBytes(peek as char)),
+		}
 	}
 
 	fn deserialize_byte_buf<V>(self, visitor: V) -> Result<V::Value, Self::Error>

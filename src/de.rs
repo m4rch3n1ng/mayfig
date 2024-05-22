@@ -1,6 +1,6 @@
 use self::{
 	access::TopMapAcc,
-	r#enum::TaggedEnumAcc,
+	r#enum::TaggedEnumValueAcc,
 	read::{Read, Ref, SliceRead, StrRead},
 };
 use crate::{
@@ -154,10 +154,10 @@ impl<'de, R: Read<'de>> Deserializer<R> {
 	}
 }
 
-#[allow(unused_variables)]
-impl<'de, 'a, R: Read<'de>> serde::Deserializer<'de> for &'a mut Deserializer<R> {
+impl<'de, R: Read<'de>> serde::Deserializer<'de> for &mut Deserializer<R> {
 	type Error = Error;
 
+	#[allow(unused_variables)]
 	fn deserialize_any<V>(self, visitor: V) -> Result<V::Value, Self::Error>
 	where
 		V: serde::de::Visitor<'de>,
@@ -442,8 +442,8 @@ impl<'de, 'a, R: Read<'de>> serde::Deserializer<'de> for &'a mut Deserializer<R>
 
 	fn deserialize_enum<V>(
 		self,
-		name: &'static str,
-		variants: &'static [&'static str],
+		_name: &'static str,
+		_variants: &'static [&'static str],
 		visitor: V,
 	) -> Result<V::Value, Self::Error>
 	where
@@ -454,7 +454,7 @@ impl<'de, 'a, R: Read<'de>> serde::Deserializer<'de> for &'a mut Deserializer<R>
 		if peek == b'{' {
 			todo!()
 		} else if peek == b'"' || peek == b'\'' {
-			let acc = TaggedEnumAcc::new(self);
+			let acc = TaggedEnumValueAcc::new(self);
 			visitor.visit_enum(acc)
 		} else {
 			todo!()
@@ -479,6 +479,7 @@ impl<'de, 'a, R: Read<'de>> serde::Deserializer<'de> for &'a mut Deserializer<R>
 		}
 	}
 
+	#[allow(unused_variables)]
 	fn deserialize_ignored_any<V>(self, visitor: V) -> Result<V::Value, Self::Error>
 	where
 		V: serde::de::Visitor<'de>,
