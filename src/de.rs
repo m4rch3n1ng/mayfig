@@ -46,7 +46,7 @@ where
 }
 
 impl<'de> Deserializer<SliceRead<'de>> {
-	fn from_slice(input: &'de [u8]) -> Self {
+	pub fn from_slice(input: &'de [u8]) -> Self {
 		let read = SliceRead::new(input);
 		Deserializer::new(read)
 	}
@@ -61,14 +61,28 @@ where
 }
 
 impl<'de, R: Read<'de>> Deserializer<R> {
+	/// discard comment
+	fn discard_comment(&mut self) -> Option<()> {
+		loop {
+			let peek = self.read.peek()?;
+			self.read.discard();
+			if peek == b'\n' {
+				break Some(());
+			}
+		}
+	}
+
 	/// peek next character that isn't a whitespace
 	fn peek_any(&mut self) -> Option<u8> {
 		loop {
 			let peek = self.read.peek()?;
-			if read::is_whitespace(peek) {
+			if peek == b'#' {
+				self.read.discard();
+				self.discard_comment()?;
+			} else if read::is_whitespace(peek) {
 				self.read.discard();
 			} else {
-				return Some(peek);
+				break Some(peek);
 			}
 		}
 	}
@@ -79,15 +93,15 @@ impl<'de, R: Read<'de>> Deserializer<R> {
 	fn peek_line(&mut self) -> Result<Option<u8>, Error> {
 		loop {
 			let Some(peek) = self.read.peek() else {
-				return Ok(None);
+				break Ok(None);
 			};
 
 			if read::is_whitespace_line(peek) {
 				self.read.discard();
-			} else if peek == b'\n' {
-				return Err(Error::UnexpectedNewline);
+			} else if peek == b'\n' || peek == b'#' {
+				break Err(Error::UnexpectedNewline);
 			} else {
-				return Ok(Some(peek));
+				break Ok(Some(peek));
 			}
 		}
 	}
@@ -99,18 +113,25 @@ impl<'de, R: Read<'de>> Deserializer<R> {
 		let mut is_newline = false;
 		loop {
 			let Some(peek) = self.read.peek() else {
-				return Ok(None);
+				break Ok(None);
 			};
 
 			if read::is_whitespace_line(peek) {
 				self.read.discard()
+			} else if peek == b'#' {
+				is_newline = true;
+				self.read.discard();
+
+				if self.discard_comment().is_none() {
+					break Ok(None);
+				};
 			} else if peek == b'\n' {
 				is_newline = true;
 				self.read.discard();
 			} else if is_newline {
-				return Ok(Some(peek));
+				break Ok(Some(peek));
 			} else {
-				return Err(Error::ExpectedNewline(peek as char));
+				break Err(Error::ExpectedNewline(peek as char));
 			}
 		}
 	}
@@ -154,7 +175,7 @@ impl<'de, R: Read<'de>> Deserializer<R> {
 	}
 }
 
-impl<'de, R: Read<'de>> serde::Deserializer<'de> for &mut Deserializer<R> {
+impl<'de, R: Read<'de>> serde::de::Deserializer<'de> for &mut Deserializer<R> {
 	type Error = Error;
 
 	#[allow(unused_variables)]
