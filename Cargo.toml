@@ -4,6 +4,7 @@ version = "0.1.0"
 edition = "2021"
 
 [dependencies]
+indexmap = "2.2.6"
 serde = "1.0.202"
 thiserror = "1.0.60"
 
