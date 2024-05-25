@@ -125,3 +125,59 @@ fn bool() {
 	let b4 = b4.unwrap();
 	assert_eq!(b4.b, true);
 }
+
+#[derive(Debug, Deserialize)]
+struct F {
+	f: f64,
+}
+
+const F1: &str = r#"
+f = 2.4
+"#;
+
+const F2: &str = r#"
+f = .2
+"#;
+
+const F3: &str = r#"
+f = .
+"#;
+
+const F4: &str = r#"
+f = .nAn
+"#;
+
+const F5: &str = r#"
+f = +.inf
+"#;
+
+const F6: &str = r#"
+f = -.inf
+"#;
+
+#[test]
+fn f64() {
+	let f1 = mayfig::from_str::<F>(F1);
+	let f1 = f1.unwrap();
+	assert_eq!(f1.f, 2.4);
+
+	let f2 = mayfig::from_str::<F>(F2);
+	let f2 = f2.unwrap();
+	assert_eq!(f2.f, 0.2);
+
+	let f3 = mayfig::from_str::<F>(F3);
+	let e3 = f3.unwrap_err();
+	assert!(matches!(e3, Error::InvalidNum(_)));
+
+	let f4 = mayfig::from_str::<F>(F4);
+	let e4 = f4.unwrap_err();
+	assert!(matches!(e4, Error::UnsupportedNaN));
+
+	let f5 = mayfig::from_str::<F>(F5);
+	let f5 = f5.unwrap();
+	assert_eq!(f5.f, f64::INFINITY);
+
+	let f6 = mayfig::from_str::<F>(F6);
+	let f6 = f6.unwrap();
+	assert_eq!(f6.f, f64::NEG_INFINITY);
+}

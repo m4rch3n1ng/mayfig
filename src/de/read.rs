@@ -99,8 +99,24 @@ impl<'de> Read<'de> for SliceRead<'de> {
 	fn num<'s>(&mut self, _scratch: &'s mut Vec<u8>) -> Result<Ref<'de, 's, str>, Error> {
 		let start = self.index;
 
-		if let Some(b'-') = self.slice.get(self.index) {
+		if let Some(b'-' | b'+') = self.slice.get(self.index) {
 			self.index += 1;
+		}
+
+		if let Some(b'.') = self.slice.get(self.index) {
+			self.index += 1;
+
+			if let Some(b'a'..=b'z' | b'A'..=b'Z') = self.slice.get(self.index) {
+				while let Some(b'a'..=b'z' | b'A'..=b'Z') = self.slice.get(self.index) {
+					self.index += 1;
+				}
+
+				let borrow = &self.slice[start..self.index];
+				let borrow = std::str::from_utf8(borrow).expect("should never fail");
+
+				let r#ref = Ref::Borrow(borrow);
+				return Ok(r#ref);
+			}
 		}
 
 		loop {
@@ -255,16 +271,6 @@ fn is_delimiter(ch: u8) -> bool {
 		|| ch == b'}'
 		|| ch == b'['
 		|| ch == b']'
-}
-
-pub fn parse_bool(word: &str) -> Result<bool, Error> {
-	if word.eq_ignore_ascii_case("true") {
-		Ok(true)
-	} else if word.eq_ignore_ascii_case("false") {
-		Ok(false)
-	} else {
-		Err(Error::InvalidBool(word.to_owned()))
-	}
 }
 
 pub fn is_whitespace(ch: u8) -> bool {

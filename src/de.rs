@@ -191,7 +191,7 @@ impl<'de, R: Read<'de>> serde::de::Deserializer<'de> for &mut Deserializer<R> {
 		V: serde::de::Visitor<'de>,
 	{
 		let w = self.word()?;
-		let b = read::parse_bool(&w)?;
+		let b = parse_bool(&w)?;
 		visitor.visit_bool(b)
 	}
 
@@ -271,9 +271,7 @@ impl<'de, R: Read<'de>> serde::de::Deserializer<'de> for &mut Deserializer<R> {
 	where
 		V: serde::de::Visitor<'de>,
 	{
-		let w = self.num()?;
-		let n = w.parse::<f32>().map_err(|_| Error::InvalidNum(w.into()))?;
-		visitor.visit_f32(n)
+		self.deserialize_f64(visitor)
 	}
 
 	fn deserialize_f64<V>(self, visitor: V) -> Result<V::Value, Self::Error>
@@ -281,7 +279,7 @@ impl<'de, R: Read<'de>> serde::de::Deserializer<'de> for &mut Deserializer<R> {
 		V: serde::de::Visitor<'de>,
 	{
 		let w = self.num()?;
-		let n = w.parse::<f64>().map_err(|_| Error::InvalidNum(w.into()))?;
+		let n = parse_f64(&w)?;
 		visitor.visit_f64(n)
 	}
 
@@ -506,5 +504,42 @@ impl<'de, R: Read<'de>> serde::de::Deserializer<'de> for &mut Deserializer<R> {
 		V: serde::de::Visitor<'de>,
 	{
 		todo!()
+	}
+}
+
+fn parse_bool(word: &str) -> Result<bool, Error> {
+	if word.eq_ignore_ascii_case("true") {
+		Ok(true)
+	} else if word.eq_ignore_ascii_case("false") {
+		Ok(false)
+	} else {
+		Err(Error::InvalidBool(word.to_owned()))
+	}
+}
+
+fn parse_f64(num: &str) -> Result<f64, Error> {
+	let stripped = if let Some(stripped) = num.strip_prefix('+') {
+		if stripped.starts_with(['+', '-']) {
+			return Err(Error::InvalidNum(num.to_owned()));
+		}
+		stripped
+	} else {
+		num
+	};
+
+	if stripped.eq_ignore_ascii_case(".inf") {
+		Ok(f64::INFINITY)
+	} else if stripped.eq_ignore_ascii_case("-.inf") {
+		Ok(f64::NEG_INFINITY)
+	} else if stripped.eq_ignore_ascii_case(".nan") {
+		Err(Error::UnsupportedNaN)
+	} else if let Ok(float) = stripped.parse::<f64>() {
+		if float.is_finite() {
+			Ok(float)
+		} else {
+			unreachable!()
+		}
+	} else {
+		Err(Error::InvalidNum(num.to_owned()))
 	}
 }
