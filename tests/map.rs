@@ -53,6 +53,7 @@ m {
 	v = 20
 	"t" = 40
 	f = 0
+	t_k = 21
 }
 "#;
 
@@ -68,10 +69,11 @@ m = {
 fn map() {
 	let m1 = mayfig::from_str::<M<u32>>(M1);
 	let m1 = m1.unwrap();
-	assert_eq!(m1.m.len(), 3);
+	assert_eq!(m1.m.len(), 4);
 	assert_eq!(m1.m.get("v"), Some(&20));
 	assert_eq!(m1.m.get("t"), Some(&40));
 	assert_eq!(m1.m.get("f"), Some(&0));
+	assert_eq!(m1.m.get("t_k"), Some(&21));
 
 	let m2 = mayfig::from_str::<M<&str>>(M2);
 	let m2 = m2.unwrap();
