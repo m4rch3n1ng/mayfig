@@ -72,8 +72,9 @@ impl<'a, 'de, R: Read<'de>> MapAccess<'de> for TopMapAcc<'a, R> {
 		if peek == b'=' {
 			self.de.read.discard();
 		} else if peek != b'{' {
+			let point = self.de.read.position();
 			let code = ErrorCode::ExpectedValue(peek as char);
-			return Err(Error::new(code));
+			return Err(Error::with_point(code, point));
 		}
 
 		let _ = self.de.peek_line()?.ok_or(Error::new(ErrorCode::Eof))?;
@@ -129,8 +130,9 @@ impl<'a, 'de, R: Read<'de>> MapAccess<'de> for MapAcc<'a, R> {
 		if peek == b'=' {
 			self.de.read.discard();
 		} else if peek != b'{' {
+			let point = self.de.read.position();
 			let code = ErrorCode::ExpectedValue(peek as char);
-			return Err(Error::new(code));
+			return Err(Error::with_point(code, point));
 		}
 
 		let _ = self.de.peek_line()?.ok_or(Error::new(ErrorCode::Eof))?;

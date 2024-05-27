@@ -60,11 +60,12 @@ impl<'a, 'b, 'de, R: Read<'de>> VariantAccess<'de> for TaggedEnumKeyAcc<'a, 'b, 
 			.de
 			.peek_line()?
 			.ok_or(Error::new(ErrorCode::Eof))?;
-		self.map_key.de.read.discard();
 		if next != b'[' {
+			let point = self.map_key.de.read.position();
 			let code = ErrorCode::ExpectedSeq(next as char);
-			return Err(Error::new(code));
+			return Err(Error::with_point(code, point));
 		}
+		self.map_key.de.read.discard();
 
 		self.map_key.de.indent += 1;
 
@@ -80,10 +81,12 @@ impl<'a, 'b, 'de, R: Read<'de>> VariantAccess<'de> for TaggedEnumKeyAcc<'a, 'b, 
 			.de
 			.peek_any()
 			.ok_or(Error::new(ErrorCode::Eof))?;
-		self.map_key.de.read.discard();
 		if peek != b']' {
-			return Err(Error::new(ErrorCode::ExpectedSeqEnd(peek as char)));
+			let point = self.map_key.de.read.position();
+			let code = ErrorCode::ExpectedSeqEnd(peek as char);
+			return Err(Error::with_point(code, point));
 		}
+		self.map_key.de.read.discard();
 
 		self.map_key.de.indent -= 1;
 
@@ -263,8 +266,9 @@ impl<'a, 'de, R: Read<'de>> serde::de::Deserializer<'de> for TaggedKey<'a, R> {
 			b'0'..=b'9' => self.deserialize_seq(visitor),
 			b']' => visitor.visit_borrowed_bytes(&[]),
 			_ => {
+				let point = self.de.read.position();
 				let code = ErrorCode::ExpectedBytes(peek as char);
-				Err(Error::new(code))
+				Err(Error::with_point(code, point))
 			}
 		}
 	}
@@ -616,7 +620,9 @@ impl<'a, 'de, R: Read<'de>> serde::de::Deserializer<'de> for &mut MapKey<'a, R> 
 		let peek = self.de.read.peek().ok_or(Error::new(ErrorCode::Eof))?;
 
 		if peek == b'{' {
-			Err(Error::new(ErrorCode::UnsupportedMapKey("struct")))
+			let point = self.de.read.position();
+			let code = ErrorCode::UnsupportedMapKey("struct");
+			Err(Error::with_point(code, point))
 		} else if peek.is_ascii_alphabetic() || peek == b'"' || peek == b'\'' {
 			let acc = TaggedEnumKeyAcc::new(self);
 			visitor.visit_enum(acc)

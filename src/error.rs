@@ -21,6 +21,11 @@ impl Error {
 	pub(crate) fn new(code: ErrorCode) -> Self {
 		Error { code, span: None }
 	}
+
+	pub(crate) fn with_point(code: ErrorCode, point: Position) -> Self {
+		let span = Some(Span::Point(point));
+		Error { code, span }
+	}
 }
 
 impl Display for Error {
@@ -74,8 +79,6 @@ pub enum ErrorCode {
 	ExpectedValue(char),
 	#[error("expected map '{{', got {0:?}")]
 	ExpectedMap(char),
-	#[error("expected end of map '}}', got {0:?}")]
-	ExpectedMapEnd(char),
 	#[error("expected seq '[', got {0:?}")]
 	ExpectedSeq(char),
 	#[error("expected end of seq ']', got {0:?}")]
@@ -120,6 +123,7 @@ impl Display for Position {
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum Span {
 	Point(Position),
+	// todo actually use this
 	Span(Position, Position),
 }
 

@@ -1,4 +1,4 @@
-use mayfig::error::ErrorCode;
+use mayfig::error::{ErrorCode, Position, Span};
 use serde_derive::Deserialize;
 use std::collections::HashMap;
 
@@ -101,6 +101,14 @@ fn tagged() {
 	let t7 = mayfig::from_str::<Tag>(T7);
 	let t7 = t7.unwrap_err();
 	assert!(matches!(t7.code(), ErrorCode::UnexpectedNewline));
+	assert_eq!(
+		t7.span(),
+		Some(Span::Point(Position {
+			line: 2,
+			col: 9,
+			index: 9
+		}))
+	);
 
 	let t8 = mayfig::from_str::<Tag>(T8);
 	let t8 = t8.unwrap();

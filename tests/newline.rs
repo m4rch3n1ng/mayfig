@@ -1,4 +1,4 @@
-use mayfig::error::ErrorCode;
+use mayfig::error::{ErrorCode, Position, Span};
 use serde_derive::Deserialize;
 
 #[derive(Debug, Deserialize, PartialEq)]
@@ -42,8 +42,24 @@ fn is_not_newline() {
 	let t1 = mayfig::from_str::<Tst>(NO1);
 	let e2 = t1.unwrap_err();
 	assert!(matches!(e2.code(), ErrorCode::ExpectedNewline(_)));
+	assert_eq!(
+		e2.span(),
+		Some(Span::Point(Position {
+			line: 2,
+			col: 10,
+			index: 10
+		}))
+	);
 
 	let t2 = mayfig::from_str::<Tst>(NO2);
 	let e2 = t2.unwrap_err();
 	assert!(matches!(e2.code(), ErrorCode::UnexpectedNewline));
+	assert_eq!(
+		e2.span(),
+		Some(Span::Point(Position {
+			line: 3,
+			col: 6,
+			index: 14
+		}))
+	)
 }

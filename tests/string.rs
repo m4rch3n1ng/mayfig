@@ -1,4 +1,4 @@
-use mayfig::error::ErrorCode;
+use mayfig::error::{ErrorCode, Position, Span};
 use serde_derive::Deserialize;
 
 #[derive(Debug, Deserialize)]
@@ -74,10 +74,26 @@ fn delim() {
 	let v1 = mayfig::from_str::<V>(V1);
 	let e1 = v1.unwrap_err();
 	assert!(matches!(e1.code(), ErrorCode::ExpectedDelimiter(_)));
+	assert_eq!(
+		e1.span(),
+		Some(Span::Point(Position {
+			line: 2,
+			col: 13,
+			index: 13
+		}))
+	);
 
 	let w1 = mayfig::from_str::<W>(W1);
 	let e2 = w1.unwrap_err();
 	assert!(matches!(e2.code(), ErrorCode::ExpectedDelimiter(_)));
+	assert_eq!(
+		e2.span(),
+		Some(Span::Point(Position {
+			line: 2,
+			col: 12,
+			index: 12
+		}))
+	);
 
 	let v2 = mayfig::from_str::<V>(V2);
 	let v2 = v2.unwrap();

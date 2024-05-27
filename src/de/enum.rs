@@ -47,8 +47,9 @@ impl<'a, 'de, R: Read<'de>> VariantAccess<'de> for TaggedEnumValueAcc<'a, R> {
 	{
 		let next = self.de.peek_line()?.ok_or(Error::new(ErrorCode::Eof))?;
 		if next != b'[' && next != b'{' {
+			let point = self.de.read.position();
 			let code = ErrorCode::ExpectedSeq(next as char);
-			return Err(Error::new(code));
+			return Err(Error::with_point(code, point));
 		}
 
 		self.de.indent += 1;
@@ -58,12 +59,14 @@ impl<'a, 'de, R: Read<'de>> VariantAccess<'de> for TaggedEnumValueAcc<'a, R> {
 
 		if !variant.is_map {
 			let peek = self.de.peek_any().ok_or(Error::new(ErrorCode::Eof))?;
-			self.de.read.discard();
 
 			if peek != b']' {
+				let point = self.de.read.position();
 				let code = ErrorCode::ExpectedSeqEnd(peek as char);
-				return Err(Error::new(code));
+				return Err(Error::with_point(code, point));
 			}
+
+			self.de.read.discard();
 		}
 
 		self.de.indent -= 1;
@@ -111,11 +114,14 @@ impl<'a, 'de, R: Read<'de>> TaggedVariant<'a, R> {
 			return Ok(());
 		}
 
-		let peek = self.de.read.next().ok_or(Error::new(ErrorCode::Eof))?;
+		let peek = self.de.read.peek().ok_or(Error::new(ErrorCode::Eof))?;
 		if peek != b'[' {
+			let point = self.de.read.position();
 			let code = ErrorCode::ExpectedSeq(peek as char);
-			Err(Error::new(code))
+			Err(Error::with_point(code, point))
 		} else {
+			self.de.read.discard();
+
 			self.bracket_assert = true;
 			let _ = self.de.peek_any().ok_or(Error::new(ErrorCode::Eof));
 
@@ -279,8 +285,9 @@ impl<'a, 'de, R: Read<'de>> serde::de::Deserializer<'de> for &mut TaggedVariant<
 			b'0'..=b'9' => self.deserialize_seq(visitor),
 			b']' => visitor.visit_borrowed_bytes(&[]),
 			_ => {
+				let point = self.de.read.position();
 				let code = ErrorCode::ExpectedBytes(peek as char);
-				Err(Error::new(code))
+				Err(Error::with_point(code, point))
 			}
 		}
 	}

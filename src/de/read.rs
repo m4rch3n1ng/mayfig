@@ -162,8 +162,9 @@ impl<'de> Read<'de> for SliceRead<'de> {
 			} else if is_delimiter(peek) {
 				break;
 			} else {
+				let point = self.position();
 				let code = ErrorCode::ExpectedNumeric(peek as char);
-				return Err(Error::new(code));
+				return Err(Error::with_point(code, point));
 			}
 		}
 
@@ -185,8 +186,9 @@ impl<'de> Read<'de> for SliceRead<'de> {
 			} else if is_delimiter(peek) {
 				break;
 			} else {
+				let point = self.position();
 				let code = ErrorCode::ExpectedAlphaNumeric(peek as char);
-				return Err(Error::new(code));
+				return Err(Error::with_point(code, point));
 			}
 		}
 
@@ -220,8 +222,9 @@ impl<'de> Read<'de> for SliceRead<'de> {
 			}
 
 			if peek.is_ascii_control() {
+				let point = self.position();
 				let code = ErrorCode::UnescapedControl(peek as char);
-				return Err(Error::new(code));
+				return Err(Error::with_point(code, point));
 			} else if peek == b'\\' {
 				let slice = &self.slice[start..self.index];
 				scratch.extend_from_slice(slice);
@@ -238,8 +241,9 @@ impl<'de> Read<'de> for SliceRead<'de> {
 
 		if let Some(peek) = self.peek() {
 			if !is_delimiter(peek) {
+				let point = self.position();
 				let code = ErrorCode::ExpectedDelimiter(peek as char);
-				return Err(Error::new(code));
+				return Err(Error::with_point(code, point));
 			}
 		}
 
@@ -287,6 +291,7 @@ impl<'de> Read<'de> for StrRead<'de> {
 }
 
 fn parse_escape<'de, R: Read<'de>>(read: &mut R, scratch: &mut Vec<u8>) -> Result<(), Error> {
+	let point = read.position();
 	let next = read.next().ok_or(Error::new(ErrorCode::Eof))?;
 
 	match next {
@@ -302,7 +307,7 @@ fn parse_escape<'de, R: Read<'de>>(read: &mut R, scratch: &mut Vec<u8>) -> Resul
 		b'u' => todo!("unicode escape"),
 		_ => {
 			let code = ErrorCode::UnknownEscape(next as char);
-			return Err(Error::new(code));
+			return Err(Error::with_point(code, point));
 		}
 	}
 
