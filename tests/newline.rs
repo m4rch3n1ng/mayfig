@@ -1,4 +1,4 @@
-use mayfig::error::Error;
+use mayfig::error::ErrorCode;
 use serde_derive::Deserialize;
 
 #[derive(Debug, Deserialize, PartialEq)]
@@ -41,9 +41,9 @@ two =
 fn is_not_newline() {
 	let t1 = mayfig::from_str::<Tst>(NO1);
 	let e2 = t1.unwrap_err();
-	assert!(matches!(e2, Error::ExpectedNewline(_)));
+	assert!(matches!(e2.code(), ErrorCode::ExpectedNewline(_)));
 
 	let t2 = mayfig::from_str::<Tst>(NO2);
 	let e2 = t2.unwrap_err();
-	assert!(matches!(e2, Error::UnexpectedNewline));
+	assert!(matches!(e2.code(), ErrorCode::UnexpectedNewline));
 }

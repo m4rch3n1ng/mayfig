@@ -1,4 +1,4 @@
-use mayfig::error::Error;
+use mayfig::error::ErrorCode;
 use serde_derive::Deserialize;
 use std::collections::HashMap;
 
@@ -100,7 +100,7 @@ fn tagged() {
 
 	let t7 = mayfig::from_str::<Tag>(T7);
 	let t7 = t7.unwrap_err();
-	assert!(matches!(t7, Error::UnexpectedNewline));
+	assert!(matches!(t7.code(), ErrorCode::UnexpectedNewline));
 
 	let t8 = mayfig::from_str::<Tag>(T8);
 	let t8 = t8.unwrap();

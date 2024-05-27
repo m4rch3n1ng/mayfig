@@ -1,5 +1,8 @@
 use super::{map::MapKey, read::Read};
-use crate::{error::Error, Deserializer};
+use crate::{
+	error::{Error, ErrorCode},
+	Deserializer,
+};
 use serde::de::{MapAccess, SeqAccess};
 
 pub struct SeqAcc<'a, R> {
@@ -20,7 +23,7 @@ impl<'a, 'de, R: Read<'de>> SeqAccess<'de> for SeqAcc<'a, R> {
 		T: serde::de::DeserializeSeed<'de>,
 	{
 		self.de.discard_commata();
-		if self.de.peek_any().ok_or(Error::Eof)? == b']' {
+		if self.de.peek_any().ok_or(Error::new(ErrorCode::Eof))? == b']' {
 			return Ok(None);
 		}
 
@@ -64,15 +67,16 @@ impl<'a, 'de, R: Read<'de>> MapAccess<'de> for TopMapAcc<'a, R> {
 	where
 		V: serde::de::DeserializeSeed<'de>,
 	{
-		let peek = self.de.peek_line()?.ok_or(Error::Eof)?;
+		let peek = self.de.peek_line()?.ok_or(Error::new(ErrorCode::Eof))?;
 
 		if peek == b'=' {
 			self.de.read.discard();
 		} else if peek != b'{' {
-			return Err(Error::ExpectedValue(peek as char));
+			let code = ErrorCode::ExpectedValue(peek as char);
+			return Err(Error::new(code));
 		}
 
-		let _ = self.de.peek_line()?.ok_or(Error::Eof)?;
+		let _ = self.de.peek_line()?.ok_or(Error::new(ErrorCode::Eof))?;
 		seed.deserialize(&mut *self.de)
 	}
 }
@@ -107,7 +111,7 @@ impl<'a, 'de, R: Read<'de>> MapAccess<'de> for MapAcc<'a, R> {
 			self.de.peek_newline()?
 		};
 
-		if peek.ok_or(Error::Eof)? == b'}' {
+		if peek.ok_or(Error::new(ErrorCode::Eof))? == b'}' {
 			self.de.read.discard();
 			return Ok(None);
 		}
@@ -120,15 +124,16 @@ impl<'a, 'de, R: Read<'de>> MapAccess<'de> for MapAcc<'a, R> {
 	where
 		V: serde::de::DeserializeSeed<'de>,
 	{
-		let peek = self.de.peek_line()?.ok_or(Error::Eof)?;
+		let peek = self.de.peek_line()?.ok_or(Error::new(ErrorCode::Eof))?;
 
 		if peek == b'=' {
 			self.de.read.discard();
 		} else if peek != b'{' {
-			return Err(Error::ExpectedValue(peek as char));
+			let code = ErrorCode::ExpectedValue(peek as char);
+			return Err(Error::new(code));
 		}
 
-		let _ = self.de.peek_line()?.ok_or(Error::Eof)?;
+		let _ = self.de.peek_line()?.ok_or(Error::new(ErrorCode::Eof))?;
 		seed.deserialize(&mut *self.de)
 	}
 }

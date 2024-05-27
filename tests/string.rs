@@ -1,4 +1,4 @@
-use mayfig::error::Error;
+use mayfig::error::ErrorCode;
 use serde_derive::Deserialize;
 
 #[derive(Debug, Deserialize)]
@@ -73,11 +73,11 @@ w = [ "one" "two" "three" ]
 fn delim() {
 	let v1 = mayfig::from_str::<V>(V1);
 	let e1 = v1.unwrap_err();
-	assert!(matches!(e1, Error::ExpectedDelimiter(_)));
+	assert!(matches!(e1.code(), ErrorCode::ExpectedDelimiter(_)));
 
 	let w1 = mayfig::from_str::<W>(W1);
 	let e2 = w1.unwrap_err();
-	assert!(matches!(e2, Error::ExpectedDelimiter(_)));
+	assert!(matches!(e2.code(), ErrorCode::ExpectedDelimiter(_)));
 
 	let v2 = mayfig::from_str::<V>(V2);
 	let v2 = v2.unwrap();

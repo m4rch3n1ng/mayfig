@@ -1,4 +1,4 @@
-use mayfig::error::Error;
+use mayfig::error::ErrorCode;
 use serde_derive::Deserialize;
 use std::{collections::HashMap, ops::Deref};
 
@@ -115,7 +115,7 @@ fn bool() {
 
 	let b2 = mayfig::from_str::<B>(B2);
 	let e2 = b2.unwrap_err();
-	assert!(matches!(e2, Error::InvalidBool(_)));
+	assert!(matches!(e2.code(), ErrorCode::InvalidBool(_)));
 
 	let b3 = mayfig::from_str::<B>(B3);
 	let b3 = b3.unwrap();
@@ -167,11 +167,11 @@ fn f64() {
 
 	let f3 = mayfig::from_str::<F>(F3);
 	let e3 = f3.unwrap_err();
-	assert!(matches!(e3, Error::InvalidNum(_)));
+	assert!(matches!(e3.code(), ErrorCode::InvalidNum(_)));
 
 	let f4 = mayfig::from_str::<F>(F4);
 	let e4 = f4.unwrap_err();
-	assert!(matches!(e4, Error::UnsupportedNaN));
+	assert!(matches!(e4.code(), ErrorCode::UnsupportedNaN));
 
 	let f5 = mayfig::from_str::<F>(F5);
 	let f5 = f5.unwrap();

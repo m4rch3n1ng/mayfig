@@ -1,8 +1,53 @@
 use std::{cmp::Ordering, fmt::Display};
 use thiserror::Error;
 
-#[derive(Debug, Error)]
-pub enum Error {
+#[derive(Debug, Clone)]
+pub struct Error {
+	code: ErrorCode,
+	span: Option<Span>,
+}
+
+impl Error {
+	pub fn code(&self) -> &ErrorCode {
+		&self.code
+	}
+
+	pub fn span(&self) -> Option<Span> {
+		self.span
+	}
+}
+
+impl Error {
+	pub(crate) fn new(code: ErrorCode) -> Self {
+		Error { code, span: None }
+	}
+}
+
+impl Display for Error {
+	fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+		if let Some(span) = self.span {
+			write!(f, "{} at {}", self.code, span)
+		} else {
+			Display::fmt(&self.code, f)
+		}
+	}
+}
+
+impl std::error::Error for Error {}
+
+impl serde::de::Error for Error {
+	fn custom<T>(msg: T) -> Self
+	where
+		T: std::fmt::Display,
+	{
+		let msg = msg.to_string();
+		let code = ErrorCode::Custom(msg);
+		Error::new(code)
+	}
+}
+
+#[derive(Debug, Clone, Error)]
+pub enum ErrorCode {
 	#[error("end of file")]
 	Eof,
 	#[error("invalid utf8")]
@@ -57,16 +102,6 @@ pub enum Error {
 
 	#[error("custom: {0}")]
 	Custom(String),
-}
-
-impl serde::de::Error for Error {
-	fn custom<T>(msg: T) -> Self
-	where
-		T: std::fmt::Display,
-	{
-		let msg = msg.to_string();
-		Error::Custom(msg)
-	}
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]

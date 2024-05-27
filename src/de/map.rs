@@ -2,7 +2,10 @@ use super::{
 	access::SeqAcc,
 	read::{Read, Ref},
 };
-use crate::{error::Error, Deserializer};
+use crate::{
+	error::{Error, ErrorCode},
+	Deserializer,
+};
 use serde::{
 	de::{EnumAccess, VariantAccess},
 	forward_to_deserialize_any, Deserializer as _,
@@ -52,22 +55,34 @@ impl<'a, 'b, 'de, R: Read<'de>> VariantAccess<'de> for TaggedEnumKeyAcc<'a, 'b, 
 	where
 		T: serde::de::DeserializeSeed<'de>,
 	{
-		let next = self.map_key.de.peek_line()?.ok_or(Error::Eof)?;
+		let next = self
+			.map_key
+			.de
+			.peek_line()?
+			.ok_or(Error::new(ErrorCode::Eof))?;
 		self.map_key.de.read.discard();
 		if next != b'[' {
-			return Err(Error::ExpectedSeq(next as char));
+			let code = ErrorCode::ExpectedSeq(next as char);
+			return Err(Error::new(code));
 		}
 
 		self.map_key.de.indent += 1;
 
-		self.map_key.de.peek_any().ok_or(Error::Eof)?;
+		self.map_key
+			.de
+			.peek_any()
+			.ok_or(Error::new(ErrorCode::Eof))?;
 		let variant = TaggedKey::new(&mut *self.map_key.de);
 		let val = seed.deserialize(variant)?;
 
-		let peek = self.map_key.de.peek_any().ok_or(Error::Eof)?;
+		let peek = self
+			.map_key
+			.de
+			.peek_any()
+			.ok_or(Error::new(ErrorCode::Eof))?;
 		self.map_key.de.read.discard();
 		if peek != b']' {
-			return Err(Error::ExpectedSeqEnd(peek as char));
+			return Err(Error::new(ErrorCode::ExpectedSeqEnd(peek as char)));
 		}
 
 		self.map_key.de.indent -= 1;
@@ -79,7 +94,11 @@ impl<'a, 'b, 'de, R: Read<'de>> VariantAccess<'de> for TaggedEnumKeyAcc<'a, 'b, 
 	where
 		V: serde::de::Visitor<'de>,
 	{
-		let _ = self.map_key.de.peek_line()?.ok_or(Error::Eof)?;
+		let _ = self
+			.map_key
+			.de
+			.peek_line()?
+			.ok_or(Error::new(ErrorCode::Eof))?;
 		self.map_key.deserialize_tuple(len, visitor)
 	}
 
@@ -91,7 +110,7 @@ impl<'a, 'b, 'de, R: Read<'de>> VariantAccess<'de> for TaggedEnumKeyAcc<'a, 'b, 
 	where
 		V: serde::de::Visitor<'de>,
 	{
-		Err(Error::UnsupportedMapKey("struct"))
+		Err(Error::new(ErrorCode::UnsupportedMapKey("struct")))
 	}
 }
 
@@ -232,7 +251,7 @@ impl<'a, 'de, R: Read<'de>> serde::de::Deserializer<'de> for TaggedKey<'a, R> {
 	where
 		V: serde::de::Visitor<'de>,
 	{
-		let peek = self.de.peek_any().ok_or(Error::Eof)?;
+		let peek = self.de.peek_any().ok_or(Error::new(ErrorCode::Eof))?;
 		match peek {
 			b'"' | b'\'' => {
 				let r#ref = self.de.str_bytes()?;
@@ -243,7 +262,10 @@ impl<'a, 'de, R: Read<'de>> serde::de::Deserializer<'de> for TaggedKey<'a, R> {
 			}
 			b'0'..=b'9' => self.deserialize_seq(visitor),
 			b']' => visitor.visit_borrowed_bytes(&[]),
-			_ => Err(Error::ExpectedBytes(peek as char)),
+			_ => {
+				let code = ErrorCode::ExpectedBytes(peek as char);
+				Err(Error::new(code))
+			}
 		}
 	}
 
@@ -490,14 +512,14 @@ impl<'a, 'de, R: Read<'de>> serde::de::Deserializer<'de> for &mut MapKey<'a, R> 
 	where
 		V: serde::de::Visitor<'de>,
 	{
-		Err(Error::UnsupportedMapKey("bytes"))
+		Err(Error::new(ErrorCode::UnsupportedMapKey("bytes")))
 	}
 
 	fn deserialize_byte_buf<V>(self, _visitor: V) -> Result<V::Value, Self::Error>
 	where
 		V: serde::de::Visitor<'de>,
 	{
-		Err(Error::UnsupportedMapKey("bytes"))
+		Err(Error::new(ErrorCode::UnsupportedMapKey("bytes")))
 	}
 
 	fn deserialize_option<V>(self, visitor: V) -> Result<V::Value, Self::Error>
@@ -512,7 +534,7 @@ impl<'a, 'de, R: Read<'de>> serde::de::Deserializer<'de> for &mut MapKey<'a, R> 
 	where
 		V: serde::de::Visitor<'de>,
 	{
-		Err(Error::UnsupportedUnit)
+		Err(Error::new(ErrorCode::UnsupportedUnit))
 	}
 
 	fn deserialize_unit_struct<V>(
@@ -523,7 +545,7 @@ impl<'a, 'de, R: Read<'de>> serde::de::Deserializer<'de> for &mut MapKey<'a, R> 
 	where
 		V: serde::de::Visitor<'de>,
 	{
-		Err(Error::UnsupportedUnit)
+		Err(Error::new(ErrorCode::UnsupportedUnit))
 	}
 
 	fn deserialize_newtype_struct<V>(
@@ -567,7 +589,7 @@ impl<'a, 'de, R: Read<'de>> serde::de::Deserializer<'de> for &mut MapKey<'a, R> 
 	where
 		V: serde::de::Visitor<'de>,
 	{
-		Err(Error::UnsupportedMapKey("map"))
+		Err(Error::new(ErrorCode::UnsupportedMapKey("map")))
 	}
 
 	fn deserialize_struct<V>(
@@ -579,7 +601,7 @@ impl<'a, 'de, R: Read<'de>> serde::de::Deserializer<'de> for &mut MapKey<'a, R> 
 	where
 		V: serde::de::Visitor<'de>,
 	{
-		Err(Error::UnsupportedMapKey("struct"))
+		Err(Error::new(ErrorCode::UnsupportedMapKey("struct")))
 	}
 
 	fn deserialize_enum<V>(
@@ -591,10 +613,10 @@ impl<'a, 'de, R: Read<'de>> serde::de::Deserializer<'de> for &mut MapKey<'a, R> 
 	where
 		V: serde::de::Visitor<'de>,
 	{
-		let peek = self.de.read.peek().ok_or(Error::Eof)?;
+		let peek = self.de.read.peek().ok_or(Error::new(ErrorCode::Eof))?;
 
 		if peek == b'{' {
-			Err(Error::UnsupportedMapKey("struct"))
+			Err(Error::new(ErrorCode::UnsupportedMapKey("struct")))
 		} else if peek.is_ascii_alphabetic() || peek == b'"' || peek == b'\'' {
 			let acc = TaggedEnumKeyAcc::new(self);
 			visitor.visit_enum(acc)

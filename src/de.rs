@@ -5,7 +5,7 @@ use self::{
 };
 use crate::{
 	de::access::{MapAcc, SeqAcc},
-	error::Error,
+	error::{Error, ErrorCode},
 };
 
 mod access;
@@ -99,7 +99,7 @@ impl<'de, R: Read<'de>> Deserializer<R> {
 			if read::is_whitespace_line(peek) {
 				self.read.discard();
 			} else if peek == b'\n' || peek == b'#' {
-				break Err(Error::UnexpectedNewline);
+				break Err(Error::new(ErrorCode::UnexpectedNewline));
 			} else {
 				break Ok(Some(peek));
 			}
@@ -131,7 +131,8 @@ impl<'de, R: Read<'de>> Deserializer<R> {
 			} else if is_newline {
 				break Ok(Some(peek));
 			} else {
-				break Err(Error::ExpectedNewline(peek as char));
+				let code = ErrorCode::ExpectedNewline(peek as char);
+				break Err(Error::new(code));
 			}
 		}
 	}
@@ -147,8 +148,10 @@ impl<'de, R: Read<'de>> Deserializer<R> {
 
 		let r#ref = self.read.num(&mut self.scratch)?;
 		if r#ref.is_empty() {
-			let peek = self.read.peek().ok_or(Error::Eof)?;
-			Err(Error::ExpectedNumeric(peek as char))
+			let peek = self.read.peek().ok_or(Error::new(ErrorCode::Eof))?;
+
+			let code = ErrorCode::ExpectedNumeric(peek as char);
+			Err(Error::new(code))
 		} else {
 			Ok(r#ref)
 		}
@@ -160,9 +163,10 @@ impl<'de, R: Read<'de>> Deserializer<R> {
 	}
 
 	fn str<'s>(&'s mut self) -> Result<Ref<'de, 's, str>, Error> {
-		let peek = self.read.peek().ok_or(Error::Eof)?;
+		let peek = self.read.peek().ok_or(Error::new(ErrorCode::Eof))?;
 		if peek != b'"' && peek != b'\'' {
-			return Err(Error::ExpectedQuote(peek as char));
+			let code = ErrorCode::ExpectedQuote(peek as char);
+			return Err(Error::new(code));
 		}
 
 		self.scratch.clear();
@@ -200,7 +204,9 @@ impl<'de, R: Read<'de>> serde::de::Deserializer<'de> for &mut Deserializer<R> {
 		V: serde::de::Visitor<'de>,
 	{
 		let w = self.num()?;
-		let n = w.parse::<u8>().map_err(|_| Error::InvalidNum(w.into()))?;
+		let n = w
+			.parse::<u8>()
+			.map_err(|_| Error::new(ErrorCode::InvalidNum(w.into())))?;
 		visitor.visit_u8(n)
 	}
 
@@ -209,7 +215,9 @@ impl<'de, R: Read<'de>> serde::de::Deserializer<'de> for &mut Deserializer<R> {
 		V: serde::de::Visitor<'de>,
 	{
 		let w = self.num()?;
-		let n = w.parse::<u16>().map_err(|_| Error::InvalidNum(w.into()))?;
+		let n = w
+			.parse::<u16>()
+			.map_err(|_| Error::new(ErrorCode::InvalidNum(w.into())))?;
 		visitor.visit_u16(n)
 	}
 
@@ -218,7 +226,9 @@ impl<'de, R: Read<'de>> serde::de::Deserializer<'de> for &mut Deserializer<R> {
 		V: serde::de::Visitor<'de>,
 	{
 		let w = self.num()?;
-		let n = w.parse::<u32>().map_err(|_| Error::InvalidNum(w.into()))?;
+		let n = w
+			.parse::<u32>()
+			.map_err(|_| Error::new(ErrorCode::InvalidNum(w.into())))?;
 		visitor.visit_u32(n)
 	}
 
@@ -227,7 +237,9 @@ impl<'de, R: Read<'de>> serde::de::Deserializer<'de> for &mut Deserializer<R> {
 		V: serde::de::Visitor<'de>,
 	{
 		let w = self.num()?;
-		let n = w.parse::<u64>().map_err(|_| Error::InvalidNum(w.into()))?;
+		let n = w
+			.parse::<u64>()
+			.map_err(|_| Error::new(ErrorCode::InvalidNum(w.into())))?;
 		visitor.visit_u64(n)
 	}
 
@@ -236,7 +248,9 @@ impl<'de, R: Read<'de>> serde::de::Deserializer<'de> for &mut Deserializer<R> {
 		V: serde::de::Visitor<'de>,
 	{
 		let w = self.num()?;
-		let n = w.parse::<i8>().map_err(|_| Error::InvalidNum(w.into()))?;
+		let n = w
+			.parse::<i8>()
+			.map_err(|_| Error::new(ErrorCode::InvalidNum(w.into())))?;
 		visitor.visit_i8(n)
 	}
 
@@ -245,7 +259,9 @@ impl<'de, R: Read<'de>> serde::de::Deserializer<'de> for &mut Deserializer<R> {
 		V: serde::de::Visitor<'de>,
 	{
 		let w = self.num()?;
-		let n = w.parse::<i16>().map_err(|_| Error::InvalidNum(w.into()))?;
+		let n = w
+			.parse::<i16>()
+			.map_err(|_| Error::new(ErrorCode::InvalidNum(w.into())))?;
 		visitor.visit_i16(n)
 	}
 
@@ -254,7 +270,9 @@ impl<'de, R: Read<'de>> serde::de::Deserializer<'de> for &mut Deserializer<R> {
 		V: serde::de::Visitor<'de>,
 	{
 		let w = self.num()?;
-		let n = w.parse::<i32>().map_err(|_| Error::InvalidNum(w.into()))?;
+		let n = w
+			.parse::<i32>()
+			.map_err(|_| Error::new(ErrorCode::InvalidNum(w.into())))?;
 		visitor.visit_i32(n)
 	}
 
@@ -263,7 +281,9 @@ impl<'de, R: Read<'de>> serde::de::Deserializer<'de> for &mut Deserializer<R> {
 		V: serde::de::Visitor<'de>,
 	{
 		let w = self.num()?;
-		let n = w.parse::<i64>().map_err(|_| Error::InvalidNum(w.into()))?;
+		let n = w
+			.parse::<i64>()
+			.map_err(|_| Error::new(ErrorCode::InvalidNum(w.into())))?;
 		visitor.visit_i64(n)
 	}
 
@@ -312,7 +332,7 @@ impl<'de, R: Read<'de>> serde::de::Deserializer<'de> for &mut Deserializer<R> {
 	where
 		V: serde::de::Visitor<'de>,
 	{
-		let peek = self.read.peek().ok_or(Error::Eof)?;
+		let peek = self.read.peek().ok_or(Error::new(ErrorCode::Eof))?;
 		match peek {
 			b'"' | b'\'' => {
 				let r#ref = self.str_bytes()?;
@@ -322,7 +342,10 @@ impl<'de, R: Read<'de>> serde::de::Deserializer<'de> for &mut Deserializer<R> {
 				}
 			}
 			b'[' => self.deserialize_seq(visitor),
-			_ => Err(Error::ExpectedBytes(peek as char)),
+			_ => {
+				let code = ErrorCode::ExpectedBytes(peek as char);
+				Err(Error::new(code))
+			}
 		}
 	}
 
@@ -344,7 +367,7 @@ impl<'de, R: Read<'de>> serde::de::Deserializer<'de> for &mut Deserializer<R> {
 	where
 		V: serde::de::Visitor<'de>,
 	{
-		Err(Error::UnsupportedUnit)
+		Err(Error::new(ErrorCode::UnsupportedUnit))
 	}
 
 	fn deserialize_unit_struct<V>(
@@ -355,7 +378,7 @@ impl<'de, R: Read<'de>> serde::de::Deserializer<'de> for &mut Deserializer<R> {
 	where
 		V: serde::de::Visitor<'de>,
 	{
-		Err(Error::UnsupportedUnit)
+		Err(Error::new(ErrorCode::UnsupportedUnit))
 	}
 
 	fn deserialize_newtype_struct<V>(
@@ -375,20 +398,22 @@ impl<'de, R: Read<'de>> serde::de::Deserializer<'de> for &mut Deserializer<R> {
 	{
 		self.indent += 1;
 
-		let next = self.read.next().ok_or(Error::Eof)?;
+		let next = self.read.next().ok_or(Error::new(ErrorCode::Eof))?;
 		if next != b'[' {
-			return Err(Error::ExpectedSeq(next as char));
+			let code = ErrorCode::ExpectedSeq(next as char);
+			return Err(Error::new(code));
 		}
 
 		let seq = SeqAcc::new(self);
 		let val = visitor.visit_seq(seq)?;
 
 		self.discard_commata();
-		let next = self.peek_any().ok_or(Error::Eof)?;
+		let next = self.peek_any().ok_or(Error::new(ErrorCode::Eof))?;
 		self.read.discard();
 
 		if next != b']' {
-			return Err(Error::ExpectedSeqEnd(next as char));
+			let code = ErrorCode::ExpectedSeqEnd(next as char);
+			return Err(Error::new(code));
 		}
 
 		self.indent -= 1;
@@ -431,8 +456,10 @@ impl<'de, R: Read<'de>> serde::de::Deserializer<'de> for &mut Deserializer<R> {
 
 			Ok(val)
 		} else if self.indent != 0 {
-			let peek = peek.ok_or(Error::Eof)?;
-			return Err(Error::ExpectedMap(peek as char));
+			let peek = peek.ok_or(Error::new(ErrorCode::Eof))?;
+
+			let code = ErrorCode::ExpectedMap(peek as char);
+			return Err(Error::new(code));
 		} else {
 			self.indent += 1;
 
@@ -468,7 +495,7 @@ impl<'de, R: Read<'de>> serde::de::Deserializer<'de> for &mut Deserializer<R> {
 	where
 		V: serde::de::Visitor<'de>,
 	{
-		let peek = self.read.peek().ok_or(Error::Eof)?;
+		let peek = self.read.peek().ok_or(Error::new(ErrorCode::Eof))?;
 
 		if peek == b'{' {
 			todo!()
@@ -484,11 +511,12 @@ impl<'de, R: Read<'de>> serde::de::Deserializer<'de> for &mut Deserializer<R> {
 	where
 		V: serde::de::Visitor<'de>,
 	{
-		let peek = self.read.peek().ok_or(Error::Eof)?;
+		let peek = self.read.peek().ok_or(Error::new(ErrorCode::Eof))?;
 		if peek == b'"' || peek == b'\'' {
 			return self.deserialize_str(visitor);
 		} else if !peek.is_ascii_alphabetic() {
-			return Err(Error::ExpectedAlphabetic(peek as char));
+			let code = ErrorCode::ExpectedAlphabetic(peek as char);
+			return Err(Error::new(code));
 		}
 
 		let identifier = self.word()?;
@@ -513,14 +541,16 @@ fn parse_bool(word: &str) -> Result<bool, Error> {
 	} else if word.eq_ignore_ascii_case("false") {
 		Ok(false)
 	} else {
-		Err(Error::InvalidBool(word.to_owned()))
+		let code = ErrorCode::InvalidBool(word.to_owned());
+		Err(Error::new(code))
 	}
 }
 
 fn parse_f64(num: &str) -> Result<f64, Error> {
 	let stripped = if let Some(stripped) = num.strip_prefix('+') {
 		if stripped.starts_with(['+', '-']) {
-			return Err(Error::InvalidNum(num.to_owned()));
+			let code = ErrorCode::InvalidNum(num.to_owned());
+			return Err(Error::new(code));
 		}
 		stripped
 	} else {
@@ -532,7 +562,8 @@ fn parse_f64(num: &str) -> Result<f64, Error> {
 	} else if stripped.eq_ignore_ascii_case("-.inf") {
 		Ok(f64::NEG_INFINITY)
 	} else if stripped.eq_ignore_ascii_case(".nan") {
-		Err(Error::UnsupportedNaN)
+		let code = ErrorCode::UnsupportedNaN;
+		Err(Error::new(code))
 	} else if let Ok(float) = stripped.parse::<f64>() {
 		if float.is_finite() {
 			Ok(float)
@@ -540,6 +571,7 @@ fn parse_f64(num: &str) -> Result<f64, Error> {
 			unreachable!()
 		}
 	} else {
-		Err(Error::InvalidNum(num.to_owned()))
+		let code = ErrorCode::InvalidNum(num.to_owned());
+		Err(Error::new(code))
 	}
 }
