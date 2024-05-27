@@ -1,18 +1,18 @@
 use mayfig::error::Error;
 use serde_derive::Deserialize;
-use std::ops::Deref;
+use std::{collections::HashMap, ops::Deref};
 
 #[derive(Debug, Deserialize)]
-struct T<'a> {
-	v: N<(u32, i32)>,
+struct N<'a> {
+	v: I<(u32, i32)>,
 	#[serde(borrow)]
-	t: N<&'a str>,
+	t: I<&'a str>,
 }
 
 #[derive(Debug, Deserialize)]
-struct N<T>(T);
+struct I<T>(T);
 
-impl<T> Deref for N<T> {
+impl<T> Deref for I<T> {
 	type Target = T;
 
 	fn deref(&self) -> &Self::Target {
@@ -20,14 +20,14 @@ impl<T> Deref for N<T> {
 	}
 }
 
-const T1: &str = r#"
+const N1: &str = r#"
 v = [ 20 -20 ]
 t = "test"
 "#;
 
 #[test]
 fn newtype() {
-	let t1 = mayfig::from_str::<T>(T1);
+	let t1 = mayfig::from_str::<N>(N1);
 	let t1 = t1.unwrap();
 	assert_eq!(*t1.v, (20, -20));
 	assert_eq!(*t1.t, "test")
@@ -180,4 +180,36 @@ fn f64() {
 	let f6 = mayfig::from_str::<F>(F6);
 	let f6 = f6.unwrap();
 	assert_eq!(f6.f, f64::NEG_INFINITY);
+}
+
+#[derive(Debug, Deserialize, PartialEq, Eq, Hash)]
+#[serde(rename_all = "snake_case")]
+enum Te {
+	T1((u32, u32)),
+	T2(u32, u32),
+}
+
+#[derive(Debug, Deserialize)]
+struct T {
+	t: (u32, u32),
+	m: HashMap<Te, Te>,
+}
+
+const T1: &str = r#"
+t = [ 0, 1, ]
+m {
+	t1 [ 0, 1, ] = "t1" [ 2, 3, ]
+	t2 [ 0, 1, ] = "t2" [ 2, 3, ]
+}
+"#;
+
+#[test]
+fn tuple() {
+	let t1 = mayfig::from_str::<T>(T1);
+	let t1 = t1.unwrap();
+	assert_eq!(t1.t, (0, 1));
+
+	assert_eq!(t1.m.len(), 2);
+	assert_eq!(t1.m.get(&Te::T1((0, 1))), Some(&Te::T1((2, 3))));
+	assert_eq!(t1.m.get(&Te::T2(0, 1)), Some(&Te::T2(2, 3)));
 }

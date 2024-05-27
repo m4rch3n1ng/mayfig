@@ -333,10 +333,7 @@ impl<'a, 'de, R: Read<'de>> serde::de::Deserializer<'de> for &mut TaggedVariant<
 		let acc = SeqAcc::new(self.de);
 		let val = visitor.visit_seq(acc)?;
 
-		let peek = self.de.peek_any().ok_or(Error::Eof)?;
-		if peek != b']' {
-			return Err(Error::ExpectedSeqEnd(peek as char));
-		}
+		self.de.discard_commata();
 
 		Ok(val)
 	}

@@ -24,7 +24,7 @@ pub enum Error {
 
 	#[error("expected quote \" or ', got {0:?}")]
 	ExpectedQuote(char),
-	#[error("expected value assignment '=', '{{', got {0:?}")]
+	#[error("expected value assignment '=' or '{{', got {0:?}")]
 	ExpectedValue(char),
 	#[error("expected map '{{', got {0:?}")]
 	ExpectedMap(char),
