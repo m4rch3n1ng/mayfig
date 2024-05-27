@@ -271,6 +271,7 @@ fn is_delimiter(ch: u8) -> bool {
 		|| ch == b'}'
 		|| ch == b'['
 		|| ch == b']'
+		|| ch == b'#'
 }
 
 pub fn is_whitespace(ch: u8) -> bool {

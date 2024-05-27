@@ -10,7 +10,7 @@ struct C<'a> {
 
 const C1: &str = r#"
 # this is a comment
-t = 20
+t = 20# close comment
 v = [
 	0 1 2 3
 ] # comment
@@ -18,11 +18,13 @@ s = [ # ] comment
 ]
 "#;
 
-const C2: &str = r#"
+const C2: &str = r##"
 t = 0 # test
 v = [ 0 1 2 ]
-s = [ "test" ] # test
-"#;
+s = [
+	"test"# another close one
+] # test
+"##;
 
 #[test]
 fn comm() {
