@@ -1,5 +1,24 @@
-use crate::error::Error;
+use crate::error::{Error, Position};
 use std::ops::Deref;
+
+struct Pos {
+	line: usize,
+	col: usize,
+}
+
+impl Pos {
+	const fn new() -> Self {
+		Pos { line: 1, col: 1 }
+	}
+
+	const fn full(&self, index: usize) -> Position {
+		Position {
+			line: self.line,
+			col: self.col,
+			index,
+		}
+	}
+}
 
 #[derive(Debug)]
 pub enum Ref<'de, 's, T>
@@ -39,6 +58,8 @@ pub trait Read<'de> {
 
 	fn discard(&mut self);
 
+	fn position(&self) -> Position;
+
 	fn num<'s>(&mut self, scratch: &'s mut Vec<u8>) -> Result<Ref<'de, 's, str>, Error>;
 
 	fn word<'s>(&mut self, scratch: &'s mut Vec<u8>) -> Result<Ref<'de, 's, str>, Error>;
@@ -61,6 +82,7 @@ pub trait Read<'de> {
 pub struct SliceRead<'de> {
 	slice: &'de [u8],
 	index: usize,
+	pos: Pos,
 }
 
 impl<'de> SliceRead<'de> {
@@ -68,6 +90,7 @@ impl<'de> SliceRead<'de> {
 		SliceRead {
 			slice: input,
 			index: 0,
+			pos: Pos::new(),
 		}
 	}
 }
@@ -85,7 +108,15 @@ impl<'de> Read<'de> for SliceRead<'de> {
 	fn next(&mut self) -> Option<u8> {
 		if self.index < self.slice.len() {
 			let ch = self.slice[self.index];
+
 			self.index += 1;
+			if ch == b'\n' {
+				self.pos.line += 1;
+				self.pos.col = 1;
+			} else {
+				self.pos.col += 1;
+			}
+
 			Some(ch)
 		} else {
 			None
@@ -93,22 +124,26 @@ impl<'de> Read<'de> for SliceRead<'de> {
 	}
 
 	fn discard(&mut self) {
-		self.index += 1;
+		let _ = self.next();
+	}
+
+	fn position(&self) -> Position {
+		self.pos.full(self.index)
 	}
 
 	fn num<'s>(&mut self, _scratch: &'s mut Vec<u8>) -> Result<Ref<'de, 's, str>, Error> {
 		let start = self.index;
 
 		if let Some(b'-' | b'+') = self.slice.get(self.index) {
-			self.index += 1;
+			self.discard();
 		}
 
 		if let Some(b'.') = self.slice.get(self.index) {
-			self.index += 1;
+			self.discard();
 
 			if let Some(b'a'..=b'z' | b'A'..=b'Z') = self.slice.get(self.index) {
 				while let Some(b'a'..=b'z' | b'A'..=b'Z') = self.slice.get(self.index) {
-					self.index += 1;
+					self.discard();
 				}
 
 				let borrow = &self.slice[start..self.index];
@@ -123,7 +158,7 @@ impl<'de> Read<'de> for SliceRead<'de> {
 			let Some(peek) = self.peek() else { break };
 
 			if let b'0'..=b'9' | b'.' = peek {
-				self.index += 1;
+				self.discard();
 			} else if is_delimiter(peek) {
 				break;
 			} else {
@@ -145,7 +180,7 @@ impl<'de> Read<'de> for SliceRead<'de> {
 			let Some(peek) = self.peek() else { break };
 
 			if peek.is_ascii_alphanumeric() || peek == b'_' {
-				self.index += 1;
+				self.discard();
 			} else if is_delimiter(peek) {
 				break;
 			} else {
@@ -172,12 +207,12 @@ impl<'de> Read<'de> for SliceRead<'de> {
 			if peek == quote {
 				if scratch.is_empty() {
 					let borrow = &self.slice[start..self.index];
-					self.index += 1;
+					self.discard();
 					break Ref::Borrow(borrow);
 				} else {
 					let slice = &self.slice[start..self.index];
 					scratch.extend_from_slice(slice);
-					self.index += 1;
+					self.discard();
 					break Ref::Scratch(scratch);
 				}
 			}
@@ -188,13 +223,13 @@ impl<'de> Read<'de> for SliceRead<'de> {
 				let slice = &self.slice[start..self.index];
 				scratch.extend_from_slice(slice);
 
-				self.index += 1;
+				self.discard();
 
 				parse_escape(self, scratch)?;
 
 				start = self.index;
 			} else {
-				self.index += 1;
+				self.discard();
 			}
 		};
 
@@ -228,6 +263,10 @@ impl<'de> Read<'de> for StrRead<'de> {
 
 	fn discard(&mut self) {
 		self.0.discard();
+	}
+
+	fn position(&self) -> Position {
+		self.0.position()
 	}
 
 	fn num<'s>(&mut self, scratch: &'s mut Vec<u8>) -> Result<Ref<'de, 's, str>, Error> {
