@@ -40,9 +40,23 @@ impl Display for InternalNumber {
 impl Eq for InternalNumber {}
 
 impl Hash for InternalNumber {
-	#[expect(unused_variables)]
 	fn hash<H: std::hash::Hasher>(&self, state: &mut H) {
-		todo!()
+		std::mem::discriminant(self).hash(state);
+		match self {
+			InternalNumber::PosInt(u) => u.hash(state),
+			InternalNumber::NegInt(i) => i.hash(state),
+			InternalNumber::Float(ff) => {
+				let bits = if *ff == 0. {
+					// to hold the +0.0 == -0.0 => hash(+0.0) == hash(-0.0) contract
+					// https://doc.rust-lang.org/beta/std/hash/trait.Hash.html#hash-and-eq
+					0
+				} else {
+					// InternalNumber::Float cannot be NaN
+					ff.to_bits()
+				};
+				bits.hash(state)
+			}
+		}
 	}
 }
 
