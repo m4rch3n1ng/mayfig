@@ -7,6 +7,7 @@ use std::{
 };
 
 mod number;
+mod de;
 
 pub use number::Number;
 
