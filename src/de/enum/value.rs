@@ -54,7 +54,7 @@ impl<'a, 'de, R: Read<'de>> VariantAccess<'de> for TaggedEnumValueAcc<'a, R> {
 
 		self.de.indent += 1;
 
-		let mut variant = TaggedVariant::new(self.de);
+		let mut variant = TaggedValue::new(self.de);
 		let val = seed.deserialize(&mut variant)?;
 
 		if !variant.is_map {
@@ -94,15 +94,15 @@ impl<'a, 'de, R: Read<'de>> VariantAccess<'de> for TaggedEnumValueAcc<'a, R> {
 	}
 }
 
-struct TaggedVariant<'a, R> {
+struct TaggedValue<'a, R> {
 	de: &'a mut Deserializer<R>,
 	bracket_assert: bool,
 	is_map: bool,
 }
 
-impl<'a, 'de, R: Read<'de>> TaggedVariant<'a, R> {
+impl<'a, 'de, R: Read<'de>> TaggedValue<'a, R> {
 	fn new(de: &'a mut Deserializer<R>) -> Self {
-		TaggedVariant {
+		TaggedValue {
 			de,
 			bracket_assert: false,
 			is_map: false,
@@ -130,7 +130,7 @@ impl<'a, 'de, R: Read<'de>> TaggedVariant<'a, R> {
 	}
 }
 
-impl<'a, 'de, R: Read<'de>> serde::de::Deserializer<'de> for &mut TaggedVariant<'a, R> {
+impl<'a, 'de, R: Read<'de>> serde::de::Deserializer<'de> for &mut TaggedValue<'a, R> {
 	type Error = Error;
 
 	#[allow(unused_variables)]
