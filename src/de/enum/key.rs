@@ -46,11 +46,7 @@ impl<'a, 'b, 'de, R: Read<'de>> VariantAccess<'de> for TaggedEnumKeyAcc<'a, 'b, 
 	where
 		T: serde::de::DeserializeSeed<'de>,
 	{
-		let next = self
-			.map_key
-			.de
-			.peek_line()?
-			.ok_or(Error::new(ErrorCode::Eof))?;
+		let next = self.map_key.de.peek_line()?.ok_or(Error::EOF)?;
 		if next != b'[' {
 			let point = self.map_key.de.read.position();
 			let code = ErrorCode::ExpectedSeq(next as char);
@@ -60,18 +56,11 @@ impl<'a, 'b, 'de, R: Read<'de>> VariantAccess<'de> for TaggedEnumKeyAcc<'a, 'b, 
 
 		self.map_key.de.indent += 1;
 
-		self.map_key
-			.de
-			.peek_any()
-			.ok_or(Error::new(ErrorCode::Eof))?;
+		self.map_key.de.peek_any().ok_or(Error::EOF)?;
 		let variant = TaggedKey::new(&mut *self.map_key.de);
 		let val = seed.deserialize(variant)?;
 
-		let peek = self
-			.map_key
-			.de
-			.peek_any()
-			.ok_or(Error::new(ErrorCode::Eof))?;
+		let peek = self.map_key.de.peek_any().ok_or(Error::EOF)?;
 		if peek != b']' {
 			let point = self.map_key.de.read.position();
 			let code = ErrorCode::ExpectedSeqEnd(peek as char);
@@ -88,11 +77,7 @@ impl<'a, 'b, 'de, R: Read<'de>> VariantAccess<'de> for TaggedEnumKeyAcc<'a, 'b, 
 	where
 		V: serde::de::Visitor<'de>,
 	{
-		let _ = self
-			.map_key
-			.de
-			.peek_line()?
-			.ok_or(Error::new(ErrorCode::Eof))?;
+		let _ = self.map_key.de.peek_line()?.ok_or(Error::EOF)?;
 		self.map_key.deserialize_tuple(len, visitor)
 	}
 
@@ -245,7 +230,7 @@ impl<'a, 'de, R: Read<'de>> serde::de::Deserializer<'de> for TaggedKey<'a, R> {
 	where
 		V: serde::de::Visitor<'de>,
 	{
-		let peek = self.de.peek_any().ok_or(Error::new(ErrorCode::Eof))?;
+		let peek = self.de.peek_any().ok_or(Error::EOF)?;
 		match peek {
 			b'"' | b'\'' => {
 				let r#ref = self.de.str_bytes()?;

@@ -200,13 +200,13 @@ impl<'de> Read<'de> for SliceRead<'de> {
 	}
 
 	fn str_bytes<'s>(&mut self, scratch: &'s mut Vec<u8>) -> Result<Ref<'de, 's, [u8]>, Error> {
-		let quote = self.next().ok_or(Error::new(ErrorCode::Eof))?;
+		let quote = self.next().ok_or(Error::EOF)?;
 		assert!(matches!(quote, b'"' | b'\''), "is {:?}", quote as char);
 
 		let mut start = self.index;
 
 		let r#ref = loop {
-			let peek = self.peek().ok_or(Error::new(ErrorCode::Eof))?;
+			let peek = self.peek().ok_or(Error::EOF)?;
 
 			if peek == quote {
 				if scratch.is_empty() {
@@ -292,7 +292,7 @@ impl<'de> Read<'de> for StrRead<'de> {
 
 fn parse_escape<'de, R: Read<'de>>(read: &mut R, scratch: &mut Vec<u8>) -> Result<(), Error> {
 	let point = read.position();
-	let next = read.next().ok_or(Error::new(ErrorCode::Eof))?;
+	let next = read.next().ok_or(Error::EOF)?;
 
 	match next {
 		b'"' => scratch.push(b'"'),

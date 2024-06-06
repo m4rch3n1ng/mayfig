@@ -3,7 +3,7 @@ use crate::{
 	error::{Error, ErrorCode},
 	Deserializer,
 };
-use serde::{forward_to_deserialize_any};
+use serde::forward_to_deserialize_any;
 
 pub struct MapKey<'a, R> {
 	pub(super) de: &'a mut Deserializer<R>,
@@ -243,7 +243,7 @@ impl<'a, 'de, R: Read<'de>> serde::de::Deserializer<'de> for &mut MapKey<'a, R> 
 	where
 		V: serde::de::Visitor<'de>,
 	{
-		let peek = self.de.read.peek().ok_or(Error::new(ErrorCode::Eof))?;
+		let peek = self.de.read.peek().ok_or(Error::EOF)?;
 
 		if peek == b'{' {
 			let point = self.de.read.position();

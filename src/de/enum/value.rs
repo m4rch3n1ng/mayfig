@@ -45,7 +45,7 @@ impl<'a, 'de, R: Read<'de>> VariantAccess<'de> for TaggedEnumValueAcc<'a, R> {
 	where
 		T: serde::de::DeserializeSeed<'de>,
 	{
-		let next = self.de.peek_line()?.ok_or(Error::new(ErrorCode::Eof))?;
+		let next = self.de.peek_line()?.ok_or(Error::EOF)?;
 		if next != b'[' && next != b'{' {
 			let point = self.de.read.position();
 			let code = ErrorCode::ExpectedSeq(next as char);
@@ -58,7 +58,7 @@ impl<'a, 'de, R: Read<'de>> VariantAccess<'de> for TaggedEnumValueAcc<'a, R> {
 		let val = seed.deserialize(&mut variant)?;
 
 		if !variant.is_map {
-			let peek = self.de.peek_any().ok_or(Error::new(ErrorCode::Eof))?;
+			let peek = self.de.peek_any().ok_or(Error::EOF)?;
 
 			if peek != b']' {
 				let point = self.de.read.position();
@@ -77,7 +77,7 @@ impl<'a, 'de, R: Read<'de>> VariantAccess<'de> for TaggedEnumValueAcc<'a, R> {
 	where
 		V: serde::de::Visitor<'de>,
 	{
-		let _ = self.de.peek_line()?.ok_or(Error::new(ErrorCode::Eof))?;
+		let _ = self.de.peek_line()?.ok_or(Error::EOF)?;
 		self.de.deserialize_tuple(len, visitor)
 	}
 
@@ -89,7 +89,7 @@ impl<'a, 'de, R: Read<'de>> VariantAccess<'de> for TaggedEnumValueAcc<'a, R> {
 	where
 		V: serde::de::Visitor<'de>,
 	{
-		let _ = self.de.peek_line()?.ok_or(Error::new(ErrorCode::Eof))?;
+		let _ = self.de.peek_line()?.ok_or(Error::EOF)?;
 		self.de.deserialize_map(visitor)
 	}
 }
@@ -114,7 +114,7 @@ impl<'a, 'de, R: Read<'de>> TaggedValue<'a, R> {
 			return Ok(());
 		}
 
-		let peek = self.de.read.peek().ok_or(Error::new(ErrorCode::Eof))?;
+		let peek = self.de.read.peek().ok_or(Error::EOF)?;
 		if peek != b'[' {
 			let point = self.de.read.position();
 			let code = ErrorCode::ExpectedSeq(peek as char);
@@ -123,7 +123,7 @@ impl<'a, 'de, R: Read<'de>> TaggedValue<'a, R> {
 			self.de.read.discard();
 
 			self.bracket_assert = true;
-			let _ = self.de.peek_any().ok_or(Error::new(ErrorCode::Eof));
+			let _ = self.de.peek_any().ok_or(Error::EOF);
 
 			Ok(())
 		}
@@ -273,7 +273,7 @@ impl<'a, 'de, R: Read<'de>> serde::de::Deserializer<'de> for &mut TaggedValue<'a
 		V: serde::de::Visitor<'de>,
 	{
 		self.assert_bracket()?;
-		let peek = self.de.peek_any().ok_or(Error::new(ErrorCode::Eof))?;
+		let peek = self.de.peek_any().ok_or(Error::EOF)?;
 		match peek {
 			b'"' | b'\'' => {
 				let r#ref = self.de.str_bytes()?;
@@ -379,7 +379,7 @@ impl<'a, 'de, R: Read<'de>> serde::de::Deserializer<'de> for &mut TaggedValue<'a
 	where
 		V: serde::de::Visitor<'de>,
 	{
-		let peek = self.de.read.peek().ok_or(Error::new(ErrorCode::Eof))?;
+		let peek = self.de.read.peek().ok_or(Error::EOF)?;
 		if peek == b'[' {
 			self.de.read.discard();
 		} else if peek == b'{' {

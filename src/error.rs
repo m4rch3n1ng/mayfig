@@ -18,11 +18,13 @@ impl Error {
 }
 
 impl Error {
-	pub(crate) fn new(code: ErrorCode) -> Self {
+	pub(crate) const EOF: Error = Error::new(ErrorCode::Eof);
+
+	pub(crate) const fn new(code: ErrorCode) -> Self {
 		Error { code, span: None }
 	}
 
-	pub(crate) fn with_point(code: ErrorCode, point: Position) -> Self {
+	pub(crate) const fn with_point(code: ErrorCode, point: Position) -> Self {
 		let span = Some(Span::Point(point));
 		Error { code, span }
 	}
