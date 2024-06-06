@@ -6,6 +6,7 @@ use std::{
 	ops::{Deref, DerefMut},
 };
 
+mod de;
 mod number;
 
 pub use self::number::Number;
