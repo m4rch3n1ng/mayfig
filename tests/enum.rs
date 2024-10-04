@@ -139,7 +139,6 @@ enum M<'a> {
 }
 
 #[derive(Debug, Deserialize)]
-#[allow(dead_code)]
 struct Map<'a> {
 	#[serde(borrow)]
 	map: HashMap<M<'a>, V>,

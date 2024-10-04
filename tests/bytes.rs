@@ -59,7 +59,7 @@ const WTF: &[u8] = &[
 ];
 
 #[test]
-#[allow(invalid_from_utf8)]
+#[expect(invalid_from_utf8)]
 fn fucked() {
 	assert!(std::str::from_utf8(WTF).is_err());
 

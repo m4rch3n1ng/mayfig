@@ -30,7 +30,7 @@ impl<'de, R: Read<'de>> Deserializer<R> {
 }
 
 impl<'de> Deserializer<StrRead<'de>> {
-	#[allow(clippy::should_implement_trait)]
+	#[expect(clippy::should_implement_trait)]
 	pub fn from_str(input: &'de str) -> Self {
 		let read = StrRead::new(input);
 		Deserializer::new(read)
@@ -192,7 +192,7 @@ impl<'de, R: Read<'de>> Deserializer<R> {
 impl<'de, R: Read<'de>> serde::de::Deserializer<'de> for &mut Deserializer<R> {
 	type Error = Error;
 
-	#[allow(unused_variables)]
+	#[expect(unused_variables)]
 	fn deserialize_any<V>(self, visitor: V) -> Result<V::Value, Self::Error>
 	where
 		V: serde::de::Visitor<'de>,
@@ -550,7 +550,7 @@ impl<'de, R: Read<'de>> serde::de::Deserializer<'de> for &mut Deserializer<R> {
 		}
 	}
 
-	#[allow(unused_variables)]
+	#[expect(unused_variables)]
 	fn deserialize_ignored_any<V>(self, visitor: V) -> Result<V::Value, Self::Error>
 	where
 		V: serde::de::Visitor<'de>,

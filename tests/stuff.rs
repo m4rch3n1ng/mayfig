@@ -107,7 +107,7 @@ b = TRUE
 "#;
 
 #[test]
-#[allow(clippy::bool_assert_comparison)]
+#[expect(clippy::bool_assert_comparison)]
 fn bool() {
 	let b1 = mayfig::from_str::<B>(B1);
 	let b1 = b1.unwrap();

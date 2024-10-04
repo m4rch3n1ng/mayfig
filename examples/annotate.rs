@@ -3,7 +3,6 @@ use serde_derive::Deserialize;
 use std::collections::HashMap;
 
 #[derive(Debug, Deserialize, PartialEq, Eq, Hash)]
-#[allow(dead_code)]
 #[serde(rename_all = "snake_case")]
 enum Enum {
 	Num(usize),
@@ -11,7 +10,7 @@ enum Enum {
 }
 
 #[derive(Debug, Deserialize)]
-#[allow(dead_code)]
+#[expect(dead_code)]
 struct WithError {
 	v: f32,
 	m: HashMap<Enum, Enum>,

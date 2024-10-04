@@ -1,7 +1,7 @@
 use serde_derive::Deserialize;
 
 #[derive(Debug, Deserialize)]
-#[allow(dead_code)]
+#[expect(dead_code)]
 struct Txt {
 	v: f64,
 }

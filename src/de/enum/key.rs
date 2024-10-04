@@ -106,7 +106,7 @@ impl<'a, 'de, R: Read<'de>> TaggedKey<'a, R> {
 impl<'a, 'de, R: Read<'de>> serde::de::Deserializer<'de> for TaggedKey<'a, R> {
 	type Error = Error;
 
-	#[allow(unused_variables)]
+	#[expect(unused_variables)]
 	fn deserialize_any<V>(self, visitor: V) -> Result<V::Value, Self::Error>
 	where
 		V: serde::de::Visitor<'de>,
@@ -342,7 +342,7 @@ impl<'a, 'de, R: Read<'de>> serde::de::Deserializer<'de> for TaggedKey<'a, R> {
 		self.deserialize_map(visitor)
 	}
 
-	#[allow(unused_variables)]
+	#[expect(unused_variables)]
 	fn deserialize_enum<V>(
 		self,
 		_name: &'static str,

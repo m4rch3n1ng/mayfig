@@ -18,7 +18,7 @@ impl<'a, 'de, R: Read<'de>> MapKey<'a, R> {
 impl<'a, 'de, R: Read<'de>> serde::de::Deserializer<'de> for &mut MapKey<'a, R> {
 	type Error = Error;
 
-	#[allow(unused_variables)]
+	#[expect(unused_variables)]
 	fn deserialize_any<V>(self, visitor: V) -> Result<V::Value, Self::Error>
 	where
 		V: serde::de::Visitor<'de>,
