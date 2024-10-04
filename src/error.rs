@@ -28,6 +28,13 @@ impl Error {
 		let span = Some(Span::Point(point));
 		Error { code, span }
 	}
+
+	pub(crate) const fn with_span(code: ErrorCode, span: Span) -> Self {
+		Error {
+			code,
+			span: Some(span),
+		}
+	}
 }
 
 impl Display for Error {

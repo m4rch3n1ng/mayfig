@@ -13,12 +13,12 @@ enum Enum {
 #[derive(Debug, Deserialize)]
 #[allow(dead_code)]
 struct WithError {
-	v: usize,
+	v: f32,
 	m: HashMap<Enum, Enum>,
 }
 
 const WITH_ERROR: &str = r#"
-v = :
+v = ...
 m {
 	vec [ 0, 1, ] = "vec" . [ 0, 1 ]
 	num [ 0, ] = "num" [ 1 ]

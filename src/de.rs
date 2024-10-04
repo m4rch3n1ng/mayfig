@@ -5,7 +5,7 @@ use self::{
 };
 use crate::{
 	de::access::{MapAcc, SeqAcc},
-	error::{Error, ErrorCode},
+	error::{Error, ErrorCode, Span},
 };
 
 mod access;
@@ -146,7 +146,8 @@ impl<'de, R: Read<'de>> Deserializer<R> {
 		}
 	}
 
-	fn num<'s>(&'s mut self) -> Result<Ref<'de, 's, str>, Error> {
+	fn num<'s>(&'s mut self) -> Result<(Ref<'de, 's, str>, Span), Error> {
+		let start = self.read.position();
 		self.scratch.clear();
 
 		let r#ref = self.read.num(&mut self.scratch)?;
@@ -157,13 +158,17 @@ impl<'de, R: Read<'de>> Deserializer<R> {
 			let code = ErrorCode::ExpectedNumeric(peek as char);
 			Err(Error::with_point(code, point))
 		} else {
-			Ok(r#ref)
+			let span = Span::Span(start, self.read.position());
+			Ok((r#ref, span))
 		}
 	}
 
-	fn word<'s>(&'s mut self) -> Result<Ref<'de, 's, str>, Error> {
+	fn word<'s>(&'s mut self) -> Result<(Ref<'de, 's, str>, Span), Error> {
 		self.scratch.clear();
-		self.read.word(&mut self.scratch)
+
+		let start = self.read.position();
+		let word = self.read.word(&mut self.scratch)?;
+		Ok((word, Span::Span(start, self.read.position())))
 	}
 
 	fn str<'s>(&'s mut self) -> Result<Ref<'de, 's, str>, Error> {
@@ -199,8 +204,8 @@ impl<'de, R: Read<'de>> serde::de::Deserializer<'de> for &mut Deserializer<R> {
 	where
 		V: serde::de::Visitor<'de>,
 	{
-		let w = self.word()?;
-		let b = parse_bool(&w)?;
+		let (w, span) = self.word()?;
+		let b = parse_bool(&w, span)?;
 		visitor.visit_bool(b)
 	}
 
@@ -208,10 +213,11 @@ impl<'de, R: Read<'de>> serde::de::Deserializer<'de> for &mut Deserializer<R> {
 	where
 		V: serde::de::Visitor<'de>,
 	{
-		let w = self.num()?;
-		let n = w
-			.parse::<u8>()
-			.map_err(|_| Error::new(ErrorCode::InvalidNum(w.into())))?;
+		let (w, span) = self.num()?;
+		let n = w.parse::<u8>().map_err(|_| {
+			let code = ErrorCode::InvalidNum(w.to_owned());
+			Error::with_span(code, span)
+		})?;
 		visitor.visit_u8(n)
 	}
 
@@ -219,10 +225,11 @@ impl<'de, R: Read<'de>> serde::de::Deserializer<'de> for &mut Deserializer<R> {
 	where
 		V: serde::de::Visitor<'de>,
 	{
-		let w = self.num()?;
-		let n = w
-			.parse::<u16>()
-			.map_err(|_| Error::new(ErrorCode::InvalidNum(w.into())))?;
+		let (w, span) = self.num()?;
+		let n = w.parse::<u16>().map_err(|_| {
+			let code = ErrorCode::InvalidNum(w.to_owned());
+			Error::with_span(code, span)
+		})?;
 		visitor.visit_u16(n)
 	}
 
@@ -230,10 +237,11 @@ impl<'de, R: Read<'de>> serde::de::Deserializer<'de> for &mut Deserializer<R> {
 	where
 		V: serde::de::Visitor<'de>,
 	{
-		let w = self.num()?;
-		let n = w
-			.parse::<u32>()
-			.map_err(|_| Error::new(ErrorCode::InvalidNum(w.into())))?;
+		let (w, span) = self.num()?;
+		let n = w.parse::<u32>().map_err(|_| {
+			let code = ErrorCode::InvalidNum(w.to_owned());
+			Error::with_span(code, span)
+		})?;
 		visitor.visit_u32(n)
 	}
 
@@ -241,10 +249,11 @@ impl<'de, R: Read<'de>> serde::de::Deserializer<'de> for &mut Deserializer<R> {
 	where
 		V: serde::de::Visitor<'de>,
 	{
-		let w = self.num()?;
-		let n = w
-			.parse::<u64>()
-			.map_err(|_| Error::new(ErrorCode::InvalidNum(w.into())))?;
+		let (w, span) = self.num()?;
+		let n = w.parse::<u64>().map_err(|_| {
+			let code = ErrorCode::InvalidNum(w.to_owned());
+			Error::with_span(code, span)
+		})?;
 		visitor.visit_u64(n)
 	}
 
@@ -252,10 +261,11 @@ impl<'de, R: Read<'de>> serde::de::Deserializer<'de> for &mut Deserializer<R> {
 	where
 		V: serde::de::Visitor<'de>,
 	{
-		let w = self.num()?;
-		let n = w
-			.parse::<i8>()
-			.map_err(|_| Error::new(ErrorCode::InvalidNum(w.into())))?;
+		let (w, span) = self.num()?;
+		let n = w.parse::<i8>().map_err(|_| {
+			let code = ErrorCode::InvalidNum(w.to_owned());
+			Error::with_span(code, span)
+		})?;
 		visitor.visit_i8(n)
 	}
 
@@ -263,10 +273,11 @@ impl<'de, R: Read<'de>> serde::de::Deserializer<'de> for &mut Deserializer<R> {
 	where
 		V: serde::de::Visitor<'de>,
 	{
-		let w = self.num()?;
-		let n = w
-			.parse::<i16>()
-			.map_err(|_| Error::new(ErrorCode::InvalidNum(w.into())))?;
+		let (w, span) = self.num()?;
+		let n = w.parse::<i16>().map_err(|_| {
+			let code = ErrorCode::InvalidNum(w.to_owned());
+			Error::with_span(code, span)
+		})?;
 		visitor.visit_i16(n)
 	}
 
@@ -274,10 +285,11 @@ impl<'de, R: Read<'de>> serde::de::Deserializer<'de> for &mut Deserializer<R> {
 	where
 		V: serde::de::Visitor<'de>,
 	{
-		let w = self.num()?;
-		let n = w
-			.parse::<i32>()
-			.map_err(|_| Error::new(ErrorCode::InvalidNum(w.into())))?;
+		let (w, span) = self.num()?;
+		let n = w.parse::<i32>().map_err(|_| {
+			let code = ErrorCode::InvalidNum(w.to_owned());
+			Error::with_span(code, span)
+		})?;
 		visitor.visit_i32(n)
 	}
 
@@ -285,10 +297,11 @@ impl<'de, R: Read<'de>> serde::de::Deserializer<'de> for &mut Deserializer<R> {
 	where
 		V: serde::de::Visitor<'de>,
 	{
-		let w = self.num()?;
-		let n = w
-			.parse::<i64>()
-			.map_err(|_| Error::new(ErrorCode::InvalidNum(w.into())))?;
+		let (w, span) = self.num()?;
+		let n = w.parse::<i64>().map_err(|_| {
+			let code = ErrorCode::InvalidNum(w.to_owned());
+			Error::with_span(code, span)
+		})?;
 		visitor.visit_i64(n)
 	}
 
@@ -303,8 +316,8 @@ impl<'de, R: Read<'de>> serde::de::Deserializer<'de> for &mut Deserializer<R> {
 	where
 		V: serde::de::Visitor<'de>,
 	{
-		let w = self.num()?;
-		let n = parse_f64(&w)?;
+		let (w, span) = self.num()?;
+		let n = parse_f64(&w, span)?;
 		visitor.visit_f64(n)
 	}
 
@@ -530,7 +543,7 @@ impl<'de, R: Read<'de>> serde::de::Deserializer<'de> for &mut Deserializer<R> {
 			return Err(Error::with_point(code, point));
 		}
 
-		let identifier = self.word()?;
+		let (identifier, _) = self.word()?;
 		match identifier {
 			Ref::Borrow(b) => visitor.visit_borrowed_str(b),
 			Ref::Scratch(s) => visitor.visit_str(s),
@@ -546,22 +559,22 @@ impl<'de, R: Read<'de>> serde::de::Deserializer<'de> for &mut Deserializer<R> {
 	}
 }
 
-fn parse_bool(word: &str) -> Result<bool, Error> {
+fn parse_bool(word: &str, span: Span) -> Result<bool, Error> {
 	if word.eq_ignore_ascii_case("true") {
 		Ok(true)
 	} else if word.eq_ignore_ascii_case("false") {
 		Ok(false)
 	} else {
 		let code = ErrorCode::InvalidBool(word.to_owned());
-		Err(Error::new(code))
+		Err(Error::with_span(code, span))
 	}
 }
 
-fn parse_f64(num: &str) -> Result<f64, Error> {
+fn parse_f64(num: &str, span: Span) -> Result<f64, Error> {
 	let stripped = if let Some(stripped) = num.strip_prefix('+') {
 		if stripped.starts_with(['+', '-']) {
 			let code = ErrorCode::InvalidNum(num.to_owned());
-			return Err(Error::new(code));
+			return Err(Error::with_span(code, span));
 		}
 		stripped
 	} else {
@@ -574,7 +587,7 @@ fn parse_f64(num: &str) -> Result<f64, Error> {
 		Ok(f64::NEG_INFINITY)
 	} else if stripped.eq_ignore_ascii_case(".nan") {
 		let code = ErrorCode::UnsupportedNaN;
-		Err(Error::new(code))
+		Err(Error::with_span(code, span))
 	} else if let Ok(float) = stripped.parse::<f64>() {
 		if float.is_finite() {
 			Ok(float)
@@ -583,6 +596,6 @@ fn parse_f64(num: &str) -> Result<f64, Error> {
 		}
 	} else {
 		let code = ErrorCode::InvalidNum(num.to_owned());
-		Err(Error::new(code))
+		Err(Error::with_span(code, span))
 	}
 }
