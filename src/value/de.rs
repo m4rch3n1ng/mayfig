@@ -1,6 +1,9 @@
 use super::{Map, Number, Seq};
 use crate::Value;
-use serde::{de::Visitor, Deserialize};
+use serde::{
+	de::{VariantAccess, Visitor},
+	Deserialize,
+};
 
 struct ValueVisitor;
 
@@ -74,6 +77,16 @@ impl<'de> Visitor<'de> for ValueVisitor {
 			seq.push(val)
 		}
 		Ok(Value::Seq(seq))
+	}
+
+	fn visit_enum<A>(self, data: A) -> Result<Self::Value, A::Error>
+	where
+		A: serde::de::EnumAccess<'de>,
+	{
+		let (variant, access) = data.variant::<String>()?;
+		let values = access.newtype_variant::<Vec<Value>>()?;
+
+		Ok(Value::Tagged(variant, values))
 	}
 
 	fn visit_map<A>(self, mut vis: A) -> Result<Self::Value, A::Error>

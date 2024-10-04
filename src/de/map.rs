@@ -27,8 +27,15 @@ impl<'a, 'de, R: Read<'de>> serde::de::Deserializer<'de> for &mut MapKey<'a, R> 
 			b'[' => self.deserialize_seq(visitor),
 			b'{' => self.deserialize_map(visitor),
 			b'0'..=b'9' | b'.' | b'-' | b'+' => self.de.deserialize_number(visitor),
-			// todo tagged enums
-			_ => self.deserialize_string(visitor),
+			_ => {
+				let ident = self.de.identifier()?.to_owned();
+				if let Ok(Some(b'[')) = self.de.peek_line() {
+					let tagged = TaggedEnumKeyAcc::with_tag(self, ident);
+					visitor.visit_enum(tagged)
+				} else {
+					visitor.visit_string(ident)
+				}
+			}
 		}
 	}
 

@@ -1,8 +1,9 @@
 const TXT: &str = r#"
 map {
-	test = true
-	val = +1.2
+	test [ "test" 20 ] = true
+	val = "tag" [ +1.2 ]
 }
+vec = [ "test" -24 ]
 "#;
 
 fn main() {

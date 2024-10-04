@@ -18,6 +18,7 @@ pub enum Value {
 	Bool(bool),
 	Seq(Seq),
 	Map(Map),
+	Tagged(String, Vec<Value>),
 }
 
 impl Debug for Value {
@@ -28,6 +29,7 @@ impl Debug for Value {
 			Value::Bool(bool) => write!(f, "Bool({})", bool),
 			Value::Seq(seq) => Debug::fmt(seq, f),
 			Value::Map(map) => Debug::fmt(map, f),
+			Value::Tagged(tag, values) => write!(f, "Tagged({:?} {:?})", tag, values),
 		}
 	}
 }

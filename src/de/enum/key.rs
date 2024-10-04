@@ -1,3 +1,4 @@
+use super::fake::FakeStringDeserializer;
 use crate::{
 	de::{
 		access::SeqAcc,
@@ -14,11 +15,22 @@ use serde::{
 
 pub struct TaggedEnumKeyAcc<'a, 'b, R> {
 	map_key: &'a mut MapKey<'b, R>,
+	string: Option<String>,
 }
 
 impl<'a, 'b, 'de, R: Read<'de>> TaggedEnumKeyAcc<'a, 'b, R> {
 	pub fn new(map_key: &'a mut MapKey<'b, R>) -> Self {
-		TaggedEnumKeyAcc { map_key }
+		TaggedEnumKeyAcc {
+			map_key,
+			string: None,
+		}
+	}
+
+	pub fn with_tag(map_key: &'a mut MapKey<'b, R>, string: String) -> Self {
+		TaggedEnumKeyAcc {
+			map_key,
+			string: Some(string),
+		}
 	}
 }
 
@@ -26,12 +38,18 @@ impl<'a, 'b, 'de, R: Read<'de>> EnumAccess<'de> for TaggedEnumKeyAcc<'a, 'b, R> 
 	type Error = Error;
 	type Variant = Self;
 
-	fn variant_seed<V>(self, seed: V) -> Result<(V::Value, Self::Variant), Self::Error>
+	fn variant_seed<V>(mut self, seed: V) -> Result<(V::Value, Self::Variant), Self::Error>
 	where
 		V: serde::de::DeserializeSeed<'de>,
 	{
-		let variant = seed.deserialize(&mut *self.map_key)?;
-		Ok((variant, self))
+		if let Some(string) = self.string.take() {
+			let fake = FakeStringDeserializer::new(string);
+			let variant = seed.deserialize(fake)?;
+			Ok((variant, self))
+		} else {
+			let variant = seed.deserialize(&mut *self.map_key)?;
+			Ok((variant, self))
+		}
 	}
 }
 

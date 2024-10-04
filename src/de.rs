@@ -188,6 +188,20 @@ impl<'de, R: Read<'de>> Deserializer<R> {
 		self.read.str_bytes(&mut self.scratch)
 	}
 
+	fn identifier<'s>(&'s mut self) -> Result<Ref<'de, 's, str>, Error> {
+		let peek = self.read.peek().ok_or(Error::EOF)?;
+		if peek == b'"' || peek == b'\'' {
+			return self.str();
+		} else if !peek.is_ascii_alphabetic() {
+			let point = self.read.position();
+			let code = ErrorCode::ExpectedAlphabetic(peek as char);
+			return Err(Error::with_point(code, point));
+		}
+
+		let (identifier, _) = self.word()?;
+		Ok(identifier)
+	}
+
 	fn deserialize_number<'any, V>(&mut self, visitor: V) -> Result<V::Value, Error>
 	where
 		V: serde::de::Visitor<'any>,
@@ -230,8 +244,13 @@ impl<'de, R: Read<'de>> serde::de::Deserializer<'de> for &mut Deserializer<R> {
 		} else if let b'0'..=b'9' | b'.' | b'-' | b'+' = peek {
 			self.deserialize_number(visitor)
 		} else if peek == b'"' || peek == b'\'' {
-			// todo tagged enums
-			self.deserialize_string(visitor)
+			let string = self.str()?.to_owned();
+			if let Ok(Some(b'[')) = self.peek_line() {
+				let tagged = TaggedEnumValueAcc::with_tag(self, string);
+				visitor.visit_enum(tagged)
+			} else {
+				visitor.visit_string(string)
+			}
 		} else {
 			let (word, span) = self.word()?;
 			if let Ok(b) = parse_bool(&word, span) {
@@ -576,16 +595,7 @@ impl<'de, R: Read<'de>> serde::de::Deserializer<'de> for &mut Deserializer<R> {
 	where
 		V: serde::de::Visitor<'de>,
 	{
-		let peek = self.read.peek().ok_or(Error::EOF)?;
-		if peek == b'"' || peek == b'\'' {
-			return self.deserialize_str(visitor);
-		} else if !peek.is_ascii_alphabetic() {
-			let point = self.read.position();
-			let code = ErrorCode::ExpectedAlphabetic(peek as char);
-			return Err(Error::with_point(code, point));
-		}
-
-		let (identifier, _) = self.word()?;
+		let identifier = self.identifier()?;
 		match identifier {
 			Ref::Borrow(b) => visitor.visit_borrowed_str(b),
 			Ref::Scratch(s) => visitor.visit_str(s),

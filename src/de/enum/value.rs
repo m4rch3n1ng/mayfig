@@ -1,3 +1,4 @@
+use super::fake::FakeStringDeserializer;
 use crate::{
 	de::{
 		access::SeqAcc,
@@ -13,11 +14,19 @@ use serde::{
 
 pub struct TaggedEnumValueAcc<'a, R> {
 	de: &'a mut Deserializer<R>,
+	string: Option<String>,
 }
 
 impl<'a, 'de, R: Read<'de>> TaggedEnumValueAcc<'a, R> {
 	pub fn new(de: &'a mut Deserializer<R>) -> Self {
-		TaggedEnumValueAcc { de }
+		TaggedEnumValueAcc { de, string: None }
+	}
+
+	pub fn with_tag(de: &'a mut Deserializer<R>, string: String) -> Self {
+		TaggedEnumValueAcc {
+			de,
+			string: Some(string),
+		}
 	}
 }
 
@@ -25,12 +34,18 @@ impl<'a, 'de, R: Read<'de>> EnumAccess<'de> for TaggedEnumValueAcc<'a, R> {
 	type Error = Error;
 	type Variant = Self;
 
-	fn variant_seed<V>(self, seed: V) -> Result<(V::Value, Self::Variant), Self::Error>
+	fn variant_seed<V>(mut self, seed: V) -> Result<(V::Value, Self::Variant), Self::Error>
 	where
 		V: serde::de::DeserializeSeed<'de>,
 	{
-		let variant = seed.deserialize(&mut *self.de)?;
-		Ok((variant, self))
+		if let Some(string) = self.string.take() {
+			let fake = FakeStringDeserializer::new(string);
+			let variant = seed.deserialize(fake)?;
+			Ok((variant, self))
+		} else {
+			let variant = seed.deserialize(&mut *self.de)?;
+			Ok((variant, self))
+		}
 	}
 }
 
