@@ -187,17 +187,60 @@ impl<'de, R: Read<'de>> Deserializer<R> {
 		self.scratch.clear();
 		self.read.str_bytes(&mut self.scratch)
 	}
+
+	fn deserialize_number<'any, V>(&mut self, visitor: V) -> Result<V::Value, Error>
+	where
+		V: serde::de::Visitor<'any>,
+	{
+		let (w, span) = self.num()?;
+		if w.contains('.') || w.contains('e') {
+			let n = w.parse::<f64>().map_err(|_| {
+				let code = ErrorCode::InvalidNum(w.to_owned());
+				Error::with_span(code, span)
+			})?;
+			visitor.visit_f64(n)
+		} else if w.starts_with('-') {
+			let n = w.parse::<i64>().map_err(|_| {
+				let code = ErrorCode::InvalidNum(w.to_owned());
+				Error::with_span(code, span)
+			})?;
+			visitor.visit_i64(n)
+		} else {
+			let n = w.parse::<u64>().map_err(|_| {
+				let code = ErrorCode::InvalidNum(w.to_owned());
+				Error::with_span(code, span)
+			})?;
+			visitor.visit_u64(n)
+		}
+	}
 }
 
 impl<'de, R: Read<'de>> serde::de::Deserializer<'de> for &mut Deserializer<R> {
 	type Error = Error;
 
-	#[expect(unused_variables)]
 	fn deserialize_any<V>(self, visitor: V) -> Result<V::Value, Self::Error>
 	where
 		V: serde::de::Visitor<'de>,
 	{
-		todo!()
+		let peek = self.peek_any().ok_or(Error::EOF)?;
+		if self.indent == 0 || peek == b'{' {
+			self.deserialize_map(visitor)
+		} else if peek == b'[' {
+			self.deserialize_seq(visitor)
+		} else if let b'0'..=b'9' | b'.' | b'-' | b'+' = peek {
+			self.deserialize_number(visitor)
+		} else if peek == b'"' || peek == b'\'' {
+			// todo tagged enums
+			self.deserialize_string(visitor)
+		} else {
+			let (word, span) = self.word()?;
+			if let Ok(b) = parse_bool(&word, span) {
+				visitor.visit_bool(b)
+			} else {
+				let code = ErrorCode::UnexpectedWord(word.to_owned());
+				Err(Error::with_span(code, span))
+			}
+		}
 	}
 
 	fn deserialize_bool<V>(self, visitor: V) -> Result<V::Value, Self::Error>

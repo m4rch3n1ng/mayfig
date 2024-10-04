@@ -81,6 +81,8 @@ pub enum ErrorCode {
 	InvalidBool(String),
 	#[error("invalid number {0:?}")]
 	InvalidNum(String),
+	#[error("unexpected word {0:?}")]
+	UnexpectedWord(String),
 
 	#[error("expected quote \" or ', got {0:?}")]
 	ExpectedQuote(char),

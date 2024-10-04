@@ -18,12 +18,18 @@ impl<'a, 'de, R: Read<'de>> MapKey<'a, R> {
 impl<'a, 'de, R: Read<'de>> serde::de::Deserializer<'de> for &mut MapKey<'a, R> {
 	type Error = Error;
 
-	#[expect(unused_variables)]
 	fn deserialize_any<V>(self, visitor: V) -> Result<V::Value, Self::Error>
 	where
 		V: serde::de::Visitor<'de>,
 	{
-		todo!()
+		let peek = self.de.peek_any().ok_or(Error::EOF)?;
+		match peek {
+			b'[' => self.deserialize_seq(visitor),
+			b'{' => self.deserialize_map(visitor),
+			b'0'..=b'9' | b'.' | b'-' | b'+' => self.de.deserialize_number(visitor),
+			// todo tagged enums
+			_ => self.deserialize_string(visitor),
+		}
 	}
 
 	fn deserialize_bool<V>(self, visitor: V) -> Result<V::Value, Self::Error>
