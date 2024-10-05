@@ -4,8 +4,32 @@ use std::{
 	hash::Hash,
 };
 
-#[derive(Clone, PartialEq, Eq, Hash)]
+#[derive(Clone, Copy, PartialEq, Eq, Hash)]
 pub struct Number(InternalNumber);
+
+impl Number {
+	pub fn as_f64(&self) -> f64 {
+		match self.0 {
+			InternalNumber::PosInt(u) => u as f64,
+			InternalNumber::NegInt(i) => i as f64,
+			InternalNumber::Float(ff) => ff,
+		}
+	}
+
+	pub fn as_i64(&self) -> Option<i64> {
+		match self.0 {
+			InternalNumber::PosInt(u) => {
+				if u <= i64::MAX as u64 {
+					Some(u as i64)
+				} else {
+					None
+				}
+			}
+			InternalNumber::NegInt(i) => Some(i),
+			InternalNumber::Float(_) => None,
+		}
+	}
+}
 
 impl Debug for Number {
 	fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
@@ -19,7 +43,7 @@ impl Display for Number {
 	}
 }
 
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone, Copy, PartialEq)]
 pub enum InternalNumber {
 	PosInt(u64),
 	NegInt(i64),
