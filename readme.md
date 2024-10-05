@@ -157,6 +157,61 @@ windowrules {
 }
 ```
 
-### use
+### usage
+
+`mayland.mf`
+```properties
+cursor {
+	xcursor_theme = "Bibata-Modern-Classic"
+	xcursor_size = 24
+}
+
+bind {
+	"mod q" = "close"
+	"mod t" = "spawn" [ "kitty" ]
+	"mod 0" = "workspace" [ 0 ]
+}
+```
+
+`Cargo.toml`
+```toml
+[dependencies]
+mayfig = { git = "https://github.com/m4rch3n1ng/mayfig" }
+serde = { version = "1", features = ["derive"] }
+```
+
+`src/main.rs`
+```rust
+use serde::Deserialize;
+use std::collections::HashMap;
+
+#[derive(Debug, Deserialize)]
+struct Mayland {
+	cursor: Cursor,
+	bind: HashMap<String, Action>,
+}
+
+#[derive(Debug, Deserialize)]
+struct Cursor {
+	xcursor_theme: String,
+	xcursor_size: u32,
+}
+
+#[derive(Debug, Deserialize)]
+#[serde(rename_all = "snake_case")]
+enum Action {
+	Close,
+	Spawn(String),
+	Workspace(usize),
+}
+
+fn main() {
+	let content = std::fs::read_to_string("mayland.mf").unwrap();
+	let mayland = mayfig::from_str::<Mayland>(&content).unwrap();
+	dbg!(mayland);
+}
+```
+
+### background
 
 mayfig was made for the [mayland](https://github.com/m4rch3n1ng/mayland) wayland compositor
