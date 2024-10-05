@@ -76,7 +76,7 @@ layout {
 
 ```properties
 # sequences are to mayfig what arrays are to json and toml
-# they can be created 
+# they can be created with square brackets
 size = [ 24 24 ]
 
 # while the commata are optional,
