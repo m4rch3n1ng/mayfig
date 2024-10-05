@@ -7,32 +7,32 @@
 
 ```properties
 input {
-	keyboard {
-		# xkb_file = "~/.config/keymap/may.xkb"
+    keyboard {
+        # xkb_file = "~/.config/keymap/may.xkb"
 
-		repeat_delay = 600
-		repeat_rate = 25
-	}
+        repeat_delay = 600
+        repeat_rate = 25
+    }
 
-	touchpad {
-		tap = true
+    touchpad {
+        tap = true
 
-		natural_scroll = true
-		# scroll_method = "two_finger"
-	}
+        natural_scroll = true
+        # scroll_method = "two_finger"
+    }
 }
 
 cursor {
-	xcursor_theme = "Bibata-Modern-Classic"
-	xcursor_size = 24
+    xcursor_theme = "Bibata-Modern-Classic"
+    xcursor_size = 24
 }
 
 bind {
-	"mod escape" = "quit"
-	"mod q" = "close"
+    "mod escape" = "quit"
+    "mod q" = "close"
 
-	"mod t" = "spawn" [ "kitty" ]
-	"mod n" = "spawn" [ "firefox" ]
+    "mod t" = "spawn" [ "kitty" ]
+    "mod n" = "spawn" [ "firefox" ]
 }
 ```
 
@@ -62,13 +62,13 @@ bind {
 # all key=value pairs in categories must be on their
 # own seperate line
 layout {
-	thing = true
+    thing = true
 
-	# you can even add nested categories
-	tiling {
-		gaps = 10
-		margin = 20
-	}
+    # you can even add nested categories
+    tiling {
+        gaps = 10
+        margin = 20
+    }
 }
 ```
 
@@ -87,10 +87,10 @@ offset = [ 0, 0 ]
 # lines, but the opening brackets have to be on the same line as the
 # `=` sign.
 tiling_exceptions = [
-	"com.system76.CosmicFilesDialog"
-	"com.system76.CosmicFiles"
-	"jetbrains-toolbox"
-	"blueman-manager"
+    "com.system76.CosmicFilesDialog"
+    "com.system76.CosmicFiles"
+    "jetbrains-toolbox"
+    "blueman-manager"
 ]
 ```
 
@@ -104,10 +104,10 @@ st1 = "this is a string"
 st2 = 'single quoted strings work too'
 
 map {
-	# keys are also strings, but quotes are optional,
-	# if you restrict yourself to /[a-zA-Z][a-zA-Z0-9]*/
-	unquoted = true
-	"with quotes" = true
+    # keys are also strings, but quotes are optional,
+    # if you restrict yourself to /[a-zA-Z][a-zA-Z0-9]*/
+    unquoted = true
+    "with quotes" = true
 }
 ```
 
@@ -138,22 +138,22 @@ thing = "tag" [ "value" ]
 # this is how enums are defined in mayfig
 # by omitting the value you can create unit enum variants
 bind {
-	"mod q" = "close"
-	"mod t" = "spawn" [ "kitty" ]
-	"mod 0" = "workspace" [ 0 ]
+    "mod q" = "close"
+    "mod t" = "spawn" [ "kitty" ]
+    "mod 0" = "workspace" [ 0 ]
 }
 
 # you can even use them in category keys
 # there you can even omit the quotes around the tag
 windowrules {
-	class [ "com.system76.CosmicFiles" ] {
-		floating = true
-		size = [ 1000 700 ]
-	}
+    class [ "com.system76.CosmicFiles" ] {
+        floating = true
+        size = [ 1000 700 ]
+    }
 
-	title [ "maym ~" ] {
-		opacity = 0.6
-	}
+    title [ "maym ~" ] {
+        opacity = 0.6
+    }
 }
 ```
 
@@ -162,14 +162,14 @@ windowrules {
 `mayland.mf`
 ```properties
 cursor {
-	xcursor_theme = "Bibata-Modern-Classic"
-	xcursor_size = 24
+    xcursor_theme = "Bibata-Modern-Classic"
+    xcursor_size = 24
 }
 
 bind {
-	"mod q" = "close"
-	"mod t" = "spawn" [ "kitty" ]
-	"mod 0" = "workspace" [ 0 ]
+    "mod q" = "close"
+    "mod t" = "spawn" [ "kitty" ]
+    "mod 0" = "workspace" [ 0 ]
 }
 ```
 
@@ -187,28 +187,28 @@ use std::collections::HashMap;
 
 #[derive(Debug, Deserialize)]
 struct Mayland {
-	cursor: Cursor,
-	bind: HashMap<String, Action>,
+    cursor: Cursor,
+    bind: HashMap<String, Action>,
 }
 
 #[derive(Debug, Deserialize)]
 struct Cursor {
-	xcursor_theme: String,
-	xcursor_size: u32,
+    xcursor_theme: String,
+    xcursor_size: u32,
 }
 
 #[derive(Debug, Deserialize)]
 #[serde(rename_all = "snake_case")]
 enum Action {
-	Close,
-	Spawn(String),
-	Workspace(usize),
+    Close,
+    Spawn(String),
+    Workspace(usize),
 }
 
 fn main() {
-	let content = std::fs::read_to_string("mayland.mf").unwrap();
-	let mayland = mayfig::from_str::<Mayland>(&content).unwrap();
-	dbg!(mayland);
+    let content = std::fs::read_to_string("mayland.mf").unwrap();
+    let mayland = mayfig::from_str::<Mayland>(&content).unwrap();
+    dbg!(mayland);
 }
 ```
 
