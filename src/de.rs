@@ -7,6 +7,7 @@ use crate::{
 	de::access::{MapAcc, SeqAcc},
 	error::{Error, ErrorCode, Span},
 };
+use serde::forward_to_deserialize_any;
 
 mod access;
 mod r#enum;
@@ -602,13 +603,7 @@ impl<'de, R: Read<'de>> serde::de::Deserializer<'de> for &mut Deserializer<R> {
 		}
 	}
 
-	#[expect(unused_variables)]
-	fn deserialize_ignored_any<V>(self, visitor: V) -> Result<V::Value, Self::Error>
-	where
-		V: serde::de::Visitor<'de>,
-	{
-		todo!()
-	}
+	forward_to_deserialize_any! { ignored_any }
 }
 
 fn parse_bool(word: &str, span: Span) -> Result<bool, Error> {
