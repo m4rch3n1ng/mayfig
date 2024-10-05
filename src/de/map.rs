@@ -244,16 +244,13 @@ impl<'a, 'de, R: Read<'de>> serde::de::Deserializer<'de> for &mut MapKey<'a, R> 
 		V: serde::de::Visitor<'de>,
 	{
 		let peek = self.de.read.peek().ok_or(Error::EOF)?;
-
-		if peek == b'{' {
-			let point = self.de.read.position();
-			let code = ErrorCode::UnsupportedMapKey("struct");
-			Err(Error::with_point(code, point))
-		} else if peek.is_ascii_alphabetic() || peek == b'"' || peek == b'\'' {
+		if peek.is_ascii_alphabetic() || peek == b'"' || peek == b'\'' {
 			let acc = TaggedEnumKeyAcc::new(self);
 			visitor.visit_enum(acc)
 		} else {
-			todo!()
+			let point = self.de.read.position();
+			let code = ErrorCode::ExpectedEnum(peek as char);
+			Err(Error::with_point(code, point))
 		}
 	}
 

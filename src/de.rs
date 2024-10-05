@@ -519,14 +519,13 @@ impl<'de, R: Read<'de>> serde::de::Deserializer<'de> for &mut Deserializer<R> {
 		V: serde::de::Visitor<'de>,
 	{
 		let peek = self.read.peek().ok_or(Error::EOF)?;
-
-		if peek == b'{' {
-			todo!()
-		} else if peek == b'"' || peek == b'\'' {
+		if peek == b'"' || peek == b'\'' {
 			let acc = TaggedEnumValueAcc::new(self);
 			visitor.visit_enum(acc)
 		} else {
-			todo!()
+			let point = self.read.position();
+			let code = ErrorCode::ExpectedEnum(peek as char);
+			Err(Error::with_point(code, point))
 		}
 	}
 

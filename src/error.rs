@@ -92,6 +92,8 @@ pub enum ErrorCode {
 	ExpectedSeq(char),
 	#[error("expected end of seq ']', got {0:?}")]
 	ExpectedSeqEnd(char),
+	#[error("expected tagged enum, got {0:?}")]
+	ExpectedEnum(char),
 	#[error("expected quote ', \" or seq, got {0:?}")]
 	ExpectedBytes(char),
 
@@ -132,7 +134,6 @@ impl Display for Position {
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum Span {
 	Point(Position),
-	// todo actually use this
 	Span(Position, Position),
 }
 
