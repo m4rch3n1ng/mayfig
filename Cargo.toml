@@ -2,6 +2,9 @@
 name = "mayfig"
 version = "0.1.0"
 edition = "2021"
+readme = "readme.md"
+repository = "https://github.com/m4rch3n1ng/mayfig"
+license = "MPL-2.0"
 
 [dependencies]
 serde = "1.0.202"
