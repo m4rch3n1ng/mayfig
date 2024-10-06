@@ -129,9 +129,10 @@ impl<'id, W: std::io::Write> serde::ser::Serializer for &mut Serializer<'id, W> 
 		Ok(())
 	}
 
-	#[expect(unused_variables)]
 	fn serialize_char(self, v: char) -> Result<Self::Ok, Self::Error> {
-		todo!();
+		let mut buf = [0; 4];
+		let v = v.encode_utf8(&mut buf);
+		self.serialize_str(v)
 	}
 
 	fn serialize_str(self, v: &str) -> Result<Self::Ok, Self::Error> {
@@ -199,9 +200,9 @@ impl<'id, W: std::io::Write> serde::ser::Serializer for &mut Serializer<'id, W> 
 		todo!();
 	}
 
-	#[expect(unused_variables)]
-	fn serialize_seq(self, len: Option<usize>) -> Result<Self::SerializeSeq, Self::Error> {
-		todo!();
+	fn serialize_seq(self, _len: Option<usize>) -> Result<Self::SerializeSeq, Self::Error> {
+		self.writer.write_all(b"[ ")?;
+		Ok(self)
 	}
 
 	#[expect(unused_variables)]
@@ -233,7 +234,7 @@ impl<'id, W: std::io::Write> serde::ser::Serializer for &mut Serializer<'id, W> 
 		if self.indent_level == 0 {
 			Ok(self)
 		} else {
-			self.writer.write_all(b" {")?;
+			self.writer.write_all(b" {\n")?;
 			Ok(self)
 		}
 	}
@@ -262,24 +263,29 @@ impl<'id, W: std::io::Write> serde::ser::SerializeMap for &mut Serializer<'id, W
 	type Ok = ();
 	type Error = Error;
 
-	#[expect(unused_variables)]
 	fn serialize_key<T>(&mut self, key: &T) -> Result<(), Self::Error>
 	where
 		T: ?Sized + Serialize,
 	{
-		todo!();
+		self.indent()?;
+
+		let map_key = MapKeySerializer::new(self);
+		key.serialize(map_key)
 	}
 
-	#[expect(unused_variables)]
 	fn serialize_value<T>(&mut self, value: &T) -> Result<(), Self::Error>
 	where
 		T: ?Sized + Serialize,
 	{
-		todo!();
+		let map_val = MapValSerializer::new(self);
+		value.serialize(map_val)?;
+
+		self.writer.write_all(b"\n")?;
+		Ok(())
 	}
 
 	fn end(self) -> Result<Self::Ok, Self::Error> {
-		todo!()
+		serde::ser::SerializeStruct::end(self)
 	}
 }
 
@@ -287,16 +293,19 @@ impl<'id, W: std::io::Write> serde::ser::SerializeSeq for &mut Serializer<'id, W
 	type Ok = ();
 	type Error = Error;
 
-	#[expect(unused_variables)]
+	// todo somehow conditionally line break
 	fn serialize_element<T>(&mut self, value: &T) -> Result<(), Self::Error>
 	where
 		T: ?Sized + Serialize,
 	{
-		todo!();
+		value.serialize(&mut **self)?;
+		self.writer.write_all(b" ")?;
+		Ok(())
 	}
 
 	fn end(self) -> Result<Self::Ok, Self::Error> {
-		todo!();
+		self.writer.write_all(b"]")?;
+		Ok(())
 	}
 }
 
@@ -352,16 +361,15 @@ impl<'id, W: std::io::Write> serde::ser::SerializeTuple for &mut Serializer<'id,
 	type Ok = ();
 	type Error = Error;
 
-	#[expect(unused_variables)]
 	fn serialize_element<T>(&mut self, value: &T) -> Result<(), Self::Error>
 	where
 		T: ?Sized + Serialize,
 	{
-		todo!();
+		serde::ser::SerializeSeq::serialize_element(self, value)
 	}
 
 	fn end(self) -> Result<Self::Ok, Self::Error> {
-		todo!();
+		serde::ser::SerializeSeq::end(self)
 	}
 }
 
@@ -369,16 +377,15 @@ impl<'id, W: std::io::Write> serde::ser::SerializeTupleStruct for &mut Serialize
 	type Ok = ();
 	type Error = Error;
 
-	#[expect(unused_variables)]
 	fn serialize_field<T>(&mut self, value: &T) -> Result<(), Self::Error>
 	where
 		T: ?Sized + Serialize,
 	{
-		todo!();
+		serde::ser::SerializeSeq::serialize_element(self, value)
 	}
 
 	fn end(self) -> Result<Self::Ok, Self::Error> {
-		todo!();
+		serde::ser::SerializeSeq::end(self)
 	}
 }
 
@@ -397,6 +404,24 @@ impl<'id, W: std::io::Write> serde::ser::SerializeTupleVariant for &mut Serializ
 	fn end(self) -> Result<Self::Ok, Self::Error> {
 		todo!();
 	}
+}
+
+pub fn to_writer<W, T>(writer: W, value: &T) -> Result<(), Error>
+where
+	W: std::io::Write,
+	T: ?Sized + Serialize,
+{
+	let mut serializer = Serializer::new(writer);
+	value.serialize(&mut serializer)
+}
+
+pub fn to_vec<T: ?Sized + Serialize>(value: &T) -> Result<Vec<u8>, Error> {
+	let mut vec = Vec::with_capacity(128);
+
+	let mut serializer = Serializer::new(&mut vec);
+	value.serialize(&mut serializer)?;
+
+	Ok(vec)
 }
 
 pub fn to_string<T: ?Sized + Serialize>(value: &T) -> Result<String, Error> {

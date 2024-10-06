@@ -68,9 +68,10 @@ impl<'a, 'id, W: std::io::Write> serde::ser::Serializer for MapKeySerializer<'a,
 		self.ser.serialize_f64(v)
 	}
 
-	#[expect(unused_variables)]
 	fn serialize_char(self, v: char) -> Result<Self::Ok, Self::Error> {
-		todo!();
+		let mut buf = [0; 4];
+		let v = v.encode_utf8(&mut buf);
+		self.serialize_str(v)
 	}
 
 	fn serialize_str(self, v: &str) -> Result<Self::Ok, Self::Error> {
@@ -334,9 +335,9 @@ impl<'a, 'id, W: std::io::Write> serde::ser::Serializer for MapValSerializer<'a,
 		todo!()
 	}
 
-	#[expect(unused_variables)]
 	fn serialize_seq(self, len: Option<usize>) -> Result<Self::SerializeSeq, Self::Error> {
-		todo!();
+		self.ser.writer.write_all(b" = ")?;
+		self.ser.serialize_seq(len)
 	}
 
 	#[expect(unused_variables)]
