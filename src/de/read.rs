@@ -157,7 +157,7 @@ impl<'de> Read<'de> for SliceRead<'de> {
 		loop {
 			let Some(peek) = self.peek() else { break };
 
-			if let b'0'..=b'9' | b'.' = peek {
+			if let b'0'..=b'9' | b'.' | b'e' | b'-' | b'+' = peek {
 				self.discard();
 			} else if is_delimiter(peek) {
 				break;
