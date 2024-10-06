@@ -303,14 +303,13 @@ impl<'a, 'id, W: std::io::Write> serde::ser::Serializer for MapValSerializer<'a,
 		Err(Error::new(ErrorCode::UnsupportedUnit))
 	}
 
-	#[expect(unused_variables)]
 	fn serialize_unit_variant(
 		self,
-		name: &'static str,
-		variant_index: u32,
+		_name: &'static str,
+		_variant_index: u32,
 		variant: &'static str,
 	) -> Result<Self::Ok, Self::Error> {
-		todo!();
+		self.serialize_str(variant)
 	}
 
 	fn serialize_newtype_struct<T: Serialize + ?Sized>(
@@ -321,7 +320,6 @@ impl<'a, 'id, W: std::io::Write> serde::ser::Serializer for MapValSerializer<'a,
 		value.serialize(self)
 	}
 
-	#[expect(unused_variables)]
 	fn serialize_newtype_variant<T>(
 		self,
 		name: &'static str,
@@ -332,7 +330,9 @@ impl<'a, 'id, W: std::io::Write> serde::ser::Serializer for MapValSerializer<'a,
 	where
 		T: ?Sized + Serialize,
 	{
-		todo!()
+		self.ser.writer.write_all(b" = ")?;
+		self.ser
+			.serialize_newtype_variant(name, variant_index, variant, value)
 	}
 
 	fn serialize_seq(self, len: Option<usize>) -> Result<Self::SerializeSeq, Self::Error> {
@@ -354,7 +354,6 @@ impl<'a, 'id, W: std::io::Write> serde::ser::Serializer for MapValSerializer<'a,
 		todo!();
 	}
 
-	#[expect(unused_variables)]
 	fn serialize_tuple_variant(
 		self,
 		name: &'static str,
@@ -362,7 +361,9 @@ impl<'a, 'id, W: std::io::Write> serde::ser::Serializer for MapValSerializer<'a,
 		variant: &'static str,
 		len: usize,
 	) -> Result<Self::SerializeTupleVariant, Self::Error> {
-		todo!();
+		self.ser.writer.write_all(b" = ")?;
+		self.ser
+			.serialize_tuple_variant(name, variant_index, variant, len)
 	}
 
 	fn serialize_map(self, len: Option<usize>) -> Result<Self::SerializeMap, Self::Error> {
@@ -379,7 +380,6 @@ impl<'a, 'id, W: std::io::Write> serde::ser::Serializer for MapValSerializer<'a,
 		self.ser.serialize_struct(name, len)
 	}
 
-	#[expect(unused_variables)]
 	fn serialize_struct_variant(
 		self,
 		name: &'static str,
@@ -387,6 +387,8 @@ impl<'a, 'id, W: std::io::Write> serde::ser::Serializer for MapValSerializer<'a,
 		variant: &'static str,
 		len: usize,
 	) -> Result<Self::SerializeStructVariant, Self::Error> {
-		todo!()
+		self.ser.writer.write_all(b" = ")?;
+		self.ser
+			.serialize_struct_variant(name, variant_index, variant, len)
 	}
 }

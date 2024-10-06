@@ -1,7 +1,11 @@
-use self::map::{MapKeySerializer, MapValSerializer};
+use self::{
+	map::{MapKeySerializer, MapValSerializer},
+	r#enum::NewtypeVariantSerializer,
+};
 use crate::{error::ErrorCode, Error};
 use serde::Serialize;
 
+mod r#enum;
 mod map;
 
 pub struct Serializer<'id, W> {
@@ -186,18 +190,22 @@ impl<'id, W: std::io::Write> serde::ser::Serializer for &mut Serializer<'id, W> 
 		value.serialize(self)
 	}
 
-	#[expect(unused_variables)]
 	fn serialize_newtype_variant<T>(
 		self,
-		name: &'static str,
-		variant_index: u32,
+		_name: &'static str,
+		_variant_index: u32,
 		variant: &'static str,
 		value: &T,
 	) -> Result<Self::Ok, Self::Error>
 	where
 		T: ?Sized + Serialize,
 	{
-		todo!();
+		self.serialize_str(variant)?;
+
+		let newtype = NewtypeVariantSerializer::new(self);
+		value.serialize(newtype)?;
+
+		Ok(())
 	}
 
 	fn serialize_seq(self, _len: Option<usize>) -> Result<Self::SerializeSeq, Self::Error> {
@@ -205,29 +213,28 @@ impl<'id, W: std::io::Write> serde::ser::Serializer for &mut Serializer<'id, W> 
 		Ok(self)
 	}
 
-	#[expect(unused_variables)]
 	fn serialize_tuple(self, len: usize) -> Result<Self::SerializeTuple, Self::Error> {
-		todo!();
+		self.serialize_seq(Some(len))
 	}
 
-	#[expect(unused_variables)]
 	fn serialize_tuple_struct(
 		self,
-		name: &'static str,
+		_name: &'static str,
 		len: usize,
 	) -> Result<Self::SerializeTupleStruct, Self::Error> {
-		todo!();
+		self.serialize_seq(Some(len))
 	}
 
-	#[expect(unused_variables)]
 	fn serialize_tuple_variant(
 		self,
-		name: &'static str,
-		variant_index: u32,
+		_name: &'static str,
+		_variant_index: u32,
 		variant: &'static str,
-		len: usize,
+		_len: usize,
 	) -> Result<Self::SerializeTupleVariant, Self::Error> {
-		todo!();
+		self.serialize_str(variant)?;
+		self.writer.write_all(b" [ ")?;
+		Ok(self)
 	}
 
 	fn serialize_map(self, _len: Option<usize>) -> Result<Self::SerializeMap, Self::Error> {
@@ -247,15 +254,17 @@ impl<'id, W: std::io::Write> serde::ser::Serializer for &mut Serializer<'id, W> 
 		self.serialize_map(Some(len))
 	}
 
-	#[expect(unused_variables)]
 	fn serialize_struct_variant(
 		self,
 		name: &'static str,
-		variant_index: u32,
+		_variant_index: u32,
 		variant: &'static str,
 		len: usize,
 	) -> Result<Self::SerializeStructVariant, Self::Error> {
-		todo!();
+		self.serialize_str(variant)?;
+		self.indent_level += 1;
+
+		self.serialize_struct(name, len)
 	}
 }
 
@@ -344,16 +353,15 @@ impl<'id, W: std::io::Write> serde::ser::SerializeStructVariant for &mut Seriali
 	type Ok = ();
 	type Error = Error;
 
-	#[expect(unused_variables)]
 	fn serialize_field<T>(&mut self, key: &'static str, value: &T) -> Result<(), Self::Error>
 	where
 		T: ?Sized + Serialize,
 	{
-		todo!();
+		serde::ser::SerializeStruct::serialize_field(self, key, value)
 	}
 
 	fn end(self) -> Result<Self::Ok, Self::Error> {
-		todo!();
+		serde::ser::SerializeStruct::end(self)
 	}
 }
 
@@ -393,16 +401,15 @@ impl<'id, W: std::io::Write> serde::ser::SerializeTupleVariant for &mut Serializ
 	type Ok = ();
 	type Error = Error;
 
-	#[expect(unused_variables)]
 	fn serialize_field<T>(&mut self, value: &T) -> Result<(), Self::Error>
 	where
 		T: ?Sized + Serialize,
 	{
-		todo!();
+		serde::ser::SerializeSeq::serialize_element(self, value)
 	}
 
 	fn end(self) -> Result<Self::Ok, Self::Error> {
-		todo!();
+		serde::ser::SerializeSeq::end(self)
 	}
 }
 
