@@ -1,7 +1,7 @@
 use std::{cmp::Ordering, fmt::Display};
 use thiserror::Error;
 
-#[derive(Debug, Clone)]
+#[derive(Debug)]
 pub struct Error {
 	code: ErrorCode,
 	span: Option<Span>,
@@ -52,7 +52,7 @@ impl std::error::Error for Error {}
 impl serde::de::Error for Error {
 	fn custom<T>(msg: T) -> Self
 	where
-		T: std::fmt::Display,
+		T: Display,
 	{
 		let msg = msg.to_string();
 		let code = ErrorCode::Custom(msg);
@@ -60,8 +60,29 @@ impl serde::de::Error for Error {
 	}
 }
 
-#[derive(Debug, Clone, Error)]
+impl serde::ser::Error for Error {
+	fn custom<T>(msg: T) -> Self
+	where
+		T: Display,
+	{
+		let msg = msg.to_string();
+		let code = ErrorCode::Custom(msg);
+		Error::new(code)
+	}
+}
+
+impl From<std::io::Error> for Error {
+	fn from(err: std::io::Error) -> Self {
+		let code = ErrorCode::Io(err);
+		Error::new(code)
+	}
+}
+
+#[derive(Debug, Error)]
 pub enum ErrorCode {
+	#[error("io error")]
+	Io(#[source] std::io::Error),
+
 	#[error("end of file")]
 	Eof,
 	#[error("invalid utf8")]
@@ -113,6 +134,8 @@ pub enum ErrorCode {
 	UnsupportedUnit,
 	#[error("unsupported nan")]
 	UnsupportedNaN,
+	#[error("unsupported none")]
+	UnsupportedNone,
 	#[error("unsupported map key type {0}")]
 	UnsupportedMapKey(&'static str),
 

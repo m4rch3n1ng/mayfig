@@ -8,6 +8,8 @@ license = "MPL-2.0"
 
 [dependencies]
 indexmap = "2.2.6"
+itoa = "1.0.11"
+ryu = "1.0.18"
 serde = "1.0.202"
 thiserror = "1.0.60"
 
