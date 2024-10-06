@@ -1,7 +1,6 @@
-use serde::Serialize;
-
 use super::Serializer;
 use crate::{error::ErrorCode, Error};
+use serde::Serialize;
 
 pub struct NewtypeVariantSerializer<'a, 'id, W: std::io::Write> {
 	ser: &'a mut Serializer<'id, W>,
@@ -115,9 +114,11 @@ impl<'a, 'id, W: std::io::Write> serde::ser::Serializer for NewtypeVariantSerial
 		Ok(())
 	}
 
-	#[expect(unused_variables)]
 	fn serialize_bytes(self, v: &[u8]) -> Result<Self::Ok, Self::Error> {
-		todo!()
+		self.ser.writer.write_all(b" [ ")?;
+		self.ser.serialize_bytes(v)?;
+		self.ser.writer.write_all(b" ]")?;
+		Ok(())
 	}
 
 	fn serialize_none(self) -> Result<Self::Ok, Self::Error> {
@@ -181,7 +182,7 @@ impl<'a, 'id, W: std::io::Write> serde::ser::Serializer for NewtypeVariantSerial
 		_name: &'static str,
 		len: usize,
 	) -> Result<Self::SerializeTupleStruct, Self::Error> {
-		self.serialize_seq(Some(len))
+		self.serialize_tuple(len)
 	}
 
 	#[expect(unused_variables)]

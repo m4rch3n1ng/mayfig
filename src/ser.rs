@@ -169,14 +169,13 @@ impl<'id, W: std::io::Write> serde::ser::Serializer for &mut Serializer<'id, W> 
 		Err(Error::new(ErrorCode::UnsupportedUnit))
 	}
 
-	#[expect(unused_variables)]
 	fn serialize_unit_variant(
 		self,
-		name: &'static str,
-		variant_index: u32,
+		_name: &'static str,
+		_variant_index: u32,
 		variant: &'static str,
 	) -> Result<Self::Ok, Self::Error> {
-		todo!();
+		self.serialize_str(variant)
 	}
 
 	fn serialize_newtype_struct<T>(
@@ -222,7 +221,7 @@ impl<'id, W: std::io::Write> serde::ser::Serializer for &mut Serializer<'id, W> 
 		_name: &'static str,
 		len: usize,
 	) -> Result<Self::SerializeTupleStruct, Self::Error> {
-		self.serialize_seq(Some(len))
+		self.serialize_tuple(len)
 	}
 
 	fn serialize_tuple_variant(
@@ -278,8 +277,8 @@ impl<'id, W: std::io::Write> serde::ser::SerializeMap for &mut Serializer<'id, W
 	{
 		self.indent()?;
 
-		let map_key = MapKeySerializer::new(self);
-		key.serialize(map_key)
+		let mut map_key = MapKeySerializer::new(self);
+		key.serialize(&mut map_key)
 	}
 
 	fn serialize_value<T>(&mut self, value: &T) -> Result<(), Self::Error>
@@ -328,8 +327,8 @@ impl<'id, W: std::io::Write> serde::ser::SerializeStruct for &mut Serializer<'id
 	{
 		self.indent()?;
 
-		let map_key = MapKeySerializer::new(self);
-		key.serialize(map_key)?;
+		let mut map_key = MapKeySerializer::new(self);
+		key.serialize(&mut map_key)?;
 
 		let map_val = MapValSerializer::new(self);
 		value.serialize(map_val)?;

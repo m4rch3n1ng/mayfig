@@ -1,4 +1,4 @@
-use super::Serializer;
+use super::{r#enum::NewtypeVariantSerializer, Serializer};
 use crate::{error::ErrorCode, Error};
 use serde::Serialize;
 
@@ -12,16 +12,18 @@ impl<'a, 'id, W: std::io::Write> MapKeySerializer<'a, 'id, W> {
 	}
 }
 
-impl<'a, 'id, W: std::io::Write> serde::ser::Serializer for MapKeySerializer<'a, 'id, W> {
+impl<'a, 's, 'id, W: std::io::Write> serde::ser::Serializer
+	for &'s mut MapKeySerializer<'a, 'id, W>
+{
 	type Ok = ();
 	type Error = Error;
 
-	type SerializeMap = &'a mut Serializer<'id, W>;
-	type SerializeSeq = &'a mut Serializer<'id, W>;
-	type SerializeTuple = &'a mut Serializer<'id, W>;
-	type SerializeTupleStruct = &'a mut Serializer<'id, W>;
-	type SerializeTupleVariant = &'a mut Serializer<'id, W>;
-	type SerializeStruct = &'a mut Serializer<'id, W>;
+	type SerializeMap = &'s mut Serializer<'id, W>;
+	type SerializeSeq = &'s mut Serializer<'id, W>;
+	type SerializeTuple = &'s mut Serializer<'id, W>;
+	type SerializeTupleStruct = &'s mut Serializer<'id, W>;
+	type SerializeTupleVariant = &'s mut Serializer<'id, W>;
+	type SerializeStruct = &'s mut Serializer<'id, W>;
 	type SerializeStructVariant = &'a mut Serializer<'id, W>;
 
 	fn serialize_bool(self, v: bool) -> Result<Self::Ok, Self::Error> {
@@ -107,14 +109,13 @@ impl<'a, 'id, W: std::io::Write> serde::ser::Serializer for MapKeySerializer<'a,
 		Err(Error::new(ErrorCode::UnsupportedUnit))
 	}
 
-	#[expect(unused_variables)]
 	fn serialize_unit_variant(
 		self,
-		name: &'static str,
-		variant_index: u32,
+		_name: &'static str,
+		_variant_index: u32,
 		variant: &'static str,
 	) -> Result<Self::Ok, Self::Error> {
-		todo!();
+		self.serialize_str(variant)
 	}
 
 	fn serialize_newtype_struct<T>(
@@ -128,37 +129,38 @@ impl<'a, 'id, W: std::io::Write> serde::ser::Serializer for MapKeySerializer<'a,
 		value.serialize(self)
 	}
 
-	#[expect(unused_variables)]
 	fn serialize_newtype_variant<T>(
 		self,
-		name: &'static str,
-		variant_index: u32,
+		_name: &'static str,
+		_variant_index: u32,
 		variant: &'static str,
 		value: &T,
 	) -> Result<Self::Ok, Self::Error>
 	where
 		T: ?Sized + Serialize,
 	{
-		todo!()
+		self.serialize_str(variant)?;
+
+		let newtype = NewtypeVariantSerializer::new(self.ser);
+		value.serialize(newtype)?;
+
+		Ok(())
 	}
 
-	#[expect(unused_variables)]
 	fn serialize_seq(self, len: Option<usize>) -> Result<Self::SerializeSeq, Self::Error> {
-		todo!();
+		self.ser.serialize_seq(len)
 	}
 
-	#[expect(unused_variables)]
 	fn serialize_tuple(self, len: usize) -> Result<Self::SerializeTuple, Self::Error> {
-		todo!();
+		self.serialize_seq(Some(len))
 	}
 
-	#[expect(unused_variables)]
 	fn serialize_tuple_struct(
 		self,
-		name: &'static str,
+		_name: &'static str,
 		len: usize,
 	) -> Result<Self::SerializeTupleStruct, Self::Error> {
-		todo!();
+		self.serialize_tuple(len)
 	}
 
 	#[expect(unused_variables)]
@@ -169,7 +171,9 @@ impl<'a, 'id, W: std::io::Write> serde::ser::Serializer for MapKeySerializer<'a,
 		variant: &'static str,
 		len: usize,
 	) -> Result<Self::SerializeTupleVariant, Self::Error> {
-		todo!();
+		self.serialize_str(variant)?;
+		self.ser.writer.write_all(b" [ ")?;
+		Ok(self.ser)
 	}
 
 	fn serialize_map(self, _len: Option<usize>) -> Result<Self::SerializeMap, Self::Error> {
@@ -282,9 +286,8 @@ impl<'a, 'id, W: std::io::Write> serde::ser::Serializer for MapValSerializer<'a,
 		self.ser.serialize_str(v)
 	}
 
-	#[expect(unused_variables)]
 	fn serialize_bytes(self, v: &[u8]) -> Result<Self::Ok, Self::Error> {
-		todo!()
+		self.ser.serialize_bytes(v)
 	}
 
 	fn serialize_none(self) -> Result<Self::Ok, Self::Error> {
@@ -340,18 +343,16 @@ impl<'a, 'id, W: std::io::Write> serde::ser::Serializer for MapValSerializer<'a,
 		self.ser.serialize_seq(len)
 	}
 
-	#[expect(unused_variables)]
 	fn serialize_tuple(self, len: usize) -> Result<Self::SerializeTuple, Self::Error> {
-		todo!();
+		self.serialize_seq(Some(len))
 	}
 
-	#[expect(unused_variables)]
 	fn serialize_tuple_struct(
 		self,
-		name: &'static str,
+		_name: &'static str,
 		len: usize,
 	) -> Result<Self::SerializeTupleStruct, Self::Error> {
-		todo!();
+		self.serialize_tuple(len)
 	}
 
 	fn serialize_tuple_variant(

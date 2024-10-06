@@ -31,9 +31,29 @@ enum Action {
 	Seq(Vec<char>),
 }
 
-#[derive(Debug, Deserialize, Serialize, PartialEq, Eq)]
+#[derive(Debug, Deserialize, Serialize, PartialEq, Eq, Hash)]
+#[serde(rename_all = "snake_case")]
+enum Match {
+	Thing(String, String),
+	Class(String),
+	Title(String),
+	None,
+}
+
+#[derive(Debug, Deserialize, Serialize, PartialEq)]
+struct WindowRule {
+	#[serde(skip_serializing_if = "Option::is_none", default)]
+	floating: Option<bool>,
+	#[serde(skip_serializing_if = "Option::is_none", default)]
+	size: Option<(u32, u32)>,
+	#[serde(skip_serializing_if = "Option::is_none", default)]
+	opacity: Option<f64>,
+}
+
+#[derive(Debug, Deserialize, Serialize, PartialEq)]
 struct DeSer2 {
 	binds: IndexMap<String, Action>,
+	window: IndexMap<Match, WindowRule>,
 }
 
 const DE_SER_2: &str = r#"binds {
@@ -48,6 +68,23 @@ const DE_SER_2: &str = r#"binds {
 	}
 	"mod s" = "seq" [ "a" "c" ]
 	"mod 0" = "move" [ "workspace" 0 ]
+}
+window {
+	class [ "com.system76.CosmicFiles" ] {
+		floating = true
+		size = [ 1000 700 ]
+	}
+	title [ "maym ~" ] {
+		opacity = 0.6
+	}
+	thing [ "chromium" "Save File" ] {
+		floating = true
+		size = [ 700 700 ]
+		opacity = 0.4
+	}
+	none {
+		floating = false
+	}
 }
 "#;
 
@@ -87,6 +124,40 @@ fn ser() {
 			("mod s".to_owned(), Action::Seq(vec!['a', 'c'])),
 			("mod 0".to_owned(), Action::Move("workspace".to_owned(), 0)),
 		]),
+		window: IndexMap::from([
+			(
+				Match::Class("com.system76.CosmicFiles".to_owned()),
+				WindowRule {
+					floating: Some(true),
+					size: Some((1000, 700)),
+					opacity: None,
+				},
+			),
+			(
+				Match::Title("maym ~".to_owned()),
+				WindowRule {
+					floating: None,
+					size: None,
+					opacity: Some(0.6),
+				},
+			),
+			(
+				Match::Thing("chromium".to_owned(), "Save File".to_owned()),
+				WindowRule {
+					floating: Some(true),
+					size: Some((700, 700)),
+					opacity: Some(0.4),
+				},
+			),
+			(
+				Match::None,
+				WindowRule {
+					floating: Some(false),
+					size: None,
+					opacity: None,
+				},
+			),
+		]),
 	};
 
 	let de2 = mayfig::from_str::<DeSer2>(DE_SER_2).unwrap();
@@ -94,4 +165,29 @@ fn ser() {
 
 	let ser2 = mayfig::to_string(&de2).unwrap();
 	assert_eq!(ser2, DE_SER_2);
+}
+
+#[derive(Debug, Deserialize, Serialize, PartialEq, Eq)]
+struct DeSer3 {
+	map: IndexMap<(u8, u8), (u8, u8)>,
+}
+
+const DE_SER_3: &str = r#"map {
+	[ 0 1 ] = [ 1 0 ]
+	[ 1 0 ] = [ 0 1 ]
+	[ 2 2 ] = [ 2 2 ]
+}
+"#;
+
+#[test]
+fn more() {
+	let ref3 = DeSer3 {
+		map: IndexMap::from([((0, 1), (1, 0)), ((1, 0), (0, 1)), ((2, 2), (2, 2))]),
+	};
+
+	let de3 = mayfig::from_str::<DeSer3>(DE_SER_3).unwrap();
+	assert_eq!(de3, ref3);
+
+	let ser3 = mayfig::to_string(&de3).unwrap();
+	assert_eq!(ser3, DE_SER_3);
 }
