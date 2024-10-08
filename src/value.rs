@@ -1,3 +1,5 @@
+//! contains the [`Value`] enum, a way of deserializing any valid mayfig value
+
 use crate::Error;
 use std::{fmt::Debug, hash::Hash};
 
@@ -9,17 +11,30 @@ mod ser;
 pub use self::map::Map;
 pub use self::number::Number;
 
+/// a representation of a mayfig value
 #[derive(Clone, PartialEq, Eq, Hash)]
 pub enum Value {
+	/// represents a string
 	String(String),
+	/// represents a number
 	Number(Number),
+	/// represents a boolean
 	Bool(bool),
+	/// represents a mayfig sequence
 	Seq(Vec<Value>),
+	/// represents a mayfig map
 	Map(Map),
+	/// represents a mayfig tagged enum
+	///
+	/// # warning
+	///
+	/// serializing this variant via serde will leak the
+	/// `tag` string due to a [serde limitation](https://github.com/serde-rs/serde/issues/2218).
 	Tagged(String, Vec<Value>),
 }
 
 impl Value {
+	/// returns a `str` if `self` is [`Value::String`]. returns `None` otherwise.
 	pub fn as_str(&self) -> Option<&str> {
 		match self {
 			Value::String(s) => Some(s),
@@ -27,6 +42,7 @@ impl Value {
 		}
 	}
 
+	/// returns a [`Number`] if `self` is [`Value::Number`]. returns `None` otherwise.
 	pub fn as_number(&self) -> Option<Number> {
 		match self {
 			Value::Number(num) => Some(*num),
@@ -34,6 +50,8 @@ impl Value {
 		}
 	}
 
+	/// returns an `f64` if `self` is [`Value::Number`], and casts the value if necessary.
+	/// returns `None` otherwise.
 	pub fn as_f64(&self) -> Option<f64> {
 		match self {
 			Value::Number(num) => Some(num.as_f64()),
@@ -41,6 +59,8 @@ impl Value {
 		}
 	}
 
+	/// returns an `i64` if `self` is [`Value::Number`], the number is an integer and fits into an `i64`.
+	/// returns `None` otherwise.
 	pub fn as_i64(&self) -> Option<i64> {
 		match self {
 			Value::Number(num) => num.as_i64(),
@@ -48,6 +68,7 @@ impl Value {
 		}
 	}
 
+	/// returns a `bool` if `self` is [`Value::Bool`]. returns `None` otherwise.
 	pub fn as_bool(&self) -> Option<bool> {
 		match self {
 			Value::Bool(b) => Some(*b),
@@ -55,6 +76,7 @@ impl Value {
 		}
 	}
 
+	/// returns the associated `&[]` slice if `self` is [`Value::Seq`]. returns `None` otherwise.
 	pub fn as_seq(&self) -> Option<&[Value]> {
 		match self {
 			Value::Seq(seq) => Some(seq),
@@ -62,6 +84,8 @@ impl Value {
 		}
 	}
 
+	/// returns a mutable reference to the associated `Vec` if `self` is [`Value::Seq`].
+	/// returns `None` otherwise.
 	pub fn as_seq_mut(&mut self) -> Option<&mut Vec<Value>> {
 		match self {
 			Value::Seq(seq) => Some(seq),
@@ -69,6 +93,7 @@ impl Value {
 		}
 	}
 
+	/// returns a [`Map`] if `self` is [`Value::Map`]. returns `None` otherwise.
 	pub fn as_map(&self) -> Option<&Map> {
 		match self {
 			Value::Map(map) => Some(map),
@@ -76,6 +101,8 @@ impl Value {
 		}
 	}
 
+	/// returns a mutable reference to the associated [`Map`] if `self` is [`Value::Map`].
+	/// returns `None` otherwise.
 	pub fn as_map_mut(&mut self) -> Option<&mut Map> {
 		match self {
 			Value::Map(map) => Some(map),

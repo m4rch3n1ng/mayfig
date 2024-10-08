@@ -7,10 +7,16 @@ use std::{
 	ops::{Deref, DerefMut},
 };
 
+/// a mayfig mapping, in which both key and value are of type [`Value`]
+///
+/// its underlying implementation is an [`indexmap::IndexMap`], but unlike the `IndexMap`
+/// its [`PartialEq`] implementation is sensitive to the ordering of the keys and it
+/// also implements [`Hash`].
 #[derive(Clone)]
 pub struct Map(pub IndexMap<Value, Value>);
 
 impl Map {
+	/// create a new [`Map`]
 	pub fn new() -> Self {
 		Map(IndexMap::new())
 	}
