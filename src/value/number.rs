@@ -1,3 +1,5 @@
+use serde::Serialize;
+
 use crate::error::ErrorCode;
 use std::{
 	fmt::{Debug, Display},
@@ -34,6 +36,19 @@ impl Number {
 		match self.0 {
 			InternalNumber::PosInt(u) => Some(u),
 			InternalNumber::NegInt(_) | InternalNumber::Float(_) => None,
+		}
+	}
+}
+
+impl Serialize for Number {
+	fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+	where
+		S: serde::Serializer,
+	{
+		match self.0 {
+			InternalNumber::PosInt(u) => serializer.serialize_u64(u),
+			InternalNumber::NegInt(i) => serializer.serialize_i64(i),
+			InternalNumber::Float(ff) => serializer.serialize_f64(ff),
 		}
 	}
 }

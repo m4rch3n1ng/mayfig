@@ -4,6 +4,7 @@ use std::{fmt::Debug, hash::Hash};
 mod de;
 mod map;
 mod number;
+mod ser;
 
 pub use self::map::Map;
 pub use self::number::Number;

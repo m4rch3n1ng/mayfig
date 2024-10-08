@@ -1,5 +1,6 @@
 use super::Value;
 use indexmap::IndexMap;
+use serde::Serialize;
 use std::{
 	fmt::Debug,
 	hash::Hash,
@@ -72,5 +73,14 @@ impl Hash for Map {
 		for elt in &self.0 {
 			elt.hash(state)
 		}
+	}
+}
+
+impl Serialize for Map {
+	fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+	where
+		S: serde::Serializer,
+	{
+		self.0.serialize(serializer)
 	}
 }

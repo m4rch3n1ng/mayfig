@@ -7,7 +7,7 @@ repository = "https://github.com/m4rch3n1ng/mayfig"
 license = "MPL-2.0"
 
 [dependencies]
-indexmap = "2.2.6"
+indexmap = { version = "2.2.6", features = ["serde"] }
 itoa = "1.0.11"
 ryu = "1.0.18"
 serde = "1.0.202"

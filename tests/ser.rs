@@ -1,4 +1,5 @@
 use indexmap::IndexMap;
+use mayfig::{value::Map, Value};
 use serde_derive::{Deserialize, Serialize};
 
 #[derive(Debug, Deserialize, Serialize, PartialEq, Eq)]
@@ -190,4 +191,39 @@ fn more() {
 
 	let ser3 = mayfig::to_string(&de3).unwrap();
 	assert_eq!(ser3, DE_SER_3);
+}
+
+const R1: &str = r#"val = "test"
+test = 20
+v {
+	t = [ 0 1 2 ]
+	t [ "test" ] = false
+}
+"#;
+
+#[test]
+fn value() {
+	let ref1 = Value::Map(Map::from([
+		(Value::from("val"), Value::from("test")),
+		(Value::from("test"), Value::from(20)),
+		(
+			Value::from("v"),
+			Value::Map(Map::from([
+				(
+					Value::from("t"),
+					Value::Seq(vec![Value::from(0), Value::from(1), Value::from(2)]),
+				),
+				(
+					Value::Tagged("t".to_owned(), vec![Value::from("test")]),
+					Value::Bool(false),
+				),
+			])),
+		),
+	]));
+
+	let val = mayfig::from_str::<mayfig::Value>(R1).unwrap();
+	assert_eq!(val, ref1);
+
+	let ser = mayfig::to_string(&val).unwrap();
+	assert_eq!(ser, R1);
 }
