@@ -29,7 +29,7 @@ where
 	Scratch(&'s T),
 }
 
-impl<'de, 's, T> Deref for Ref<'de, 's, T>
+impl<T> Deref for Ref<'_, '_, T>
 where
 	T: ?Sized,
 {

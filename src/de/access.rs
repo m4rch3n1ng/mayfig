@@ -15,7 +15,7 @@ impl<'a, 'de, R: Read<'de>> SeqAcc<'a, R> {
 	}
 }
 
-impl<'a, 'de, R: Read<'de>> SeqAccess<'de> for SeqAcc<'a, R> {
+impl<'de, R: Read<'de>> SeqAccess<'de> for SeqAcc<'_, R> {
 	type Error = Error;
 
 	fn next_element_seed<T>(&mut self, seed: T) -> Result<Option<T::Value>, Self::Error>
@@ -42,7 +42,7 @@ impl<'a, 'de, R: Read<'de>> TopMapAcc<'a, R> {
 	}
 }
 
-impl<'a, 'de, R: Read<'de>> MapAccess<'de> for TopMapAcc<'a, R> {
+impl<'de, R: Read<'de>> MapAccess<'de> for TopMapAcc<'_, R> {
 	type Error = Error;
 
 	fn next_key_seed<K>(&mut self, seed: K) -> Result<Option<K::Value>, Self::Error>
@@ -93,7 +93,7 @@ impl<'a, 'de, R: Read<'de>> MapAcc<'a, R> {
 	}
 }
 
-impl<'a, 'de, R: Read<'de>> MapAccess<'de> for MapAcc<'a, R> {
+impl<'de, R: Read<'de>> MapAccess<'de> for MapAcc<'_, R> {
 	type Error = Error;
 
 	fn next_key_seed<K>(&mut self, seed: K) -> Result<Option<K::Value>, Self::Error>

@@ -12,9 +12,7 @@ impl<'a, 'id, W: std::io::Write> MapKeySerializer<'a, 'id, W> {
 	}
 }
 
-impl<'a, 's, 'id, W: std::io::Write> serde::ser::Serializer
-	for &'s mut MapKeySerializer<'a, 'id, W>
-{
+impl<'s, 'id, W: std::io::Write> serde::ser::Serializer for &'s mut MapKeySerializer<'_, 'id, W> {
 	type Ok = ();
 	type Error = Error;
 
@@ -24,7 +22,7 @@ impl<'a, 's, 'id, W: std::io::Write> serde::ser::Serializer
 	type SerializeTupleStruct = &'s mut Serializer<'id, W>;
 	type SerializeTupleVariant = &'s mut Serializer<'id, W>;
 	type SerializeStruct = &'s mut Serializer<'id, W>;
-	type SerializeStructVariant = &'a mut Serializer<'id, W>;
+	type SerializeStructVariant = &'s mut Serializer<'id, W>;
 
 	fn serialize_bool(self, v: bool) -> Result<Self::Ok, Self::Error> {
 		self.ser.serialize_bool(v)

@@ -35,7 +35,7 @@ impl<'id, W: std::io::Write> Serializer<'id, W> {
 	}
 }
 
-impl<'id, W: std::io::Write> Serializer<'id, W> {
+impl<W: std::io::Write> Serializer<'_, W> {
 	fn indent(&mut self) -> Result<(), Error> {
 		for _ in 0..self.indent_level {
 			self.writer.write_all(self.indent)?;
@@ -45,7 +45,7 @@ impl<'id, W: std::io::Write> Serializer<'id, W> {
 	}
 }
 
-impl<'id, W: std::io::Write> serde::ser::Serializer for &mut Serializer<'id, W> {
+impl<W: std::io::Write> serde::ser::Serializer for &mut Serializer<'_, W> {
 	type Ok = ();
 	type Error = Error;
 
@@ -267,7 +267,7 @@ impl<'id, W: std::io::Write> serde::ser::Serializer for &mut Serializer<'id, W> 
 	}
 }
 
-impl<'id, W: std::io::Write> serde::ser::SerializeMap for &mut Serializer<'id, W> {
+impl<W: std::io::Write> serde::ser::SerializeMap for &mut Serializer<'_, W> {
 	type Ok = ();
 	type Error = Error;
 
@@ -297,7 +297,7 @@ impl<'id, W: std::io::Write> serde::ser::SerializeMap for &mut Serializer<'id, W
 	}
 }
 
-impl<'id, W: std::io::Write> serde::ser::SerializeSeq for &mut Serializer<'id, W> {
+impl<W: std::io::Write> serde::ser::SerializeSeq for &mut Serializer<'_, W> {
 	type Ok = ();
 	type Error = Error;
 
@@ -317,7 +317,7 @@ impl<'id, W: std::io::Write> serde::ser::SerializeSeq for &mut Serializer<'id, W
 	}
 }
 
-impl<'id, W: std::io::Write> serde::ser::SerializeStruct for &mut Serializer<'id, W> {
+impl<W: std::io::Write> serde::ser::SerializeStruct for &mut Serializer<'_, W> {
 	type Ok = ();
 	type Error = Error;
 
@@ -348,7 +348,7 @@ impl<'id, W: std::io::Write> serde::ser::SerializeStruct for &mut Serializer<'id
 	}
 }
 
-impl<'id, W: std::io::Write> serde::ser::SerializeStructVariant for &mut Serializer<'id, W> {
+impl<W: std::io::Write> serde::ser::SerializeStructVariant for &mut Serializer<'_, W> {
 	type Ok = ();
 	type Error = Error;
 
@@ -364,7 +364,7 @@ impl<'id, W: std::io::Write> serde::ser::SerializeStructVariant for &mut Seriali
 	}
 }
 
-impl<'id, W: std::io::Write> serde::ser::SerializeTuple for &mut Serializer<'id, W> {
+impl<W: std::io::Write> serde::ser::SerializeTuple for &mut Serializer<'_, W> {
 	type Ok = ();
 	type Error = Error;
 
@@ -380,7 +380,7 @@ impl<'id, W: std::io::Write> serde::ser::SerializeTuple for &mut Serializer<'id,
 	}
 }
 
-impl<'id, W: std::io::Write> serde::ser::SerializeTupleStruct for &mut Serializer<'id, W> {
+impl<W: std::io::Write> serde::ser::SerializeTupleStruct for &mut Serializer<'_, W> {
 	type Ok = ();
 	type Error = Error;
 
@@ -396,7 +396,7 @@ impl<'id, W: std::io::Write> serde::ser::SerializeTupleStruct for &mut Serialize
 	}
 }
 
-impl<'id, W: std::io::Write> serde::ser::SerializeTupleVariant for &mut Serializer<'id, W> {
+impl<W: std::io::Write> serde::ser::SerializeTupleVariant for &mut Serializer<'_, W> {
 	type Ok = ();
 	type Error = Error;
 
