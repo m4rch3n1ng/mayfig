@@ -1,3 +1,5 @@
+//! serialize into mayfig
+
 use self::{
 	map::{MapKeySerializer, MapValSerializer},
 	r#enum::NewtypeVariantSerializer,
@@ -8,6 +10,7 @@ use serde::Serialize;
 mod r#enum;
 mod map;
 
+/// a mayfig serializer
 pub struct Serializer<'id, W> {
 	/// current level of indentation
 	indent_level: usize,
@@ -16,6 +19,9 @@ pub struct Serializer<'id, W> {
 }
 
 impl<W: std::io::Write> Serializer<'static, W> {
+	/// create a new mayfig serializer
+	///
+	/// mayfig is indented with a tab by default.
 	pub fn new(writer: W) -> Self {
 		Serializer {
 			indent_level: 0,
@@ -26,6 +32,8 @@ impl<W: std::io::Write> Serializer<'static, W> {
 }
 
 impl<'id, W: std::io::Write> Serializer<'id, W> {
+	/// create a new mayfig serializer, which uses the `indent` byte slice
+	/// for indentation.
 	pub fn with_indent(writer: W, indent: &'id [u8]) -> Self {
 		Serializer {
 			indent_level: 0,
@@ -412,6 +420,15 @@ impl<W: std::io::Write> serde::ser::SerializeTupleVariant for &mut Serializer<'_
 	}
 }
 
+/// serialize the given struct as `mayfig` into the given io writer.
+///
+/// if you want to configure the serialization, you can use the [`Serializer`] struct.
+///
+/// # errors
+///
+/// can return an error if `T`'s impl of `Serialize` returns an error, if
+/// `T` contains a map with keys that are structs, maps or enum struct variants
+/// or if the [`Write`](std::io::Write) impl of `W` returns an error.
 pub fn to_writer<W, T>(writer: W, value: &T) -> Result<(), Error>
 where
 	W: std::io::Write,
@@ -421,6 +438,14 @@ where
 	value.serialize(&mut serializer)
 }
 
+/// serialize the given struct as `mayfig` into a byte vec.
+///
+/// if you want to configure the serialization, you can use the [`Serializer`] struct.
+///
+/// # errors
+///
+/// can return an error if `T`'s impl of `Serialize` returns an error or if
+/// `T` contains a map with keys that are structs, maps or enum struct variants.
 pub fn to_vec<T: ?Sized + Serialize>(value: &T) -> Result<Vec<u8>, Error> {
 	let mut vec = Vec::with_capacity(128);
 
@@ -430,6 +455,14 @@ pub fn to_vec<T: ?Sized + Serialize>(value: &T) -> Result<Vec<u8>, Error> {
 	Ok(vec)
 }
 
+/// serialize the given struct as `mayfig` into a string.
+///
+/// if you want to configure the serialization, you can use the [`Serializer`] struct.
+///
+/// # errors
+///
+/// can return an error if `T`'s impl of `Serialize` returns an error or if
+/// `T` contains a map with keys that are structs, maps or enum struct variants.
 pub fn to_string<T: ?Sized + Serialize>(value: &T) -> Result<String, Error> {
 	let mut buf = Vec::with_capacity(128);
 
