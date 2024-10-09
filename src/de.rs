@@ -1,3 +1,5 @@
+//! deserialize mayfig into a rust data structure.
+
 use self::{
 	access::TopMapAcc,
 	r#enum::TaggedEnumValueAcc,
@@ -14,6 +16,7 @@ mod r#enum;
 mod map;
 mod read;
 
+/// a mayfig deseralizer.
 pub struct Deserializer<R> {
 	read: R,
 	indent: usize,
@@ -31,6 +34,7 @@ impl<'de, R: Read<'de>> Deserializer<R> {
 }
 
 impl<'de> Deserializer<StrRead<'de>> {
+	/// create a mayfig deserializer from a `&str`.
 	#[expect(clippy::should_implement_trait)]
 	pub fn from_str(input: &'de str) -> Self {
 		let read = StrRead::new(input);
@@ -38,6 +42,15 @@ impl<'de> Deserializer<StrRead<'de>> {
 	}
 }
 
+/// deserialize a type `T` from a mayfig `&str`
+///
+/// # errors
+///
+/// this returns an error if the structure of the input does not match the
+/// structure of `T`, or if the `Deserialize` impl of `T` returns an error.
+///
+/// for more info on possible errors take a look at the
+/// [`ErrorCode`] enum
 pub fn from_str<'a, T>(input: &'a str) -> Result<T, Error>
 where
 	T: serde::de::Deserialize<'a>,
@@ -47,12 +60,22 @@ where
 }
 
 impl<'de> Deserializer<SliceRead<'de>> {
+	/// create a mayfig deserializer from a byte slice.
 	pub fn from_slice(input: &'de [u8]) -> Self {
 		let read = SliceRead::new(input);
 		Deserializer::new(read)
 	}
 }
 
+/// deserialize a type `T` from a mayfig byte slice
+///
+/// # errors
+///
+/// this returns an error if the structure of the input does not match the
+/// structure of `T`, or if the `Deserialize` impl of `T` returns an error.
+///
+/// for more info on possible errors take a look at the
+/// [`ErrorCode`] enum
 pub fn from_slice<'a, T>(input: &'a [u8]) -> Result<T, Error>
 where
 	T: serde::de::Deserialize<'a>,
