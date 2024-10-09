@@ -1,4 +1,4 @@
-use super::{Map, Number, Seq};
+use super::{Map, Number};
 use crate::Value;
 use serde::{
 	de::{VariantAccess, Visitor},
@@ -72,7 +72,7 @@ impl<'de> Visitor<'de> for ValueVisitor {
 	where
 		A: serde::de::SeqAccess<'de>,
 	{
-		let mut seq = Seq::new();
+		let mut seq = Vec::new();
 		while let Some(val) = vis.next_element()? {
 			seq.push(val)
 		}

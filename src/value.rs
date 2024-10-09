@@ -13,7 +13,7 @@ pub enum Value {
 	String(String),
 	Number(Number),
 	Bool(bool),
-	Seq(Seq),
+	Seq(Vec<Value>),
 	Map(Map),
 	Tagged(String, Vec<Value>),
 }
@@ -54,14 +54,14 @@ impl Value {
 		}
 	}
 
-	pub fn as_seq(&self) -> Option<&Seq> {
+	pub fn as_seq(&self) -> Option<&[Value]> {
 		match self {
 			Value::Seq(seq) => Some(seq),
 			_ => None,
 		}
 	}
 
-	pub fn as_seq_mut(&mut self) -> Option<&mut Seq> {
+	pub fn as_seq_mut(&mut self) -> Option<&mut Vec<Value>> {
 		match self {
 			Value::Seq(seq) => Some(seq),
 			_ => None,
@@ -142,5 +142,3 @@ impl From<bool> for Value {
 		Value::Bool(value)
 	}
 }
-
-pub type Seq = Vec<Value>;
