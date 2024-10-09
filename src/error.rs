@@ -1,6 +1,9 @@
+//! when deserializing or serializing mayfig goes wrong
+
 use std::{cmp::Ordering, fmt::Display};
 use thiserror::Error;
 
+/// a `mayfig::Error`
 #[derive(Debug)]
 pub struct Error {
 	code: ErrorCode,
@@ -8,10 +11,14 @@ pub struct Error {
 }
 
 impl Error {
+	/// returns a reference to the underlying [`ErrorCode`]
 	pub fn code(&self) -> &ErrorCode {
 		&self.code
 	}
 
+	/// returns an optional span of the location where the error happened
+	///
+	/// only ever returns `Some` when deserializing.
 	pub fn span(&self) -> Option<Span> {
 		self.span
 	}
@@ -78,75 +85,114 @@ impl From<std::io::Error> for Error {
 	}
 }
 
+/// a mayfig error code
 #[derive(Debug, Error)]
 pub enum ErrorCode {
+	/// failed to write into a [`Write`](std::io::Write).
+	///
+	/// can currently only occur when serializing with [`to_writer`](crate::to_writer).
 	#[error("io error")]
 	Io(#[source] std::io::Error),
 
+	/// unexpected end of file while parsing
 	#[error("end of file")]
 	Eof,
+	/// mayfig value is invalid utf8
 	#[error("invalid utf8")]
 	InvalidUtf8,
 
+	/// unknown escape sequence in string
 	#[error("unknown escape sequence {0:?}")]
 	UnknownEscape(char),
+	/// unescaped control character in string
 	#[error("unescaped control character {0:?}")]
 	UnescapedControl(char),
 
+	/// expected newline, found value
 	#[error("expected newline, found {0:?} first")]
 	ExpectedNewline(char),
+	/// expected value, found newline
 	#[error("unexpected newline")]
 	UnexpectedNewline,
 
+	/// invalid boolean
 	#[error("invalid boolean {0:?}")]
 	InvalidBool(String),
+	/// invalid number
 	#[error("invalid number {0:?}")]
 	InvalidNum(String),
+	/// unexpected word
 	#[error("unexpected word {0:?}")]
 	UnexpectedWord(String),
 
+	/// expected quote
 	#[error("expected quote \" or ', got {0:?}")]
 	ExpectedQuote(char),
+	/// expected value assignment
 	#[error("expected value assignment '=' or '{{', got {0:?}")]
 	ExpectedValue(char),
+	/// expected map
 	#[error("expected map '{{', got {0:?}")]
 	ExpectedMap(char),
+	/// expected sequence
 	#[error("expected seq '[', got {0:?}")]
 	ExpectedSeq(char),
+	/// expected end of sequence
 	#[error("expected end of seq ']', got {0:?}")]
 	ExpectedSeqEnd(char),
+	/// expected enum
 	#[error("expected tagged enum, got {0:?}")]
 	ExpectedEnum(char),
+	/// expected bytes as string or sequence
 	#[error("expected quote ', \" or seq, got {0:?}")]
 	ExpectedBytes(char),
 
+	/// expected delimiter
 	#[error("expected delimiter after string, got {0:?}")]
 	ExpectedDelimiter(char),
 
+	/// expected numeric
 	#[error("expected numeric, got {0:?}")]
 	ExpectedNumeric(char),
+	/// expected alphabetic
 	#[error("expected alphabetic, got {0:?}")]
 	ExpectedAlphabetic(char),
+	/// expected alphanumeric
 	#[error("expected alphanumeric, got {0:?}")]
 	ExpectedAlphaNumeric(char),
 
+	/// unit values are unsupported in mayfig
 	#[error("unsupported unit type")]
 	UnsupportedUnit,
+	/// nan is unsupported in mayfig
 	#[error("unsupported nan")]
 	UnsupportedNaN,
+	/// `None` is unsupported in mayfig
 	#[error("unsupported none")]
 	UnsupportedNone,
+	/// unsupported map key
 	#[error("unsupported map key type {0}")]
 	UnsupportedMapKey(&'static str),
 
+	/// custom serde error
 	#[error("custom: {0}")]
 	Custom(String),
 }
 
+/// an error position
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
 pub struct Position {
+	/// line at which the error occured
+	///
+	/// 1-indexed
 	pub line: usize,
+	/// column at which the error occured
+	///
+	/// 1-indexed
 	pub col: usize,
+	/// absolute index of the position
+	///
+	/// 0-indexed
 	pub index: usize,
 }
 
@@ -156,13 +202,17 @@ impl Display for Position {
 	}
 }
 
+/// span of the `Error` location
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum Span {
+	/// a single point
 	Point(Position),
+	/// a span between two points
 	Span(Position, Position),
 }
 
 impl Span {
+	/// returns a [`Range`](std::ops::Range) of the span
 	pub fn range(&self) -> std::ops::Range<usize> {
 		match self {
 			Span::Point(pos) => pos.index..(pos.index + 1),
