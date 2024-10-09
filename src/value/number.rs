@@ -29,6 +29,13 @@ impl Number {
 			InternalNumber::Float(_) => None,
 		}
 	}
+
+	pub fn as_u64(&self) -> Option<u64> {
+		match self.0 {
+			InternalNumber::PosInt(u) => Some(u),
+			InternalNumber::NegInt(_) | InternalNumber::Float(_) => None,
+		}
+	}
 }
 
 impl Debug for Number {
