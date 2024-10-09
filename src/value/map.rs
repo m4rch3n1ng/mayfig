@@ -6,8 +6,8 @@ use std::{
 	ops::{Deref, DerefMut},
 };
 
-#[derive(Clone, PartialEq, Eq)]
-pub struct Map(IndexMap<Value, Value>);
+#[derive(Clone)]
+pub struct Map(pub IndexMap<Value, Value>);
 
 impl Map {
 	pub fn new() -> Self {
@@ -47,6 +47,24 @@ impl<const N: usize> From<[(Value, Value); N]> for Map {
 		Map(map)
 	}
 }
+
+impl PartialEq for Map {
+	fn eq(&self, other: &Self) -> bool {
+		if self.len() != other.len() {
+			return false;
+		}
+
+		for (l, r) in self.iter().zip(other.iter()) {
+			if l != r {
+				return false;
+			}
+		}
+
+		true
+	}
+}
+
+impl Eq for Map {}
 
 impl Hash for Map {
 	fn hash<H: std::hash::Hasher>(&self, state: &mut H) {
