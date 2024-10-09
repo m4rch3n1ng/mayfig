@@ -6,10 +6,12 @@ use std::{
 	hash::Hash,
 };
 
+/// represents a mayfig number. can be positive, negative or a float
 #[derive(Clone, Copy, PartialEq, Eq, Hash)]
 pub struct Number(InternalNumber);
 
 impl Number {
+	/// returns an `f64`, casting the value if necessary.
 	pub fn as_f64(&self) -> f64 {
 		match self.0 {
 			InternalNumber::PosInt(u) => u as f64,
@@ -18,6 +20,7 @@ impl Number {
 		}
 	}
 
+	/// returns an `i64` if the number is an integer and fits into an `i64`.
 	pub fn as_i64(&self) -> Option<i64> {
 		match self.0 {
 			InternalNumber::PosInt(u) => {
@@ -32,6 +35,7 @@ impl Number {
 		}
 	}
 
+	/// returns a `u64` if the number is a positive integer.
 	pub fn as_u64(&self) -> Option<u64> {
 		match self.0 {
 			InternalNumber::PosInt(u) => Some(u),
