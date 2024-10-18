@@ -20,7 +20,7 @@ const WITH_ERROR: &str = r#"
 v = ...
 m {
 	vec [ 0, 1, ] = "vec" . [ 0, 1 ]
-	num [ 0, ] = "num" [ 1 ]
+	num [ 0 "t" ] = "num" [ 1 ]
 }
 "#;
 

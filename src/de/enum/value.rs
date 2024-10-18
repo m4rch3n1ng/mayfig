@@ -73,6 +73,7 @@ impl<'a, 'de, R: Read<'de>> VariantAccess<'de> for TaggedEnumValueAcc<'a, R> {
 		let val = seed.deserialize(&mut variant)?;
 
 		if !variant.is_map {
+			self.de.discard_commata();
 			let peek = self.de.peek_any().ok_or(Error::EOF)?;
 
 			if peek != b']' {

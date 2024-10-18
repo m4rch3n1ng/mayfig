@@ -78,6 +78,7 @@ impl<'a, 'b, 'de, R: Read<'de>> VariantAccess<'de> for TaggedEnumKeyAcc<'a, 'b, 
 		let variant = TaggedKey::new(&mut *self.map_key.de);
 		let val = seed.deserialize(variant)?;
 
+		self.map_key.de.discard_commata();
 		let peek = self.map_key.de.peek_any().ok_or(Error::EOF)?;
 		if peek != b']' {
 			let point = self.map_key.de.read.position();
