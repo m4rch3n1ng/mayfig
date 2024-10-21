@@ -38,7 +38,7 @@ bind {
 
 ### spec
 
-`mayfig` is a key=value style format.
+`mayfig` is fundamentally a `key=value` style format.
 
 **comments**
 
@@ -57,7 +57,7 @@ bind {
 # block behind the key with curly braces
 #
 # categories are to mayfig what tables are to
-# toml, objects are to json and mapping are to yaml
+# toml, objects are to json and mappings are to yaml
 #
 # all key=value pairs in categories must be on their
 # own seperate line
@@ -105,7 +105,7 @@ st2 = 'single quoted strings work too'
 
 map {
     # keys are also strings, but quotes are optional,
-    # if you restrict yourself to /[a-zA-Z][a-zA-Z0-9]*/
+    # if you restrict yourself to /[a-zA-Z_][a-zA-Z0-9_]*/
     unquoted = true
     "with quotes" = true
 }
@@ -116,7 +116,7 @@ map {
 ```properties
 # integers
 i1 = -1
-i2 = +3
+i2 = 3
 
 # floats
 f1 = 1.0
@@ -143,7 +143,7 @@ bind {
     "mod 0" = "workspace" [ 0 ]
 }
 
-# you can even use them in category keys
+# you can also use them in category keys
 # there you can even omit the quotes around the tag
 windowrules {
     class [ "com.system76.CosmicFiles" ] {
