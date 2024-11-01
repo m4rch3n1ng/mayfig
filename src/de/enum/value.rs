@@ -149,12 +149,14 @@ impl<'a, 'de, R: Read<'de>> TaggedValue<'a, R> {
 impl<'de, R: Read<'de>> serde::de::Deserializer<'de> for &mut TaggedValue<'_, R> {
 	type Error = Error;
 
-	#[expect(unused_variables)]
 	fn deserialize_any<V>(self, visitor: V) -> Result<V::Value, Self::Error>
 	where
 		V: serde::de::Visitor<'de>,
 	{
-		todo!()
+		// similar to how the value visitor always request
+		// a newtype of a `Vec<Value>` when visiting an enum,
+		// just treat the tagged values as a seq. it's fine.
+		self.de.deserialize_seq(visitor)
 	}
 
 	fn deserialize_u8<V>(self, visitor: V) -> Result<V::Value, Self::Error>

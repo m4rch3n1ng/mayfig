@@ -56,3 +56,22 @@ fn value() {
 	let t2 = mayfig::from_str::<Value>(TAG).unwrap();
 	assert_eq!(t1, t2);
 }
+
+const IGNORED: &str = r#"
+windowrules {
+	app_id [ "org.gnome.Nautilus" ] {
+		floating = true
+	}
+}
+
+binds {
+	"mod q" = "quit"
+	"mod t" = "spawn" [ "kitty" ]
+	"mod n" = "spawn" [ "firefox" "--private-window" ]
+}
+"#;
+
+#[test]
+fn ignored() {
+	let _ = mayfig::from_str::<serde::de::IgnoredAny>(IGNORED);
+}

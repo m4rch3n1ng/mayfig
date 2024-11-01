@@ -125,12 +125,12 @@ impl<'a, 'de, R: Read<'de>> TaggedKey<'a, R> {
 impl<'de, R: Read<'de>> serde::de::Deserializer<'de> for TaggedKey<'_, R> {
 	type Error = Error;
 
-	#[expect(unused_variables)]
 	fn deserialize_any<V>(self, visitor: V) -> Result<V::Value, Self::Error>
 	where
 		V: serde::de::Visitor<'de>,
 	{
-		todo!()
+		// see the comment in TaggedValue::deserialize_any
+		self.deserialize_seq(visitor)
 	}
 
 	fn deserialize_bool<V>(self, visitor: V) -> Result<V::Value, Self::Error>
