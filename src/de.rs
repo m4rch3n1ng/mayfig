@@ -195,7 +195,7 @@ impl<'de, R: Read<'de>> Deserializer<R> {
 		Ok((word, Span::Span(start, self.read.position())))
 	}
 
-	fn str<'s>(&'s mut self) -> Result<Ref<'de, 's, str>, Error> {
+	fn str<'s>(&'s mut self) -> Result<(Ref<'de, 's, str>, Span), Error> {
 		let peek = self.read.peek().ok_or(Error::EOF)?;
 		if peek != b'"' && peek != b'\'' {
 			let point = self.read.position();
@@ -203,8 +203,10 @@ impl<'de, R: Read<'de>> Deserializer<R> {
 			return Err(Error::with_point(code, point));
 		}
 
+		let start = self.read.position();
 		self.scratch.clear();
-		self.read.str(&mut self.scratch)
+		let str = self.read.str(&mut self.scratch)?;
+		Ok((str, Span::Span(start, self.read.position())))
 	}
 
 	fn str_bytes<'s>(&'s mut self) -> Result<Ref<'de, 's, [u8]>, Error> {
@@ -212,7 +214,7 @@ impl<'de, R: Read<'de>> Deserializer<R> {
 		self.read.str_bytes(&mut self.scratch)
 	}
 
-	fn identifier<'s>(&'s mut self) -> Result<Ref<'de, 's, str>, Error> {
+	fn identifier<'s>(&'s mut self) -> Result<(Ref<'de, 's, str>, Span), Error> {
 		let peek = self.read.peek().ok_or(Error::EOF)?;
 		if peek == b'"' || peek == b'\'' {
 			return self.str();
@@ -222,8 +224,7 @@ impl<'de, R: Read<'de>> Deserializer<R> {
 			return Err(Error::with_point(code, point));
 		}
 
-		let (identifier, _) = self.word()?;
-		Ok(identifier)
+		self.word()
 	}
 
 	fn deserialize_number<'any, V>(&mut self, visitor: V) -> Result<V::Value, Error>
@@ -236,19 +237,19 @@ impl<'de, R: Read<'de>> Deserializer<R> {
 				let code = ErrorCode::InvalidNum(w.to_owned());
 				Error::with_span(code, span)
 			})?;
-			visitor.visit_f64(n)
+			visitor.visit_f64(n).map_err(|err| add_span(err, span))
 		} else if w.starts_with('-') {
 			let n = w.parse::<i64>().map_err(|_| {
 				let code = ErrorCode::InvalidNum(w.to_owned());
 				Error::with_span(code, span)
 			})?;
-			visitor.visit_i64(n)
+			visitor.visit_i64(n).map_err(|err| add_span(err, span))
 		} else {
 			let n = w.parse::<u64>().map_err(|_| {
 				let code = ErrorCode::InvalidNum(w.to_owned());
 				Error::with_span(code, span)
 			})?;
-			visitor.visit_u64(n)
+			visitor.visit_u64(n).map_err(|err| add_span(err, span))
 		}
 	}
 }
@@ -268,17 +269,19 @@ impl<'de, R: Read<'de>> serde::de::Deserializer<'de> for &mut Deserializer<R> {
 		} else if let b'0'..=b'9' | b'.' | b'-' | b'+' = peek {
 			self.deserialize_number(visitor)
 		} else if peek == b'"' || peek == b'\'' {
-			let string = self.str()?.to_owned();
+			let (str, span) = self.str()?;
+			let str = str.to_owned();
+
 			if let Ok(Some(b'[')) = self.peek_line() {
-				let tagged = TaggedEnumValueAcc::with_tag(self, string);
+				let tagged = TaggedEnumValueAcc::with_tag(self, str);
 				visitor.visit_enum(tagged)
 			} else {
-				visitor.visit_string(string)
+				visitor.visit_string(str).map_err(|err| add_span(err, span))
 			}
 		} else {
 			let (word, span) = self.word()?;
 			if let Ok(b) = parse_bool(&word, span) {
-				visitor.visit_bool(b)
+				visitor.visit_bool(b).map_err(|err| add_span(err, span))
 			} else {
 				let code = ErrorCode::UnexpectedWord(word.to_owned());
 				Err(Error::with_span(code, span))
@@ -292,7 +295,7 @@ impl<'de, R: Read<'de>> serde::de::Deserializer<'de> for &mut Deserializer<R> {
 	{
 		let (w, span) = self.word()?;
 		let b = parse_bool(&w, span)?;
-		visitor.visit_bool(b)
+		visitor.visit_bool(b).map_err(|err| add_span(err, span))
 	}
 
 	fn deserialize_u8<V>(self, visitor: V) -> Result<V::Value, Self::Error>
@@ -304,7 +307,7 @@ impl<'de, R: Read<'de>> serde::de::Deserializer<'de> for &mut Deserializer<R> {
 			let code = ErrorCode::InvalidNum(w.to_owned());
 			Error::with_span(code, span)
 		})?;
-		visitor.visit_u8(n)
+		visitor.visit_u8(n).map_err(|err| add_span(err, span))
 	}
 
 	fn deserialize_u16<V>(self, visitor: V) -> Result<V::Value, Self::Error>
@@ -316,7 +319,7 @@ impl<'de, R: Read<'de>> serde::de::Deserializer<'de> for &mut Deserializer<R> {
 			let code = ErrorCode::InvalidNum(w.to_owned());
 			Error::with_span(code, span)
 		})?;
-		visitor.visit_u16(n)
+		visitor.visit_u16(n).map_err(|err| add_span(err, span))
 	}
 
 	fn deserialize_u32<V>(self, visitor: V) -> Result<V::Value, Self::Error>
@@ -328,7 +331,7 @@ impl<'de, R: Read<'de>> serde::de::Deserializer<'de> for &mut Deserializer<R> {
 			let code = ErrorCode::InvalidNum(w.to_owned());
 			Error::with_span(code, span)
 		})?;
-		visitor.visit_u32(n)
+		visitor.visit_u32(n).map_err(|err| add_span(err, span))
 	}
 
 	fn deserialize_u64<V>(self, visitor: V) -> Result<V::Value, Self::Error>
@@ -340,7 +343,7 @@ impl<'de, R: Read<'de>> serde::de::Deserializer<'de> for &mut Deserializer<R> {
 			let code = ErrorCode::InvalidNum(w.to_owned());
 			Error::with_span(code, span)
 		})?;
-		visitor.visit_u64(n)
+		visitor.visit_u64(n).map_err(|err| add_span(err, span))
 	}
 
 	fn deserialize_i8<V>(self, visitor: V) -> Result<V::Value, Self::Error>
@@ -352,7 +355,7 @@ impl<'de, R: Read<'de>> serde::de::Deserializer<'de> for &mut Deserializer<R> {
 			let code = ErrorCode::InvalidNum(w.to_owned());
 			Error::with_span(code, span)
 		})?;
-		visitor.visit_i8(n)
+		visitor.visit_i8(n).map_err(|err| add_span(err, span))
 	}
 
 	fn deserialize_i16<V>(self, visitor: V) -> Result<V::Value, Self::Error>
@@ -364,7 +367,7 @@ impl<'de, R: Read<'de>> serde::de::Deserializer<'de> for &mut Deserializer<R> {
 			let code = ErrorCode::InvalidNum(w.to_owned());
 			Error::with_span(code, span)
 		})?;
-		visitor.visit_i16(n)
+		visitor.visit_i16(n).map_err(|err| add_span(err, span))
 	}
 
 	fn deserialize_i32<V>(self, visitor: V) -> Result<V::Value, Self::Error>
@@ -376,7 +379,7 @@ impl<'de, R: Read<'de>> serde::de::Deserializer<'de> for &mut Deserializer<R> {
 			let code = ErrorCode::InvalidNum(w.to_owned());
 			Error::with_span(code, span)
 		})?;
-		visitor.visit_i32(n)
+		visitor.visit_i32(n).map_err(|err| add_span(err, span))
 	}
 
 	fn deserialize_i64<V>(self, visitor: V) -> Result<V::Value, Self::Error>
@@ -388,7 +391,7 @@ impl<'de, R: Read<'de>> serde::de::Deserializer<'de> for &mut Deserializer<R> {
 			let code = ErrorCode::InvalidNum(w.to_owned());
 			Error::with_span(code, span)
 		})?;
-		visitor.visit_i64(n)
+		visitor.visit_i64(n).map_err(|err| add_span(err, span))
 	}
 
 	fn deserialize_f32<V>(self, visitor: V) -> Result<V::Value, Self::Error>
@@ -404,7 +407,7 @@ impl<'de, R: Read<'de>> serde::de::Deserializer<'de> for &mut Deserializer<R> {
 	{
 		let (w, span) = self.num()?;
 		let n = parse_f64(&w, span)?;
-		visitor.visit_f64(n)
+		visitor.visit_f64(n).map_err(|err| add_span(err, span))
 	}
 
 	fn deserialize_char<V>(self, visitor: V) -> Result<V::Value, Self::Error>
@@ -418,10 +421,10 @@ impl<'de, R: Read<'de>> serde::de::Deserializer<'de> for &mut Deserializer<R> {
 	where
 		V: serde::de::Visitor<'de>,
 	{
-		let r#str = self.str()?;
+		let (r#str, span) = self.str()?;
 		match r#str {
-			Ref::Borrow(b) => visitor.visit_borrowed_str(b),
-			Ref::Scratch(s) => visitor.visit_str(s),
+			Ref::Borrow(b) => visitor.visit_borrowed_str(b).map_err(|e| add_span(e, span)),
+			Ref::Scratch(s) => visitor.visit_str(s).map_err(|err| add_span(err, span)),
 		}
 	}
 
@@ -619,10 +622,10 @@ impl<'de, R: Read<'de>> serde::de::Deserializer<'de> for &mut Deserializer<R> {
 	where
 		V: serde::de::Visitor<'de>,
 	{
-		let identifier = self.identifier()?;
+		let (identifier, span) = self.identifier()?;
 		match identifier {
-			Ref::Borrow(b) => visitor.visit_borrowed_str(b),
-			Ref::Scratch(s) => visitor.visit_str(s),
+			Ref::Borrow(b) => visitor.visit_borrowed_str(b).map_err(|e| add_span(e, span)),
+			Ref::Scratch(s) => visitor.visit_str(s).map_err(|err| add_span(err, span)),
 		}
 	}
 
@@ -668,4 +671,10 @@ fn parse_f64(num: &str, span: Span) -> Result<f64, Error> {
 		let code = ErrorCode::InvalidNum(num.to_owned());
 		Err(Error::with_span(code, span))
 	}
+}
+
+#[inline]
+fn add_span(mut err: Error, span: Span) -> Error {
+	err.span = Some(err.span.unwrap_or(span));
+	err
 }

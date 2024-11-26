@@ -6,8 +6,8 @@ use thiserror::Error;
 /// a `mayfig::Error`
 #[derive(Debug)]
 pub struct Error {
-	code: ErrorCode,
-	span: Option<Span>,
+	pub(crate) code: ErrorCode,
+	pub(crate) span: Option<Span>,
 }
 
 impl Error {

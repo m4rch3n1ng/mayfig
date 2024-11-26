@@ -1,4 +1,4 @@
-use super::{r#enum::TaggedEnumKeyAcc, read::Read};
+use super::{add_span, r#enum::TaggedEnumKeyAcc, read::Read};
 use crate::{
 	error::{Error, ErrorCode},
 	Deserializer,
@@ -28,12 +28,14 @@ impl<'de, R: Read<'de>> serde::de::Deserializer<'de> for &mut MapKey<'_, R> {
 			b'{' => self.deserialize_map(visitor),
 			b'0'..=b'9' | b'.' | b'-' | b'+' => self.de.deserialize_number(visitor),
 			_ => {
-				let ident = self.de.identifier()?.to_owned();
+				let (ident, span) = self.de.identifier()?;
+				let ident = ident.to_owned();
+
 				if let Ok(Some(b'[')) = self.de.peek_line() {
 					let tagged = TaggedEnumKeyAcc::with_tag(self, ident);
 					visitor.visit_enum(tagged)
 				} else {
-					visitor.visit_string(ident)
+					visitor.visit_string(ident).map_err(|e| add_span(e, span))
 				}
 			}
 		}
