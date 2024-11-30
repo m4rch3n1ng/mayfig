@@ -567,10 +567,15 @@ impl<'de, R: Read<'de>> serde::de::Deserializer<'de> for &mut Deserializer<R> {
 		let peek = self.peek_any();
 		let value = if let Some(b'{') = peek {
 			self.indent += 1;
+
+			let start = self.read.position();
 			self.read.discard();
 
 			let map_acc = MapAcc::new(self);
-			let val = visitor.visit_map(map_acc)?;
+			let val = visitor.visit_map(map_acc).map_err(|err| {
+				let end = self.read.position();
+				add_span(err, Span::Span(start, end))
+			})?;
 
 			self.indent -= 1;
 
