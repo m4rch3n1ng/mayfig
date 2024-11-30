@@ -84,6 +84,17 @@ impl Visitor<'_> for NumberVis {
 
 #[derive(Debug, Deserialize)]
 #[expect(dead_code)]
+struct Tuple(u32, u32);
+
+#[derive(Debug, Deserialize)]
+#[expect(dead_code)]
+#[serde(rename_all = "snake_case")]
+enum Enum {
+	Test((u32, u32)),
+}
+
+#[derive(Debug, Deserialize)]
+#[expect(dead_code)]
 struct Struct {
 	one: bool,
 	two: u32,
@@ -92,6 +103,7 @@ struct Struct {
 #[derive(Debug, Deserialize)]
 #[expect(dead_code)]
 struct AnnotatedError {
+	r#enum: Enum,
 	struc: Struct,
 	tup: (u32, u32, u32),
 	num: Number,
@@ -99,6 +111,7 @@ struct AnnotatedError {
 }
 
 const WITH_ERROR: &str = r##"
+enum = "test" [ 0 ]
 struc {
 	one = false
 }

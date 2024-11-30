@@ -2,9 +2,10 @@ use super::fake::FakeStringDeserializer;
 use crate::{
 	de::{
 		access::SeqAcc,
+		add_span,
 		read::{Read, Ref},
 	},
-	error::{Error, ErrorCode},
+	error::{Error, ErrorCode, Span},
 	Deserializer,
 };
 use serde::{
@@ -67,23 +68,34 @@ impl<'de, R: Read<'de>> VariantAccess<'de> for TaggedEnumValueAcc<'_, R> {
 			return Err(Error::with_point(code, point));
 		}
 
+		let start = self.de.read.position();
+
 		self.de.indent += 1;
 
 		let mut variant = TaggedValue::new(self.de);
-		let val = seed.deserialize(&mut variant)?;
+		let val = seed.deserialize(&mut variant);
 
-		if !variant.is_map {
+		let val = if !variant.is_map {
 			self.de.discard_commata();
 			let peek = self.de.peek_any().ok_or(Error::EOF)?;
 
+			let seq_end_point = self.de.read.position();
+			self.de.read.discard();
+
+			let val = val.map_err(|err| {
+				let end = self.de.read.position();
+				add_span(err, Span::Span(start, end))
+			})?;
+
 			if peek != b']' {
-				let point = self.de.read.position();
 				let code = ErrorCode::ExpectedSeqEnd(peek as char);
-				return Err(Error::with_point(code, point));
+				return Err(Error::with_point(code, seq_end_point));
 			}
 
-			self.de.read.discard();
-		}
+			val
+		} else {
+			val?
+		};
 
 		self.de.indent -= 1;
 		Ok(val)
