@@ -512,20 +512,29 @@ impl<'de, R: Read<'de>> serde::de::Deserializer<'de> for &mut Deserializer<R> {
 			let code = ErrorCode::ExpectedSeq(next as char);
 			return Err(Error::with_point(code, point));
 		}
+
+		let start = self.read.position();
 		self.read.discard();
 
 		let seq = SeqAcc::new(self);
-		let val = visitor.visit_seq(seq)?;
+		let val = visitor.visit_seq(seq);
 
 		self.discard_commata();
 		let next = self.peek_any().ok_or(Error::EOF)?;
 
-		if next != b']' {
-			let point = self.read.position();
-			let code = ErrorCode::ExpectedSeqEnd(next as char);
-			return Err(Error::with_point(code, point));
-		}
+		// point for seq end check
+		let seq_end = self.read.position();
 		self.read.discard();
+
+		let val = val.map_err(|err| {
+			let end = self.read.position();
+			add_span(err, Span::Span(start, end))
+		})?;
+
+		if next != b']' {
+			let code = ErrorCode::ExpectedSeqEnd(next as char);
+			return Err(Error::with_point(code, seq_end));
+		}
 
 		self.indent -= 1;
 

@@ -85,12 +85,14 @@ impl Visitor<'_> for NumberVis {
 #[derive(Debug, Deserialize)]
 #[expect(dead_code)]
 struct AnnotatedError {
+	t: (u32, u32, u32),
 	v: Number,
-	t: Color,
+	c: Color,
 }
 
 const WITH_ERROR: &str = r##"
-t = "#0080xx"
+t = [ 0 1 ]
+c = "#0080xx"
 v = 21
 "##;
 
