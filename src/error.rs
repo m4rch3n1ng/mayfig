@@ -87,6 +87,7 @@ impl From<std::io::Error> for Error {
 
 /// a mayfig error code
 #[derive(Debug, Error)]
+#[non_exhaustive]
 pub enum ErrorCode {
 	/// failed to write into a [`Write`](std::io::Write).
 	///
