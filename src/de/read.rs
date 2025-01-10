@@ -181,7 +181,7 @@ impl<'de> Read<'de> for SliceRead<'de> {
 		loop {
 			let Some(peek) = self.peek() else { break };
 
-			if peek.is_ascii_alphanumeric() || peek == b'_' {
+			if peek.is_ascii_alphanumeric() || peek == b'_' || peek == b'-' || peek == b'+' {
 				self.discard();
 			} else if is_delimiter(peek) {
 				break;
