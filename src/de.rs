@@ -564,6 +564,8 @@ impl<'de, R: Read<'de>> serde::de::Deserializer<'de> for &mut Deserializer<R> {
 	where
 		V: serde::de::Visitor<'de>,
 	{
+		let start = self.read.position();
+
 		let peek = self.peek_any();
 		let value = if let Some(b'{') = peek {
 			self.indent += 1;
@@ -590,7 +592,10 @@ impl<'de, R: Read<'de>> serde::de::Deserializer<'de> for &mut Deserializer<R> {
 			self.indent += 1;
 
 			let top_map_acc = TopMapAcc::new(self);
-			let val = visitor.visit_map(top_map_acc)?;
+			let val = visitor.visit_map(top_map_acc).map_err(|err| {
+				let end = self.read.position();
+				add_span(err, Span::Span(start, end))
+			})?;
 
 			self.indent -= 1;
 

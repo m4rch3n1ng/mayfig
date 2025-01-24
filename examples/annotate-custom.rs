@@ -111,13 +111,15 @@ struct AnnotatedError {
 }
 
 const WITH_ERROR: &str = r##"
-enum = "test" [ 0 ]
-struc {
-	one = false
-}
-tup = [ 0 1 ]
+col = "#008080"
 col = "#0080xx"
-num = 21
+
+# enum = "test" [ 0 ]
+# struc {
+# 	one = false
+# }
+# tup = [ 0 1 ]
+# num = 21
 "##;
 
 fn main() {
