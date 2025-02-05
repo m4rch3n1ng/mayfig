@@ -176,7 +176,7 @@ pub enum ErrorCode {
 	UnsupportedMapKey(&'static str),
 
 	/// custom serde error
-	#[error("custom: {0}")]
+	#[error("{0}")]
 	Custom(String),
 }
 
