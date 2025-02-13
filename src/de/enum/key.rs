@@ -8,10 +8,7 @@ use crate::{
 	error::ErrorCode,
 	Deserializer, Error,
 };
-use serde::{
-	de::{EnumAccess, VariantAccess},
-	forward_to_deserialize_any, Deserializer as _,
-};
+use serde::de::{Deserializer as _, EnumAccess, VariantAccess};
 
 pub struct TaggedEnumKeyAcc<'a, 'b, R> {
 	map_key: &'a mut MapKey<'b, R>,
@@ -130,7 +127,7 @@ impl<'de, R: Read<'de>> serde::de::Deserializer<'de> for TaggedKey<'_, R> {
 		V: serde::de::Visitor<'de>,
 	{
 		// see the comment in TaggedValue::deserialize_any
-		self.deserialize_seq(visitor)
+		self.de.deserialize_any(visitor)
 	}
 
 	fn deserialize_bool<V>(self, visitor: V) -> Result<V::Value, Self::Error>
@@ -381,5 +378,11 @@ impl<'de, R: Read<'de>> serde::de::Deserializer<'de> for TaggedKey<'_, R> {
 		self.de.deserialize_identifier(visitor)
 	}
 
-	forward_to_deserialize_any! { ignored_any }
+	fn deserialize_ignored_any<V>(self, visitor: V) -> Result<V::Value, Self::Error>
+	where
+		V: serde::de::Visitor<'de>,
+	{
+		// see comment in TaggedValue::deserialize_ignored_any
+		self.deserialize_seq(visitor)
+	}
 }

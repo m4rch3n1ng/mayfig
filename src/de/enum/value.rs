@@ -8,10 +8,7 @@ use crate::{
 	error::{Error, ErrorCode, Span},
 	Deserializer,
 };
-use serde::{
-	de::{Deserializer as _, EnumAccess, VariantAccess},
-	forward_to_deserialize_any,
-};
+use serde::de::{Deserializer as _, EnumAccess, VariantAccess};
 
 pub struct TaggedEnumValueAcc<'a, R> {
 	de: &'a mut Deserializer<R>,
@@ -165,10 +162,15 @@ impl<'de, R: Read<'de>> serde::de::Deserializer<'de> for &mut TaggedValue<'_, R>
 	where
 		V: serde::de::Visitor<'de>,
 	{
-		// similar to how the value visitor always request
-		// a newtype of a `Vec<Value>` when visiting an enum,
-		// just treat the tagged values as a seq. it's fine.
-		self.de.deserialize_seq(visitor)
+		// ok this is not really great: i would prefer to be able to do
+		// any deserialization for sequences as well, but due to limitations
+		// from serde (and poor design decisions from mayfig) i don't think
+		// this is possible to do without implementing an actual parser, so
+		// to make deserialization of enums of untagged enums possible, i have
+		// to do this, which sadly doesn't allow untagged sequences, but sure fine
+		// whatever
+		self.assert_bracket()?;
+		self.de.deserialize_any(visitor)
 	}
 
 	fn deserialize_u8<V>(self, visitor: V) -> Result<V::Value, Self::Error>
@@ -452,5 +454,13 @@ impl<'de, R: Read<'de>> serde::de::Deserializer<'de> for &mut TaggedValue<'_, R>
 		self.de.deserialize_identifier(visitor)
 	}
 
-	forward_to_deserialize_any! { ignored_any }
+	fn deserialize_ignored_any<V>(self, visitor: V) -> Result<V::Value, Self::Error>
+	where
+		V: serde::de::Visitor<'de>,
+	{
+		// it *is* legal to have a sequence in the value of a mayfig enum, but
+		// always parsing any value as a sequence breaks untagged enums, so i can't
+		// do this in deserialize_any, but i can do it in deserialize_ignored_any
+		self.de.deserialize_seq(visitor)
+	}
 }
