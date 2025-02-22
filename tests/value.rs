@@ -73,5 +73,5 @@ binds {
 
 #[test]
 fn ignored() {
-	let _ = mayfig::from_str::<serde::de::IgnoredAny>(IGNORED);
+	let _ = mayfig::from_str::<serde::de::IgnoredAny>(IGNORED).unwrap();
 }

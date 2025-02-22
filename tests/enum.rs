@@ -168,3 +168,15 @@ fn map() {
 	);
 	assert_eq!(m1.map.get(&M::Seq(vec![])), Some(&V::Unit));
 }
+
+const IGNORED: &str = r#"
+gestures {
+	swipe = "workspace" [ 2 ]
+	swipe [ 4 "left" 250 ] = "workspace" [ 0 ]
+}
+"#;
+
+#[test]
+fn ignored() {
+	let _ = mayfig::from_str::<serde::de::IgnoredAny>(IGNORED).unwrap();
+}

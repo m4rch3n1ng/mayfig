@@ -168,7 +168,7 @@ impl<'de, R: Read<'de>> serde::de::Deserializer<'de> for &mut TaggedValue<'_, R>
 		// this is possible to do without implementing an actual parser, so
 		// to make deserialization of enums of untagged enums possible, i have
 		// to do this, which sadly doesn't allow untagged sequences, but sure fine
-		// whatever
+		// whatever who cares
 		self.assert_bracket()?;
 		self.de.deserialize_any(visitor)
 	}
@@ -461,6 +461,6 @@ impl<'de, R: Read<'de>> serde::de::Deserializer<'de> for &mut TaggedValue<'_, R>
 		// it *is* legal to have a sequence in the value of a mayfig enum, but
 		// always parsing any value as a sequence breaks untagged enums, so i can't
 		// do this in deserialize_any, but i can do it in deserialize_ignored_any
-		self.de.deserialize_seq(visitor)
+		self.deserialize_seq(visitor)
 	}
 }
