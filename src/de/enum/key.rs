@@ -1,4 +1,4 @@
-use super::fake::FakeStringDeserializer;
+use super::{fake::FakeStringDeserializer, unit::TaggedUnitEnumAcc};
 use crate::{
 	de::{
 		access::SeqAcc,
@@ -358,7 +358,6 @@ impl<'de, R: Read<'de>> serde::de::Deserializer<'de> for TaggedKey<'_, R> {
 		self.deserialize_map(visitor)
 	}
 
-	#[expect(unused_variables)]
 	fn deserialize_enum<V>(
 		self,
 		_name: &'static str,
@@ -368,7 +367,15 @@ impl<'de, R: Read<'de>> serde::de::Deserializer<'de> for TaggedKey<'_, R> {
 	where
 		V: serde::de::Visitor<'de>,
 	{
-		todo!()
+		let peek = self.de.read.peek().ok_or(Error::EOF)?;
+		if peek == b'"' || peek == b'\'' {
+			let acc = TaggedUnitEnumAcc::new(&mut *self.de);
+			visitor.visit_enum(acc)
+		} else {
+			let point = self.de.read.position();
+			let code = ErrorCode::ExpectedEnum(peek as char);
+			Err(Error::with_point(code, point))
+		}
 	}
 
 	fn deserialize_identifier<V>(self, visitor: V) -> Result<V::Value, Self::Error>

@@ -1,3 +1,4 @@
+use indexmap::IndexMap;
 use mayfig::error::{ErrorCode, Position, Span};
 use serde_derive::Deserialize;
 use std::collections::HashMap;
@@ -179,4 +180,62 @@ gestures {
 #[test]
 fn ignored() {
 	let _ = mayfig::from_str::<serde::de::IgnoredAny>(IGNORED).unwrap();
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Hash, Deserialize)]
+#[serde(rename_all = "snake_case")]
+enum Bind {
+	Meta(Key),
+	Ctrl(Key),
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Hash, Deserialize)]
+#[serde(rename_all = "snake_case")]
+enum Key {
+	Tab,
+	Right,
+	Left,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Deserialize)]
+#[serde(rename_all = "snake_case")]
+enum Action {
+	Cycle(Navigation),
+	Move(Direction),
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Deserialize)]
+#[serde(rename_all = "snake_case")]
+enum Navigation {
+	Next,
+	Prev,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Deserialize)]
+#[serde(rename_all = "snake_case")]
+enum Direction {
+	Left,
+	Right,
+}
+
+const NESTED: &str = r#"
+meta [ "tab" ] = "cycle" [ "next" ]
+ctrl [ "tab" ] = "cycle" [ "prev" ]
+meta [ "left" ] = "move" [ "left" ]
+meta [ "right" ] = "move" [ "right" ]
+"#;
+
+#[test]
+fn nested() {
+	let nested = mayfig::from_str::<IndexMap<Bind, Action>>(NESTED).unwrap();
+	let nested = nested.into_iter().collect::<Vec<_>>();
+	assert_eq!(
+		&nested,
+		&[
+			(Bind::Meta(Key::Tab), Action::Cycle(Navigation::Next)),
+			(Bind::Ctrl(Key::Tab), Action::Cycle(Navigation::Prev)),
+			(Bind::Meta(Key::Left), Action::Move(Direction::Left)),
+			(Bind::Meta(Key::Right), Action::Move(Direction::Right)),
+		]
+	)
 }
