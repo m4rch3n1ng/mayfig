@@ -156,10 +156,10 @@ pub enum ErrorCode {
 	#[error("expected numeric, got {0:?}")]
 	ExpectedNumeric(char),
 	/// expected alphabetic
-	#[error("expected alphabetic, got {0:?}")]
+	#[error("expected alphabetic or _, got {0:?}")]
 	ExpectedAlphabetic(char),
 	/// expected alphanumeric
-	#[error("expected alphanumeric, got {0:?}")]
+	#[error("expected alphanumeric, _, - or +, got {0:?}")]
 	ExpectedAlphaNumeric(char),
 
 	/// unit values are unsupported in mayfig

@@ -8,37 +8,38 @@
 ```properties
 input {
     keyboard {
-        # xkb_file = "~/.config/keymap/may.xkb"
+        # xkb-file = "~/.config/keymap/may.xkb"
 
-        repeat_delay = 600
-        repeat_rate = 25
+        repeat-delay = 600
+        repeat-rate = 25
     }
 
     touchpad {
         tap = true
 
-        natural_scroll = true
-        # scroll_method = "two_finger"
+        natural-scroll = true
+        # scroll-method = "two-finger"
     }
 }
 
 cursor {
-    xcursor_theme = "Bibata-Modern-Classic"
-    xcursor_size = 24
+    xcursor-theme = "Bibata-Modern-Classic"
+    xcursor-size = 24
 }
 
 bind {
-    "mod escape" = "quit"
-    "mod q" = "close"
+    mod+escape = "quit"
+    mod+q = "close"
 
-    "mod t" = "spawn" [ "kitty" ]
-    "mod n" = "spawn" [ "firefox" ]
+    mod+t = "spawn" [ "kitty" ]
+    mod+n = "spawn" [ "firefox" ]
 }
 ```
 
 ### spec
 
 `mayfig` is fundamentally a `key=value` style format.
+while it is not enforced, `mayfig` recommends kebab-case.
 
 **comments**
 
@@ -86,7 +87,7 @@ offset = [ 0, 0 ]
 # if you have a lot of values you can split them up into seperate
 # lines, but the opening brackets have to be on the same line as the
 # `=` sign.
-tiling_exceptions = [
+tiling-exceptions = [
     "com.system76.CosmicFilesDialog"
     "com.system76.CosmicFiles"
     "jetbrains-toolbox"
@@ -105,7 +106,7 @@ st2 = 'single quoted strings work too'
 
 map {
     # keys are also strings, but quotes are optional,
-    # if you restrict yourself to /[a-zA-Z_][a-zA-Z0-9_]*/
+    # if you restrict yourself to /[a-zA-Z_][a-zA-Z0-9\-+_]*/
     unquoted = true
     "with quotes" = true
 }
@@ -138,9 +139,9 @@ thing = "tag" [ "value" ]
 # this is how enums are defined in mayfig
 # by omitting the value you can create unit enum variants
 bind {
-    "mod q" = "close"
-    "mod t" = "spawn" [ "kitty" ]
-    "mod 0" = "workspace" [ 0 ]
+    mod+q = "close"
+    mod+t = "spawn" [ "kitty" ]
+    mod+0 = "workspace" [ 0 ]
 }
 
 # you can also use them in category keys
@@ -162,14 +163,14 @@ windowrules {
 `mayland.mf`
 ```properties
 cursor {
-    xcursor_theme = "Bibata-Modern-Classic"
-    xcursor_size = 24
+    xcursor-theme = "Bibata-Modern-Classic"
+    xcursor-size = 24
 }
 
 bind {
-    "mod q" = "close"
-    "mod t" = "spawn" [ "kitty" ]
-    "mod 0" = "workspace" [ 0 ]
+    mod+q = "close"
+    mod+t = "spawn" [ "kitty" ]
+    mod+0 = "workspace" [ 0 ]
 }
 ```
 

@@ -218,7 +218,7 @@ impl<'de, R: Read<'de>> Deserializer<R> {
 		let peek = self.read.peek().ok_or(Error::EOF)?;
 		if peek == b'"' || peek == b'\'' {
 			return self.str();
-		} else if !peek.is_ascii_alphabetic() {
+		} else if !peek.is_ascii_alphabetic() && peek != b'_' {
 			let point = self.read.position();
 			let code = ErrorCode::ExpectedAlphabetic(peek as char);
 			return Err(Error::with_point(code, point));
