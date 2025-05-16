@@ -41,7 +41,7 @@ bind {
 `mayfig` is fundamentally a `key=value` style format.
 while it is not enforced, `mayfig` recommends kebab-case.
 
-**comments**
+#### comments
 
 ```properties
 # comments start with a hashtag
@@ -50,7 +50,7 @@ while it is not enforced, `mayfig` recommends kebab-case.
 # in front of every line
 ```
 
-**categories**
+#### categories
 
 ```properties
 # similar to hyprlang and the sway config format,
@@ -73,7 +73,7 @@ layout {
 }
 ```
 
-**sequences**
+#### sequences
 
 ```properties
 # sequences are to mayfig what arrays are to json and toml
@@ -95,7 +95,7 @@ tiling-exceptions = [
 ]
 ```
 
-**strings**
+#### strings
 
 ```properties
 # strings have to be escaped with quotes
@@ -112,7 +112,7 @@ map {
 }
 ```
 
-**numbers**
+#### numbers
 
 ```properties
 # integers
@@ -129,7 +129,7 @@ s2 = -.inf # negative infinity
 # nan is not a supported value
 ```
 
-**tagged enums**
+#### tagged enums
 
 ```properties
 # in mayfig you can "tag" values by putting the values
