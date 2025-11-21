@@ -237,5 +237,5 @@ fn nested() {
 			(Bind::Meta(Key::Left), Action::Move(Direction::Left)),
 			(Bind::Meta(Key::Right), Action::Move(Direction::Right)),
 		]
-	)
+	);
 }

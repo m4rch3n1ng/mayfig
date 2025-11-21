@@ -12,7 +12,7 @@ impl<'a, 'de, R: Read<'de>> TaggedUnitEnumAcc<'a, R> {
 	}
 }
 
-impl<'a, 'de, R: Read<'de>> EnumAccess<'de> for TaggedUnitEnumAcc<'a, R> {
+impl<'de, R: Read<'de>> EnumAccess<'de> for TaggedUnitEnumAcc<'_, R> {
 	type Error = Error;
 	type Variant = Self;
 
@@ -25,7 +25,7 @@ impl<'a, 'de, R: Read<'de>> EnumAccess<'de> for TaggedUnitEnumAcc<'a, R> {
 	}
 }
 
-impl<'a, 'de, R: Read<'de>> VariantAccess<'de> for TaggedUnitEnumAcc<'a, R> {
+impl<'de, R: Read<'de>> VariantAccess<'de> for TaggedUnitEnumAcc<'_, R> {
 	type Error = Error;
 
 	fn unit_variant(self) -> Result<(), Self::Error> {

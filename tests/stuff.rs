@@ -30,7 +30,7 @@ fn newtype() {
 	let t1 = mayfig::from_str::<N>(N1);
 	let t1 = t1.unwrap();
 	assert_eq!(*t1.v, (20, -20));
-	assert_eq!(*t1.t, "test")
+	assert_eq!(*t1.t, "test");
 }
 
 #[derive(Debug, Deserialize)]

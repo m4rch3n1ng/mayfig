@@ -77,7 +77,7 @@ impl Hash for Map {
 	fn hash<H: std::hash::Hasher>(&self, state: &mut H) {
 		state.write_usize(self.0.len());
 		for elt in &self.0 {
-			elt.hash(state)
+			elt.hash(state);
 		}
 	}
 }

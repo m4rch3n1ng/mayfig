@@ -74,7 +74,7 @@ impl<'de> Visitor<'de> for ValueVisitor {
 	{
 		let mut seq = Vec::new();
 		while let Some(val) = vis.next_element()? {
-			seq.push(val)
+			seq.push(val);
 		}
 		Ok(Value::Seq(seq))
 	}

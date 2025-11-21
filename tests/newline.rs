@@ -61,5 +61,5 @@ fn is_not_newline() {
 			col: 6,
 			index: 14
 		}))
-	)
+	);
 }

@@ -143,14 +143,14 @@ impl<'de, R: Read<'de>> Deserializer<R> {
 			};
 
 			if read::is_whitespace_line(peek) {
-				self.read.discard()
+				self.read.discard();
 			} else if peek == b'#' {
 				is_newline = true;
 				self.read.discard();
 
 				if self.discard_comment().is_none() {
 					break Ok(None);
-				};
+				}
 			} else if peek == b'\n' {
 				is_newline = true;
 				self.read.discard();

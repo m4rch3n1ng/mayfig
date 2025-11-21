@@ -104,7 +104,7 @@ impl Hash for InternalNumber {
 					// InternalNumber::Float cannot be NaN
 					ff.to_bits()
 				};
-				bits.hash(state)
+				bits.hash(state);
 			}
 		}
 	}

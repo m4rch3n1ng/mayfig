@@ -21,3 +21,6 @@ serde_derive = "1.0.217"
 
 [lints.clippy]
 allow_attributes = "warn"
+elidable_lifetime_names = "warn"
+semicolon_if_nothing_returned = "warn"
+unnecessary_semicolon = "warn"
