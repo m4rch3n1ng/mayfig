@@ -74,10 +74,10 @@ impl Visitor<'_> for NumberVis {
 	}
 
 	fn visit_u8<E: serde::de::Error>(self, v: u8) -> Result<Self::Value, E> {
-		if v % 5 != 0 {
-			Err(serde::de::Error::custom("number has to be mod 5"))
-		} else {
+		if v.is_multiple_of(5) {
 			Ok(Number(v))
+		} else {
+			Err(serde::de::Error::custom("number has to be a multiple of 5"))
 		}
 	}
 }

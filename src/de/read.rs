@@ -154,9 +154,7 @@ impl<'de> Read<'de> for SliceRead<'de> {
 			}
 		}
 
-		loop {
-			let Some(peek) = self.peek() else { break };
-
+		while let Some(peek) = self.peek() {
 			if let b'0'..=b'9' | b'.' | b'e' | b'-' | b'+' = peek {
 				self.discard();
 			} else if is_delimiter(peek) {
@@ -178,9 +176,7 @@ impl<'de> Read<'de> for SliceRead<'de> {
 	fn word<'s>(&mut self, _scratch: &'s mut Vec<u8>) -> Result<Ref<'de, 's, str>, Error> {
 		let start = self.index;
 
-		loop {
-			let Some(peek) = self.peek() else { break };
-
+		while let Some(peek) = self.peek() {
 			if peek.is_ascii_alphanumeric() || peek == b'_' || peek == b'-' || peek == b'+' {
 				self.discard();
 			} else if is_delimiter(peek) {
