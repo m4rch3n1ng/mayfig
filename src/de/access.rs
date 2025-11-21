@@ -73,7 +73,7 @@ impl<'de, R: Read<'de>> MapAccess<'de> for TopMapAcc<'_, R> {
 			self.de.read.discard();
 		} else if peek != b'{' {
 			let point = self.de.read.position();
-			let code = ErrorCode::ExpectedValue(peek as char);
+			let code = ErrorCode::ExpectedValue(self.de.read.peek_char()?);
 			return Err(Error::with_point(code, point));
 		}
 
@@ -131,7 +131,7 @@ impl<'de, R: Read<'de>> MapAccess<'de> for MapAcc<'_, R> {
 			self.de.read.discard();
 		} else if peek != b'{' {
 			let point = self.de.read.position();
-			let code = ErrorCode::ExpectedValue(peek as char);
+			let code = ErrorCode::ExpectedValue(self.de.read.peek_char()?);
 			return Err(Error::with_point(code, point));
 		}
 

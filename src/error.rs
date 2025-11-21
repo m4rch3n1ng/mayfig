@@ -216,7 +216,7 @@ impl Span {
 	/// returns a [`Range`](std::ops::Range) of the span
 	pub fn range(&self) -> std::ops::Range<usize> {
 		match self {
-			Span::Point(pos) => pos.index..(pos.index + 1),
+			Span::Point(pos) => pos.index..pos.index,
 			Span::Span(pos1, pos2) => pos1.index..(pos2.index),
 		}
 	}

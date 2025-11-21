@@ -64,7 +64,7 @@ impl<'de, R: Read<'de>> VariantAccess<'de> for TaggedEnumKeyAcc<'_, '_, R> {
 		let next = self.map_key.de.peek_line()?.ok_or(Error::EOF)?;
 		if next != b'[' {
 			let point = self.map_key.de.read.position();
-			let code = ErrorCode::ExpectedSeq(next as char);
+			let code = ErrorCode::ExpectedSeq(self.map_key.de.read.peek_char()?);
 			return Err(Error::with_point(code, point));
 		}
 		self.map_key.de.read.discard();
@@ -79,7 +79,7 @@ impl<'de, R: Read<'de>> VariantAccess<'de> for TaggedEnumKeyAcc<'_, '_, R> {
 		let peek = self.map_key.de.peek_any().ok_or(Error::EOF)?;
 		if peek != b']' {
 			let point = self.map_key.de.read.position();
-			let code = ErrorCode::ExpectedSeqEnd(peek as char);
+			let code = ErrorCode::ExpectedSeqEnd(self.map_key.de.read.peek_char()?);
 			return Err(Error::with_point(code, point));
 		}
 		self.map_key.de.read.discard();
@@ -259,7 +259,7 @@ impl<'de, R: Read<'de>> serde::de::Deserializer<'de> for TaggedKey<'_, R> {
 			b']' => visitor.visit_borrowed_bytes(&[]),
 			_ => {
 				let point = self.de.read.position();
-				let code = ErrorCode::ExpectedBytes(peek as char);
+				let code = ErrorCode::ExpectedBytes(self.de.read.peek_char()?);
 				Err(Error::with_point(code, point))
 			}
 		}
@@ -373,7 +373,7 @@ impl<'de, R: Read<'de>> serde::de::Deserializer<'de> for TaggedKey<'_, R> {
 			visitor.visit_enum(acc)
 		} else {
 			let point = self.de.read.position();
-			let code = ErrorCode::ExpectedEnum(peek as char);
+			let code = ErrorCode::ExpectedEnum(self.de.read.peek_char()?);
 			Err(Error::with_point(code, point))
 		}
 	}

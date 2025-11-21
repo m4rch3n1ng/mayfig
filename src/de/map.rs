@@ -264,7 +264,7 @@ impl<'de, R: Read<'de>> serde::de::Deserializer<'de> for &mut MapKey<'_, R> {
 			visitor.visit_enum(acc)
 		} else {
 			let point = self.de.read.position();
-			let code = ErrorCode::ExpectedEnum(peek as char);
+			let code = ErrorCode::ExpectedEnum(self.de.read.peek_char()?);
 			Err(Error::with_point(code, point))
 		}
 	}

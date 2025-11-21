@@ -54,6 +54,12 @@ impl<'de, 's> From<Ref<'de, 's, str>> for String {
 pub trait Read<'de> {
 	fn peek(&mut self) -> Option<u8>;
 
+	/// # Panics
+	///
+	/// this function may panic, if it is called without checking
+	/// if [`Read::peek`] is [`Some`].
+	fn peek_char(&mut self) -> Result<char, Error>;
+
 	fn next(&mut self) -> Option<u8>;
 
 	fn discard(&mut self);
@@ -102,6 +108,21 @@ impl<'de> Read<'de> for SliceRead<'de> {
 			Some(ch)
 		} else {
 			None
+		}
+	}
+
+	fn peek_char(&mut self) -> Result<char, Error> {
+		debug_assert!(self.peek().is_some(), "only call after calling peek");
+
+		let max = self.slice.len().min(self.index + 4);
+		match str::from_utf8(&self.slice[self.index..max]) {
+			Ok(str) => Ok(str.chars().next().unwrap()),
+			Err(err) if err.valid_up_to() > 0 => {
+				let str = str::from_utf8(&self.slice[self.index..self.index + err.valid_up_to()])
+					.unwrap();
+				Ok(str.chars().next().unwrap())
+			}
+			Err(_) => Err(Error::new(ErrorCode::InvalidUtf8)),
 		}
 	}
 
@@ -161,7 +182,7 @@ impl<'de> Read<'de> for SliceRead<'de> {
 				break;
 			} else {
 				let point = self.position();
-				let code = ErrorCode::ExpectedNumeric(peek as char);
+				let code = ErrorCode::ExpectedNumeric(self.peek_char()?);
 				return Err(Error::with_point(code, point));
 			}
 		}
@@ -183,7 +204,7 @@ impl<'de> Read<'de> for SliceRead<'de> {
 				break;
 			} else {
 				let point = self.position();
-				let code = ErrorCode::ExpectedAlphaNumeric(peek as char);
+				let code = ErrorCode::ExpectedAlphaNumeric(self.peek_char()?);
 				return Err(Error::with_point(code, point));
 			}
 		}
@@ -197,7 +218,7 @@ impl<'de> Read<'de> for SliceRead<'de> {
 
 	fn str_bytes<'s>(&mut self, scratch: &'s mut Vec<u8>) -> Result<Ref<'de, 's, [u8]>, Error> {
 		let quote = self.next().ok_or(Error::EOF)?;
-		assert!(matches!(quote, b'"' | b'\''), "is {:?}", quote as char);
+		debug_assert!(matches!(quote, b'"' | b'\''), "is {:?}", quote as char);
 
 		let mut start = self.index;
 
@@ -238,7 +259,7 @@ impl<'de> Read<'de> for SliceRead<'de> {
 		if let Some(peek) = self.peek() {
 			if !is_delimiter(peek) {
 				let point = self.position();
-				let code = ErrorCode::ExpectedDelimiter(peek as char);
+				let code = ErrorCode::ExpectedDelimiter(self.peek_char()?);
 				return Err(Error::with_point(code, point));
 			}
 		}
@@ -259,6 +280,10 @@ impl<'de> StrRead<'de> {
 impl<'de> Read<'de> for StrRead<'de> {
 	fn peek(&mut self) -> Option<u8> {
 		self.0.peek()
+	}
+
+	fn peek_char(&mut self) -> Result<char, Error> {
+		self.0.peek_char()
 	}
 
 	fn next(&mut self) -> Option<u8> {
@@ -288,9 +313,9 @@ impl<'de> Read<'de> for StrRead<'de> {
 
 fn parse_escape<'de, R: Read<'de>>(read: &mut R, scratch: &mut Vec<u8>) -> Result<(), Error> {
 	let point = read.position();
-	let next = read.next().ok_or(Error::EOF)?;
+	let peek = read.peek().ok_or(Error::EOF)?;
 
-	match next {
+	match peek {
 		b'"' => scratch.push(b'"'),
 		b'\'' => scratch.push(b'\''),
 		b'\\' => scratch.push(b'\\'),
@@ -302,11 +327,12 @@ fn parse_escape<'de, R: Read<'de>>(read: &mut R, scratch: &mut Vec<u8>) -> Resul
 		b'f' => scratch.push(b'\x0c'),
 		b'u' => todo!("unicode escape"),
 		_ => {
-			let code = ErrorCode::UnknownEscape(next as char);
+			let code = ErrorCode::UnknownEscape(read.peek_char()?);
 			return Err(Error::with_point(code, point));
 		}
 	}
 
+	read.discard();
 	Ok(())
 }
 

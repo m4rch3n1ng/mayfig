@@ -61,7 +61,7 @@ impl<'de, R: Read<'de>> VariantAccess<'de> for TaggedEnumValueAcc<'_, R> {
 		let next = self.de.peek_line()?.ok_or(Error::EOF)?;
 		if next != b'[' && next != b'{' {
 			let point = self.de.read.position();
-			let code = ErrorCode::ExpectedSeq(next as char);
+			let code = ErrorCode::ExpectedSeq(self.de.read.peek_char()?);
 			return Err(Error::with_point(code, point));
 		}
 
@@ -77,19 +77,17 @@ impl<'de, R: Read<'de>> VariantAccess<'de> for TaggedEnumValueAcc<'_, R> {
 			let peek = self.de.peek_any().ok_or(Error::EOF)?;
 
 			let seq_end_point = self.de.read.position();
-			self.de.read.discard();
-
-			let val = val.map_err(|err| {
-				let end = self.de.read.position();
-				add_span(err, Span::Span(start, end))
-			})?;
 
 			if peek != b']' {
-				let code = ErrorCode::ExpectedSeqEnd(peek as char);
+				let code = ErrorCode::ExpectedSeqEnd(self.de.read.peek_char()?);
 				return Err(Error::with_point(code, seq_end_point));
 			}
 
-			val
+			self.de.read.discard();
+			val.map_err(|err| {
+				let end = self.de.read.position();
+				add_span(err, Span::Span(start, end))
+			})?
 		} else {
 			val?
 		};
@@ -142,7 +140,7 @@ impl<'a, 'de, R: Read<'de>> TaggedValue<'a, R> {
 		let peek = self.de.read.peek().ok_or(Error::EOF)?;
 		if peek != b'[' {
 			let point = self.de.read.position();
-			let code = ErrorCode::ExpectedSeq(peek as char);
+			let code = ErrorCode::ExpectedSeq(self.de.read.peek_char()?);
 			Err(Error::with_point(code, point))
 		} else {
 			self.de.read.discard();
@@ -318,7 +316,7 @@ impl<'de, R: Read<'de>> serde::de::Deserializer<'de> for &mut TaggedValue<'_, R>
 			b']' => visitor.visit_borrowed_bytes(&[]),
 			_ => {
 				let point = self.de.read.position();
-				let code = ErrorCode::ExpectedBytes(peek as char);
+				let code = ErrorCode::ExpectedBytes(self.de.read.peek_char()?);
 				Err(Error::with_point(code, point))
 			}
 		}
@@ -449,7 +447,7 @@ impl<'de, R: Read<'de>> serde::de::Deserializer<'de> for &mut TaggedValue<'_, R>
 			visitor.visit_enum(acc)
 		} else {
 			let point = self.de.read.position();
-			let code = ErrorCode::ExpectedEnum(peek as char);
+			let code = ErrorCode::ExpectedEnum(self.de.read.peek_char()?);
 			Err(Error::with_point(code, point))
 		}
 	}

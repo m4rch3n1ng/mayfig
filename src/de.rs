@@ -158,7 +158,7 @@ impl<'de, R: Read<'de>> Deserializer<R> {
 				break Ok(Some(peek));
 			} else {
 				let point = self.read.position();
-				let code = ErrorCode::ExpectedNewline(peek as char);
+				let code = ErrorCode::ExpectedNewline(self.read.peek_char()?);
 				break Err(Error::with_point(code, point));
 			}
 		}
@@ -176,10 +176,10 @@ impl<'de, R: Read<'de>> Deserializer<R> {
 
 		let r#ref = self.read.num(&mut self.scratch)?;
 		if r#ref.is_empty() {
-			let peek = self.read.peek().ok_or(Error::EOF)?;
+			let _ = self.read.peek().ok_or(Error::EOF)?;
 
 			let point = self.read.position();
-			let code = ErrorCode::ExpectedNumeric(peek as char);
+			let code = ErrorCode::ExpectedNumeric(self.read.peek_char()?);
 			Err(Error::with_point(code, point))
 		} else {
 			let span = Span::Span(start, self.read.position());
@@ -199,7 +199,7 @@ impl<'de, R: Read<'de>> Deserializer<R> {
 		let peek = self.read.peek().ok_or(Error::EOF)?;
 		if peek != b'"' && peek != b'\'' {
 			let point = self.read.position();
-			let code = ErrorCode::ExpectedQuote(peek as char);
+			let code = ErrorCode::ExpectedQuote(self.read.peek_char()?);
 			return Err(Error::with_point(code, point));
 		}
 
@@ -220,7 +220,7 @@ impl<'de, R: Read<'de>> Deserializer<R> {
 			return self.str();
 		} else if !peek.is_ascii_alphabetic() && peek != b'_' {
 			let point = self.read.position();
-			let code = ErrorCode::ExpectedAlphabetic(peek as char);
+			let code = ErrorCode::ExpectedAlphabetic(self.read.peek_char()?);
 			return Err(Error::with_point(code, point));
 		}
 
@@ -451,7 +451,7 @@ impl<'de, R: Read<'de>> serde::de::Deserializer<'de> for &mut Deserializer<R> {
 			b'[' => self.deserialize_seq(visitor),
 			_ => {
 				let point = self.read.position();
-				let code = ErrorCode::ExpectedBytes(peek as char);
+				let code = ErrorCode::ExpectedBytes(self.read.peek_char()?);
 				Err(Error::with_point(code, point))
 			}
 		}
@@ -509,7 +509,7 @@ impl<'de, R: Read<'de>> serde::de::Deserializer<'de> for &mut Deserializer<R> {
 		let next = self.read.peek().ok_or(Error::EOF)?;
 		if next != b'[' {
 			let point = self.read.position();
-			let code = ErrorCode::ExpectedSeq(next as char);
+			let code = ErrorCode::ExpectedSeq(self.read.peek_char()?);
 			return Err(Error::with_point(code, point));
 		}
 
@@ -532,7 +532,7 @@ impl<'de, R: Read<'de>> serde::de::Deserializer<'de> for &mut Deserializer<R> {
 		})?;
 
 		if next != b']' {
-			let code = ErrorCode::ExpectedSeqEnd(next as char);
+			let code = ErrorCode::ExpectedSeqEnd(self.read.peek_char()?);
 			return Err(Error::with_point(code, seq_end));
 		}
 
@@ -583,10 +583,10 @@ impl<'de, R: Read<'de>> serde::de::Deserializer<'de> for &mut Deserializer<R> {
 
 			Ok(val)
 		} else if self.indent != 0 {
-			let peek = peek.ok_or(Error::EOF)?;
+			let _ = peek.ok_or(Error::EOF)?;
 
 			let point = self.read.position();
-			let code = ErrorCode::ExpectedMap(peek as char);
+			let code = ErrorCode::ExpectedMap(self.read.peek_char()?);
 			return Err(Error::with_point(code, point));
 		} else {
 			self.indent += 1;
@@ -632,7 +632,7 @@ impl<'de, R: Read<'de>> serde::de::Deserializer<'de> for &mut Deserializer<R> {
 			visitor.visit_enum(acc)
 		} else {
 			let point = self.read.position();
-			let code = ErrorCode::ExpectedEnum(peek as char);
+			let code = ErrorCode::ExpectedEnum(self.read.peek_char()?);
 			Err(Error::with_point(code, point))
 		}
 	}
