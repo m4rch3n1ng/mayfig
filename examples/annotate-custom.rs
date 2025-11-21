@@ -1,4 +1,4 @@
-use annotate_snippets::{Level, Renderer, Snippet};
+use annotate_snippets::{AnnotationKind, Group, Level, Renderer, Snippet};
 use serde::{de::Visitor, Deserialize};
 use serde_derive::Deserialize;
 
@@ -132,18 +132,18 @@ fn main() {
 		Err(err) => {
 			let code = err.code().to_string();
 			let message = if let Some(span) = err.span() {
-				Level::Error.title(code.as_str()).snippet(
+				Level::ERROR.primary_title(code.as_str()).element(
 					Snippet::source(&with_error)
-						.origin("test/test.mf")
+						.path("test/test.mf")
 						.fold(true)
-						.annotation(Level::Error.span(span.range())),
+						.annotation(AnnotationKind::Primary.span(span.range())),
 				)
 			} else {
-				Level::Error.title(code.as_str())
+				Group::with_title(Level::ERROR.primary_title(code.as_str()))
 			};
 
 			let renderer = Renderer::styled();
-			anstream::println!("{}", renderer.render(message));
+			anstream::println!("{}", renderer.render(&[message]));
 
 			return;
 		}

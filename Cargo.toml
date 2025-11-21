@@ -7,17 +7,17 @@ repository = "https://github.com/m4rch3n1ng/mayfig"
 license = "MPL-2.0"
 
 [dependencies]
-indexmap = { version = "2.7.1", features = ["serde"] }
-itoa = "1.0.14"
-ryu = "1.0.19"
-serde = "1.0.217"
-thiserror = "2.0.11"
+indexmap = { version = "2.12.1", features = ["serde"] }
+itoa = "1.0.15"
+ryu = "1.0.20"
+serde = "1.0.228"
+thiserror = "2.0.17"
 
 [dev-dependencies]
-annotate-snippets = "0.11.5"
-anstream = "0.6.18"
-serde_bytes = "0.11.15"
-serde_derive = "1.0.217"
+annotate-snippets = "0.12.9"
+anstream = "0.6.21"
+serde_bytes = "0.11.19"
+serde_derive = "1.0.228"
 
 [lints.clippy]
 allow_attributes = "warn"
