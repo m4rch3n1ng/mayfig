@@ -23,13 +23,7 @@ impl Number {
 	/// returns an `i64` if the number is an integer and fits into an `i64`.
 	pub fn as_i64(&self) -> Option<i64> {
 		match self.0 {
-			InternalNumber::PosInt(u) => {
-				if u <= i64::MAX as u64 {
-					Some(u as i64)
-				} else {
-					None
-				}
-			}
+			InternalNumber::PosInt(u) => i64::try_from(u).ok(),
 			InternalNumber::NegInt(i) => Some(i),
 			InternalNumber::Float(_) => None,
 		}
