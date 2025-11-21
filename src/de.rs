@@ -220,7 +220,7 @@ impl<'de, R: Read<'de>> Deserializer<R> {
 			return self.str();
 		} else if !peek.is_ascii_alphabetic() && peek != b'_' {
 			let point = self.read.position();
-			let code = ErrorCode::ExpectedAlphabetic(self.read.peek_char()?);
+			let code = ErrorCode::ExpectedAsciiAlphabetic(self.read.peek_char()?);
 			return Err(Error::with_point(code, point));
 		}
 

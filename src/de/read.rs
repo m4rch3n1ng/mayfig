@@ -204,7 +204,7 @@ impl<'de> Read<'de> for SliceRead<'de> {
 				break;
 			} else {
 				let point = self.position();
-				let code = ErrorCode::ExpectedAlphaNumeric(self.peek_char()?);
+				let code = ErrorCode::ExpectedAsciiAlphanumeric(self.peek_char()?);
 				return Err(Error::with_point(code, point));
 			}
 		}

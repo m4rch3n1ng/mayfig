@@ -30,11 +30,14 @@ const T4: &str = r#"
 fn test() {
 	let t1 = mayfig::from_str::<Thing>(T1);
 	let e1 = t1.unwrap_err();
-	assert!(matches!(e1.code(), ErrorCode::ExpectedAlphabetic('ä')));
+	assert!(matches!(e1.code(), ErrorCode::ExpectedAsciiAlphabetic('ä')));
 
 	let t2 = mayfig::from_str::<Thing>(T2);
 	let e2 = t2.unwrap_err();
-	assert!(matches!(e2.code(), ErrorCode::ExpectedAlphaNumeric('ß')));
+	assert!(matches!(
+		e2.code(),
+		ErrorCode::ExpectedAsciiAlphanumeric('ß')
+	));
 
 	let t3 = mayfig::from_str::<Thing>(T3);
 	let e3 = t3.unwrap_err();

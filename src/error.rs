@@ -153,14 +153,16 @@ pub enum ErrorCode {
 	ExpectedDelimiter(char),
 
 	/// expected numeric
-	#[error("expected numeric, got {0:?}")]
+	#[error("expected ascii numeric, got {0:?}")]
 	ExpectedNumeric(char),
 	/// expected alphabetic
-	#[error("expected alphabetic or _, got {0:?}")]
-	ExpectedAlphabetic(char),
+	#[error("unquoted identifier may only start with ascii letters or _, found {0:?}")]
+	ExpectedAsciiAlphabetic(char),
 	/// expected alphanumeric
-	#[error("expected alphanumeric, _, - or +, got {0:?}")]
-	ExpectedAlphaNumeric(char),
+	#[error(
+		"unquoted identifiers may only contain ascii letters, numbers, _, - or +, found {0:?}"
+	)]
+	ExpectedAsciiAlphanumeric(char),
 
 	/// unit values are unsupported in mayfig
 	#[error("unsupported unit type")]
