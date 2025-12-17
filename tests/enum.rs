@@ -239,3 +239,27 @@ fn nested() {
 		]
 	);
 }
+
+#[derive(Debug, Clone, PartialEq, Eq, Deserialize)]
+#[serde(rename_all = "kebab-case")]
+enum Movement {
+	Maximize(Option<String>),
+}
+
+const OPTIONAL: &str = r#"
+"one" = "maximize" [ "one" ]
+"two" = "maximize" []
+"#;
+
+#[test]
+fn optional() {
+	let optional = mayfig::from_str::<IndexMap<String, Movement>>(OPTIONAL).unwrap();
+	let optional = optional.into_iter().collect::<Vec<_>>();
+	assert_eq!(
+		&optional,
+		&[
+			("one".to_owned(), Movement::Maximize(Some("one".to_owned()))),
+			("two".to_owned(), Movement::Maximize(None)),
+		]
+	);
+}

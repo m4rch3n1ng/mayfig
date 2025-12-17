@@ -335,7 +335,12 @@ impl<'de, R: Read<'de>> serde::de::Deserializer<'de> for &mut TaggedValue<'_, R>
 		V: serde::de::Visitor<'de>,
 	{
 		self.assert_bracket()?;
-		visitor.visit_some(self)
+		let peek = self.de.read.peek().ok_or(Error::EOF)?;
+		if peek == b']' {
+			visitor.visit_none()
+		} else {
+			visitor.visit_some(self)
+		}
 	}
 
 	fn deserialize_unit<V>(self, visitor: V) -> Result<V::Value, Self::Error>
