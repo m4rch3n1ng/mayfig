@@ -1,9 +1,11 @@
 use super::{add_span, r#enum::TaggedEnumKeyAcc, read::Read};
 use crate::{
+	de::read::Ref,
 	error::{Error, ErrorCode},
 	Deserializer,
 };
 use serde::forward_to_deserialize_any;
+use std::borrow::Cow;
 
 pub struct MapKey<'a, R> {
 	pub(super) de: &'a mut Deserializer<R>,
@@ -29,13 +31,20 @@ impl<'de, R: Read<'de>> serde::de::Deserializer<'de> for &mut MapKey<'_, R> {
 			b'0'..=b'9' | b'.' | b'-' | b'+' => self.de.deserialize_number(visitor),
 			_ => {
 				let (ident, span) = self.de.identifier()?;
-				let ident = ident.to_owned();
+				let ident = match ident {
+					Ref::Borrow(s) => Cow::Borrowed(s),
+					Ref::Scratch(s) => Cow::Owned(s.to_owned()),
+				};
 
 				if let Ok(Some(b'[')) = self.de.peek_line() {
 					let tagged = TaggedEnumKeyAcc::with_tag(self, ident);
 					visitor.visit_enum(tagged)
 				} else {
-					visitor.visit_string(ident).map_err(|e| add_span(e, span))
+					match ident {
+						Cow::Borrowed(s) => visitor.visit_borrowed_str(s),
+						Cow::Owned(s) => visitor.visit_string(s),
+					}
+					.map_err(|e| add_span(e, span))
 				}
 			}
 		}

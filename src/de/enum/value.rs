@@ -9,18 +9,19 @@ use crate::{
 	Deserializer,
 };
 use serde::de::{Deserializer as _, EnumAccess, VariantAccess};
+use std::borrow::Cow;
 
-pub struct TaggedEnumValueAcc<'a, R> {
+pub struct TaggedEnumValueAcc<'a, 'de, R> {
 	de: &'a mut Deserializer<R>,
-	string: Option<String>,
+	string: Option<Cow<'de, str>>,
 }
 
-impl<'a, 'de, R: Read<'de>> TaggedEnumValueAcc<'a, R> {
+impl<'a, 'de, R: Read<'de>> TaggedEnumValueAcc<'a, 'de, R> {
 	pub fn new(de: &'a mut Deserializer<R>) -> Self {
 		TaggedEnumValueAcc { de, string: None }
 	}
 
-	pub fn with_tag(de: &'a mut Deserializer<R>, string: String) -> Self {
+	pub fn with_tag(de: &'a mut Deserializer<R>, string: Cow<'de, str>) -> Self {
 		TaggedEnumValueAcc {
 			de,
 			string: Some(string),
@@ -28,7 +29,7 @@ impl<'a, 'de, R: Read<'de>> TaggedEnumValueAcc<'a, R> {
 	}
 }
 
-impl<'de, R: Read<'de>> EnumAccess<'de> for TaggedEnumValueAcc<'_, R> {
+impl<'de, R: Read<'de>> EnumAccess<'de> for TaggedEnumValueAcc<'_, 'de, R> {
 	type Error = Error;
 	type Variant = Self;
 
@@ -47,7 +48,7 @@ impl<'de, R: Read<'de>> EnumAccess<'de> for TaggedEnumValueAcc<'_, R> {
 	}
 }
 
-impl<'de, R: Read<'de>> VariantAccess<'de> for TaggedEnumValueAcc<'_, R> {
+impl<'de, R: Read<'de>> VariantAccess<'de> for TaggedEnumValueAcc<'_, 'de, R> {
 	type Error = Error;
 
 	fn unit_variant(self) -> Result<(), Self::Error> {

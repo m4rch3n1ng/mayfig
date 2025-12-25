@@ -10,6 +10,7 @@ use crate::{
 	error::{Error, ErrorCode, Span},
 };
 use serde::forward_to_deserialize_any;
+use std::borrow::Cow;
 
 mod access;
 mod r#enum;
@@ -270,13 +271,20 @@ impl<'de, R: Read<'de>> serde::de::Deserializer<'de> for &mut Deserializer<R> {
 			self.deserialize_number(visitor)
 		} else if peek == b'"' || peek == b'\'' {
 			let (str, span) = self.str()?;
-			let str = str.to_owned();
+			let str = match str {
+				Ref::Borrow(s) => Cow::Borrowed(s),
+				Ref::Scratch(s) => Cow::Owned(s.to_owned()),
+			};
 
 			if let Ok(Some(b'[')) = self.peek_line() {
 				let tagged = TaggedEnumValueAcc::with_tag(self, str);
 				visitor.visit_enum(tagged)
 			} else {
-				visitor.visit_string(str).map_err(|err| add_span(err, span))
+				match str {
+					Cow::Borrowed(s) => visitor.visit_borrowed_str(s),
+					Cow::Owned(s) => visitor.visit_string(s),
+				}
+				.map_err(|err| add_span(err, span))
 			}
 		} else {
 			let (word, span) = self.word()?;

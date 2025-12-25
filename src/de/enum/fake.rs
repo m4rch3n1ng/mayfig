@@ -1,24 +1,28 @@
 use crate::Error;
 use serde::{forward_to_deserialize_any, Deserializer};
+use std::borrow::Cow;
 
-pub struct FakeStringDeserializer {
-	string: String,
+pub struct FakeStringDeserializer<'a> {
+	string: Cow<'a, str>,
 }
 
-impl FakeStringDeserializer {
-	pub fn new(string: String) -> Self {
+impl<'a> FakeStringDeserializer<'a> {
+	pub fn new(string: Cow<'a, str>) -> Self {
 		FakeStringDeserializer { string }
 	}
 }
 
-impl<'de> Deserializer<'de> for FakeStringDeserializer {
+impl<'de> Deserializer<'de> for FakeStringDeserializer<'de> {
 	type Error = Error;
 
 	fn deserialize_any<V>(self, visitor: V) -> Result<V::Value, Self::Error>
 	where
 		V: serde::de::Visitor<'de>,
 	{
-		visitor.visit_string(self.string)
+		match self.string {
+			Cow::Borrowed(s) => visitor.visit_borrowed_str(s),
+			Cow::Owned(s) => visitor.visit_string(s),
+		}
 	}
 
 	forward_to_deserialize_any! {
