@@ -234,10 +234,7 @@ impl<'de, R: Read<'de>> Deserializer<R> {
 	{
 		let (w, span) = self.num()?;
 		if w.contains('.') || w.contains('e') {
-			let n = w.parse::<f64>().map_err(|_| {
-				let code = ErrorCode::InvalidNum(w.to_owned());
-				Error::with_span(code, span)
-			})?;
+			let n = parse_f64(&w, span)?;
 			visitor.visit_f64(n).map_err(|err| add_span(err, span))
 		} else if w.starts_with('-') {
 			let n = w.parse::<i64>().map_err(|_| {

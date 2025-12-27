@@ -2,7 +2,7 @@ use mayfig::{value::Map, Value};
 
 const V1: &str = r#"
 map {
-	v = 0
+	v = .inf
 	t = [ 1 2 3, ]
 }
 str = "string"
@@ -22,7 +22,10 @@ fn value() {
 		(
 			Value::String("map".to_owned()),
 			Value::Map(Map::from([
-				(Value::String("v".to_owned()), Value::from(0)),
+				(
+					Value::String("v".to_owned()),
+					Value::try_from(f64::INFINITY).unwrap(),
+				),
 				(
 					Value::String("t".to_owned()),
 					(Value::Seq(vec![Value::from(1), Value::from(2), Value::from(3)])),
