@@ -267,6 +267,7 @@ impl<'de, R: Read<'de>> serde::de::Deserializer<'de> for &mut Deserializer<R> {
 		} else if let b'0'..=b'9' | b'.' | b'-' | b'+' = peek {
 			self.deserialize_number(visitor)
 		} else if peek == b'"' || peek == b'\'' {
+			let start = self.read.position();
 			let (str, span) = self.str()?;
 			let str = match str {
 				Ref::Borrow(s) => Cow::Borrowed(s),
@@ -275,7 +276,10 @@ impl<'de, R: Read<'de>> serde::de::Deserializer<'de> for &mut Deserializer<R> {
 
 			if let Ok(Some(b'[')) = self.peek_line() {
 				let tagged = TaggedEnumValueAcc::with_tag(self, str);
-				visitor.visit_enum(tagged)
+				visitor.visit_enum(tagged).map_err(|err| {
+					let end = self.read.position();
+					add_span(err, Span::Span(start, end))
+				})
 			} else {
 				match str {
 					Cow::Borrowed(s) => visitor.visit_borrowed_str(s),
@@ -633,8 +637,12 @@ impl<'de, R: Read<'de>> serde::de::Deserializer<'de> for &mut Deserializer<R> {
 	{
 		let peek = self.read.peek().ok_or(Error::EOF)?;
 		if peek == b'"' || peek == b'\'' {
+			let start = self.read.position();
 			let acc = TaggedEnumValueAcc::new(self);
-			visitor.visit_enum(acc)
+			visitor.visit_enum(acc).map_err(|err| {
+				let end = self.read.position();
+				add_span(err, Span::Span(start, end))
+			})
 		} else {
 			let point = self.read.position();
 			let code = ErrorCode::ExpectedEnum(self.read.peek_char()?);

@@ -1,7 +1,7 @@
 use super::{add_span, r#enum::TaggedEnumKeyAcc, read::Read};
 use crate::{
 	de::read::Ref,
-	error::{Error, ErrorCode},
+	error::{Error, ErrorCode, Span},
 	Deserializer,
 };
 use serde::forward_to_deserialize_any;
@@ -30,6 +30,7 @@ impl<'de, R: Read<'de>> serde::de::Deserializer<'de> for &mut MapKey<'_, R> {
 			b'{' => self.deserialize_map(visitor),
 			b'0'..=b'9' | b'.' | b'-' | b'+' => self.de.deserialize_number(visitor),
 			_ => {
+				let start = self.de.read.position();
 				let (ident, span) = self.de.identifier()?;
 				let ident = match ident {
 					Ref::Borrow(s) => Cow::Borrowed(s),
@@ -38,7 +39,10 @@ impl<'de, R: Read<'de>> serde::de::Deserializer<'de> for &mut MapKey<'_, R> {
 
 				if let Ok(Some(b'[')) = self.de.peek_line() {
 					let tagged = TaggedEnumKeyAcc::with_tag(self, ident);
-					visitor.visit_enum(tagged)
+					visitor.visit_enum(tagged).map_err(|err| {
+						let end = self.de.read.position();
+						add_span(err, Span::Span(start, end))
+					})
 				} else {
 					match ident {
 						Cow::Borrowed(s) => visitor.visit_borrowed_str(s),
@@ -269,8 +273,12 @@ impl<'de, R: Read<'de>> serde::de::Deserializer<'de> for &mut MapKey<'_, R> {
 	{
 		let peek = self.de.read.peek().ok_or(Error::EOF)?;
 		if peek.is_ascii_alphabetic() || peek == b'"' || peek == b'\'' {
+			let start = self.de.read.position();
 			let acc = TaggedEnumKeyAcc::new(self);
-			visitor.visit_enum(acc)
+			visitor.visit_enum(acc).map_err(|err| {
+				let end = self.de.read.position();
+				add_span(err, Span::Span(start, end))
+			})
 		} else {
 			let point = self.de.read.position();
 			let code = ErrorCode::ExpectedEnum(self.de.read.peek_char()?);
