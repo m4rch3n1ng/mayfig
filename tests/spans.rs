@@ -1,6 +1,5 @@
 use mayfig::error::{ErrorCode, Position, Span};
 use serde::{de::Visitor, Deserialize};
-use serde_derive::Deserialize;
 
 #[derive(Debug, Deserialize)]
 #[expect(dead_code)]
@@ -13,7 +12,7 @@ struct N {
 struct Num(u8);
 
 impl<'de> Deserialize<'de> for Num {
-	fn deserialize<D: serde::Deserializer<'de>>(deserializer: D) -> Result<Self, D::Error> {
+	fn deserialize<D: serde_core::Deserializer<'de>>(deserializer: D) -> Result<Self, D::Error> {
 		deserializer.deserialize_u8(NumVis)
 	}
 }
@@ -27,11 +26,13 @@ impl Visitor<'_> for NumVis {
 		f.write_str("a number that is mod 5")
 	}
 
-	fn visit_u8<E: serde::de::Error>(self, v: u8) -> Result<Self::Value, E> {
+	fn visit_u8<E: serde_core::de::Error>(self, v: u8) -> Result<Self::Value, E> {
 		if v.is_multiple_of(5) {
 			Ok(Num(v))
 		} else {
-			Err(serde::de::Error::custom("number has to be a multiple of 5"))
+			Err(serde_core::de::Error::custom(
+				"number has to be a multiple of 5",
+			))
 		}
 	}
 }
@@ -57,7 +58,7 @@ struct Col(String);
 impl<'de> Deserialize<'de> for Col {
 	fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
 	where
-		D: serde::Deserializer<'de>,
+		D: serde_core::Deserializer<'de>,
 	{
 		deserializer.deserialize_str(ColVis)
 	}
@@ -74,10 +75,10 @@ impl Visitor<'_> for ColVis {
 
 	fn visit_str<E>(self, v: &str) -> Result<Self::Value, E>
 	where
-		E: serde::de::Error,
+		E: serde_core::de::Error,
 	{
 		if !v.starts_with('#') {
-			Err(serde::de::Error::custom("a color must start with a #"))
+			Err(serde_core::de::Error::custom("a color must start with a #"))
 		} else {
 			Ok(Col(v.to_owned()))
 		}

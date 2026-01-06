@@ -1,5 +1,5 @@
 use mayfig::error::{ErrorCode, Position, Span};
-use serde_derive::Deserialize;
+use serde::Deserialize;
 
 #[derive(Debug, Deserialize)]
 struct T {

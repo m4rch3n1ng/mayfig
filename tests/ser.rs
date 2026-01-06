@@ -1,6 +1,6 @@
 use indexmap::IndexMap;
 use mayfig::{value::Map, Value};
-use serde_derive::{Deserialize, Serialize};
+use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Deserialize, Serialize, PartialEq, Eq)]
 struct DeSer1 {

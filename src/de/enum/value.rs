@@ -8,7 +8,7 @@ use crate::{
 	error::{Error, ErrorCode, Span},
 	Deserializer,
 };
-use serde::de::{Deserializer as _, EnumAccess, VariantAccess};
+use serde_core::de::{Deserializer as _, EnumAccess, VariantAccess};
 use std::borrow::Cow;
 
 pub struct TaggedEnumValueAcc<'a, 'de, R> {
@@ -35,7 +35,7 @@ impl<'de, R: Read<'de>> EnumAccess<'de> for TaggedEnumValueAcc<'_, 'de, R> {
 
 	fn variant_seed<V>(mut self, seed: V) -> Result<(V::Value, Self::Variant), Self::Error>
 	where
-		V: serde::de::DeserializeSeed<'de>,
+		V: serde_core::de::DeserializeSeed<'de>,
 	{
 		if let Some(string) = self.string.take() {
 			let fake = FakeStringDeserializer::new(string);
@@ -57,7 +57,7 @@ impl<'de, R: Read<'de>> VariantAccess<'de> for TaggedEnumValueAcc<'_, 'de, R> {
 
 	fn newtype_variant_seed<T>(self, seed: T) -> Result<T::Value, Self::Error>
 	where
-		T: serde::de::DeserializeSeed<'de>,
+		T: serde_core::de::DeserializeSeed<'de>,
 	{
 		let next = self.de.peek_line()?.ok_or(Error::EOF)?;
 		if next != b'[' && next != b'{' {
@@ -99,7 +99,7 @@ impl<'de, R: Read<'de>> VariantAccess<'de> for TaggedEnumValueAcc<'_, 'de, R> {
 
 	fn tuple_variant<V>(self, len: usize, visitor: V) -> Result<V::Value, Self::Error>
 	where
-		V: serde::de::Visitor<'de>,
+		V: serde_core::de::Visitor<'de>,
 	{
 		let _ = self.de.peek_line()?.ok_or(Error::EOF)?;
 		self.de.deserialize_tuple(len, visitor)
@@ -111,7 +111,7 @@ impl<'de, R: Read<'de>> VariantAccess<'de> for TaggedEnumValueAcc<'_, 'de, R> {
 		visitor: V,
 	) -> Result<V::Value, Self::Error>
 	where
-		V: serde::de::Visitor<'de>,
+		V: serde_core::de::Visitor<'de>,
 	{
 		let _ = self.de.peek_line()?.ok_or(Error::EOF)?;
 		self.de.deserialize_map(visitor)
@@ -154,12 +154,12 @@ impl<'a, 'de, R: Read<'de>> TaggedValue<'a, R> {
 	}
 }
 
-impl<'de, R: Read<'de>> serde::de::Deserializer<'de> for &mut TaggedValue<'_, R> {
+impl<'de, R: Read<'de>> serde_core::de::Deserializer<'de> for &mut TaggedValue<'_, R> {
 	type Error = Error;
 
 	fn deserialize_any<V>(self, visitor: V) -> Result<V::Value, Self::Error>
 	where
-		V: serde::de::Visitor<'de>,
+		V: serde_core::de::Visitor<'de>,
 	{
 		// ok this is not really great: i would prefer to be able to do
 		// any deserialization for sequences as well, but due to limitations
@@ -174,7 +174,7 @@ impl<'de, R: Read<'de>> serde::de::Deserializer<'de> for &mut TaggedValue<'_, R>
 
 	fn deserialize_u8<V>(self, visitor: V) -> Result<V::Value, Self::Error>
 	where
-		V: serde::de::Visitor<'de>,
+		V: serde_core::de::Visitor<'de>,
 	{
 		self.assert_bracket()?;
 		self.de.deserialize_u8(visitor)
@@ -182,7 +182,7 @@ impl<'de, R: Read<'de>> serde::de::Deserializer<'de> for &mut TaggedValue<'_, R>
 
 	fn deserialize_u16<V>(self, visitor: V) -> Result<V::Value, Self::Error>
 	where
-		V: serde::de::Visitor<'de>,
+		V: serde_core::de::Visitor<'de>,
 	{
 		self.assert_bracket()?;
 		self.de.deserialize_u16(visitor)
@@ -190,7 +190,7 @@ impl<'de, R: Read<'de>> serde::de::Deserializer<'de> for &mut TaggedValue<'_, R>
 
 	fn deserialize_u32<V>(self, visitor: V) -> Result<V::Value, Self::Error>
 	where
-		V: serde::de::Visitor<'de>,
+		V: serde_core::de::Visitor<'de>,
 	{
 		self.assert_bracket()?;
 		self.de.deserialize_u32(visitor)
@@ -198,7 +198,7 @@ impl<'de, R: Read<'de>> serde::de::Deserializer<'de> for &mut TaggedValue<'_, R>
 
 	fn deserialize_u64<V>(self, visitor: V) -> Result<V::Value, Self::Error>
 	where
-		V: serde::de::Visitor<'de>,
+		V: serde_core::de::Visitor<'de>,
 	{
 		self.assert_bracket()?;
 		self.de.deserialize_u64(visitor)
@@ -206,7 +206,7 @@ impl<'de, R: Read<'de>> serde::de::Deserializer<'de> for &mut TaggedValue<'_, R>
 
 	fn deserialize_bool<V>(self, visitor: V) -> Result<V::Value, Self::Error>
 	where
-		V: serde::de::Visitor<'de>,
+		V: serde_core::de::Visitor<'de>,
 	{
 		self.assert_bracket()?;
 		self.de.deserialize_bool(visitor)
@@ -214,7 +214,7 @@ impl<'de, R: Read<'de>> serde::de::Deserializer<'de> for &mut TaggedValue<'_, R>
 
 	fn deserialize_i8<V>(self, visitor: V) -> Result<V::Value, Self::Error>
 	where
-		V: serde::de::Visitor<'de>,
+		V: serde_core::de::Visitor<'de>,
 	{
 		self.assert_bracket()?;
 		self.de.deserialize_i8(visitor)
@@ -222,7 +222,7 @@ impl<'de, R: Read<'de>> serde::de::Deserializer<'de> for &mut TaggedValue<'_, R>
 
 	fn deserialize_i16<V>(self, visitor: V) -> Result<V::Value, Self::Error>
 	where
-		V: serde::de::Visitor<'de>,
+		V: serde_core::de::Visitor<'de>,
 	{
 		self.assert_bracket()?;
 		self.de.deserialize_i16(visitor)
@@ -230,7 +230,7 @@ impl<'de, R: Read<'de>> serde::de::Deserializer<'de> for &mut TaggedValue<'_, R>
 
 	fn deserialize_i32<V>(self, visitor: V) -> Result<V::Value, Self::Error>
 	where
-		V: serde::de::Visitor<'de>,
+		V: serde_core::de::Visitor<'de>,
 	{
 		self.assert_bracket()?;
 		self.de.deserialize_i32(visitor)
@@ -238,7 +238,7 @@ impl<'de, R: Read<'de>> serde::de::Deserializer<'de> for &mut TaggedValue<'_, R>
 
 	fn deserialize_i64<V>(self, visitor: V) -> Result<V::Value, Self::Error>
 	where
-		V: serde::de::Visitor<'de>,
+		V: serde_core::de::Visitor<'de>,
 	{
 		self.assert_bracket()?;
 		self.de.deserialize_i64(visitor)
@@ -246,7 +246,7 @@ impl<'de, R: Read<'de>> serde::de::Deserializer<'de> for &mut TaggedValue<'_, R>
 
 	fn deserialize_i128<V>(self, visitor: V) -> Result<V::Value, Self::Error>
 	where
-		V: serde::de::Visitor<'de>,
+		V: serde_core::de::Visitor<'de>,
 	{
 		self.assert_bracket()?;
 		self.de.deserialize_i128(visitor)
@@ -254,7 +254,7 @@ impl<'de, R: Read<'de>> serde::de::Deserializer<'de> for &mut TaggedValue<'_, R>
 
 	fn deserialize_u128<V>(self, visitor: V) -> Result<V::Value, Self::Error>
 	where
-		V: serde::de::Visitor<'de>,
+		V: serde_core::de::Visitor<'de>,
 	{
 		self.assert_bracket()?;
 		self.de.deserialize_u128(visitor)
@@ -262,7 +262,7 @@ impl<'de, R: Read<'de>> serde::de::Deserializer<'de> for &mut TaggedValue<'_, R>
 
 	fn deserialize_f32<V>(self, visitor: V) -> Result<V::Value, Self::Error>
 	where
-		V: serde::de::Visitor<'de>,
+		V: serde_core::de::Visitor<'de>,
 	{
 		self.assert_bracket()?;
 		self.de.deserialize_f32(visitor)
@@ -270,7 +270,7 @@ impl<'de, R: Read<'de>> serde::de::Deserializer<'de> for &mut TaggedValue<'_, R>
 
 	fn deserialize_f64<V>(self, visitor: V) -> Result<V::Value, Self::Error>
 	where
-		V: serde::de::Visitor<'de>,
+		V: serde_core::de::Visitor<'de>,
 	{
 		self.assert_bracket()?;
 		self.de.deserialize_f64(visitor)
@@ -278,7 +278,7 @@ impl<'de, R: Read<'de>> serde::de::Deserializer<'de> for &mut TaggedValue<'_, R>
 
 	fn deserialize_char<V>(self, visitor: V) -> Result<V::Value, Self::Error>
 	where
-		V: serde::de::Visitor<'de>,
+		V: serde_core::de::Visitor<'de>,
 	{
 		self.assert_bracket()?;
 		self.de.deserialize_char(visitor)
@@ -286,7 +286,7 @@ impl<'de, R: Read<'de>> serde::de::Deserializer<'de> for &mut TaggedValue<'_, R>
 
 	fn deserialize_str<V>(self, visitor: V) -> Result<V::Value, Self::Error>
 	where
-		V: serde::de::Visitor<'de>,
+		V: serde_core::de::Visitor<'de>,
 	{
 		self.assert_bracket()?;
 		self.de.deserialize_str(visitor)
@@ -294,14 +294,14 @@ impl<'de, R: Read<'de>> serde::de::Deserializer<'de> for &mut TaggedValue<'_, R>
 
 	fn deserialize_string<V>(self, visitor: V) -> Result<V::Value, Self::Error>
 	where
-		V: serde::de::Visitor<'de>,
+		V: serde_core::de::Visitor<'de>,
 	{
 		self.deserialize_str(visitor)
 	}
 
 	fn deserialize_bytes<V>(self, visitor: V) -> Result<V::Value, Self::Error>
 	where
-		V: serde::de::Visitor<'de>,
+		V: serde_core::de::Visitor<'de>,
 	{
 		self.assert_bracket()?;
 		let peek = self.de.peek_any().ok_or(Error::EOF)?;
@@ -325,7 +325,7 @@ impl<'de, R: Read<'de>> serde::de::Deserializer<'de> for &mut TaggedValue<'_, R>
 
 	fn deserialize_byte_buf<V>(self, visitor: V) -> Result<V::Value, Self::Error>
 	where
-		V: serde::de::Visitor<'de>,
+		V: serde_core::de::Visitor<'de>,
 	{
 		self.assert_bracket()?;
 		self.deserialize_bytes(visitor)
@@ -333,7 +333,7 @@ impl<'de, R: Read<'de>> serde::de::Deserializer<'de> for &mut TaggedValue<'_, R>
 
 	fn deserialize_option<V>(self, visitor: V) -> Result<V::Value, Self::Error>
 	where
-		V: serde::de::Visitor<'de>,
+		V: serde_core::de::Visitor<'de>,
 	{
 		self.assert_bracket()?;
 		let peek = self.de.read.peek().ok_or(Error::EOF)?;
@@ -346,7 +346,7 @@ impl<'de, R: Read<'de>> serde::de::Deserializer<'de> for &mut TaggedValue<'_, R>
 
 	fn deserialize_unit<V>(self, visitor: V) -> Result<V::Value, Self::Error>
 	where
-		V: serde::de::Visitor<'de>,
+		V: serde_core::de::Visitor<'de>,
 	{
 		self.assert_bracket()?;
 		self.de.deserialize_unit(visitor)
@@ -358,7 +358,7 @@ impl<'de, R: Read<'de>> serde::de::Deserializer<'de> for &mut TaggedValue<'_, R>
 		visitor: V,
 	) -> Result<V::Value, Self::Error>
 	where
-		V: serde::de::Visitor<'de>,
+		V: serde_core::de::Visitor<'de>,
 	{
 		self.assert_bracket()?;
 		self.de.deserialize_unit_struct(name, visitor)
@@ -370,7 +370,7 @@ impl<'de, R: Read<'de>> serde::de::Deserializer<'de> for &mut TaggedValue<'_, R>
 		visitor: V,
 	) -> Result<V::Value, Self::Error>
 	where
-		V: serde::de::Visitor<'de>,
+		V: serde_core::de::Visitor<'de>,
 	{
 		self.assert_bracket()?;
 		visitor.visit_newtype_struct(self)
@@ -378,7 +378,7 @@ impl<'de, R: Read<'de>> serde::de::Deserializer<'de> for &mut TaggedValue<'_, R>
 
 	fn deserialize_seq<V>(self, visitor: V) -> Result<V::Value, Self::Error>
 	where
-		V: serde::de::Visitor<'de>,
+		V: serde_core::de::Visitor<'de>,
 	{
 		self.assert_bracket()?;
 
@@ -392,7 +392,7 @@ impl<'de, R: Read<'de>> serde::de::Deserializer<'de> for &mut TaggedValue<'_, R>
 
 	fn deserialize_tuple<V>(self, _len: usize, visitor: V) -> Result<V::Value, Self::Error>
 	where
-		V: serde::de::Visitor<'de>,
+		V: serde_core::de::Visitor<'de>,
 	{
 		self.assert_bracket()?;
 		self.deserialize_seq(visitor)
@@ -405,7 +405,7 @@ impl<'de, R: Read<'de>> serde::de::Deserializer<'de> for &mut TaggedValue<'_, R>
 		visitor: V,
 	) -> Result<V::Value, Self::Error>
 	where
-		V: serde::de::Visitor<'de>,
+		V: serde_core::de::Visitor<'de>,
 	{
 		self.assert_bracket()?;
 		self.deserialize_seq(visitor)
@@ -413,7 +413,7 @@ impl<'de, R: Read<'de>> serde::de::Deserializer<'de> for &mut TaggedValue<'_, R>
 
 	fn deserialize_map<V>(self, visitor: V) -> Result<V::Value, Self::Error>
 	where
-		V: serde::de::Visitor<'de>,
+		V: serde_core::de::Visitor<'de>,
 	{
 		let peek = self.de.read.peek().ok_or(Error::EOF)?;
 		if peek == b'[' {
@@ -432,7 +432,7 @@ impl<'de, R: Read<'de>> serde::de::Deserializer<'de> for &mut TaggedValue<'_, R>
 		visitor: V,
 	) -> Result<V::Value, Self::Error>
 	where
-		V: serde::de::Visitor<'de>,
+		V: serde_core::de::Visitor<'de>,
 	{
 		self.deserialize_map(visitor)
 	}
@@ -444,7 +444,7 @@ impl<'de, R: Read<'de>> serde::de::Deserializer<'de> for &mut TaggedValue<'_, R>
 		visitor: V,
 	) -> Result<V::Value, Self::Error>
 	where
-		V: serde::de::Visitor<'de>,
+		V: serde_core::de::Visitor<'de>,
 	{
 		self.assert_bracket()?;
 		let peek = self.de.read.peek().ok_or(Error::EOF)?;
@@ -460,7 +460,7 @@ impl<'de, R: Read<'de>> serde::de::Deserializer<'de> for &mut TaggedValue<'_, R>
 
 	fn deserialize_identifier<V>(self, visitor: V) -> Result<V::Value, Self::Error>
 	where
-		V: serde::de::Visitor<'de>,
+		V: serde_core::de::Visitor<'de>,
 	{
 		self.assert_bracket()?;
 		self.de.deserialize_identifier(visitor)
@@ -468,7 +468,7 @@ impl<'de, R: Read<'de>> serde::de::Deserializer<'de> for &mut TaggedValue<'_, R>
 
 	fn deserialize_ignored_any<V>(self, visitor: V) -> Result<V::Value, Self::Error>
 	where
-		V: serde::de::Visitor<'de>,
+		V: serde_core::de::Visitor<'de>,
 	{
 		// it *is* legal to have a sequence in the value of a mayfig enum, but
 		// always parsing any value as a sequence breaks untagged enums, so i can't

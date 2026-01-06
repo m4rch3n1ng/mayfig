@@ -1,5 +1,5 @@
 use mayfig::error::ErrorCode;
-use serde_derive::Deserialize;
+use serde::Deserialize;
 
 #[derive(Debug, PartialEq, Eq, Deserialize)]
 struct Thing {

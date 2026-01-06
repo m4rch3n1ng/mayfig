@@ -1,5 +1,5 @@
 use crate::Error;
-use serde::{forward_to_deserialize_any, Deserializer};
+use serde_core::{forward_to_deserialize_any, Deserializer};
 use std::borrow::Cow;
 
 pub struct FakeStringDeserializer<'a> {
@@ -17,7 +17,7 @@ impl<'de> Deserializer<'de> for FakeStringDeserializer<'de> {
 
 	fn deserialize_any<V>(self, visitor: V) -> Result<V::Value, Self::Error>
 	where
-		V: serde::de::Visitor<'de>,
+		V: serde_core::de::Visitor<'de>,
 	{
 		match self.string {
 			Cow::Borrowed(s) => visitor.visit_borrowed_str(s),

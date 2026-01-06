@@ -1,5 +1,5 @@
 use annotate_snippets::{AnnotationKind, Group, Level, Renderer, Snippet};
-use serde_derive::Deserialize;
+use serde::Deserialize;
 use std::collections::HashMap;
 
 #[derive(Debug, Deserialize, PartialEq, Eq, Hash)]

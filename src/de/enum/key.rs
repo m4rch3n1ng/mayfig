@@ -8,7 +8,7 @@ use crate::{
 	error::ErrorCode,
 	Deserializer, Error,
 };
-use serde::de::{Deserializer as _, EnumAccess, VariantAccess};
+use serde_core::de::{Deserializer as _, EnumAccess, VariantAccess};
 use std::borrow::Cow;
 
 pub struct TaggedEnumKeyAcc<'a, 'b, 'de, R> {
@@ -38,7 +38,7 @@ impl<'de, R: Read<'de>> EnumAccess<'de> for TaggedEnumKeyAcc<'_, '_, 'de, R> {
 
 	fn variant_seed<V>(mut self, seed: V) -> Result<(V::Value, Self::Variant), Self::Error>
 	where
-		V: serde::de::DeserializeSeed<'de>,
+		V: serde_core::de::DeserializeSeed<'de>,
 	{
 		if let Some(string) = self.string.take() {
 			let fake = FakeStringDeserializer::new(string);
@@ -60,7 +60,7 @@ impl<'de, R: Read<'de>> VariantAccess<'de> for TaggedEnumKeyAcc<'_, '_, 'de, R> 
 
 	fn newtype_variant_seed<T>(self, seed: T) -> Result<T::Value, Self::Error>
 	where
-		T: serde::de::DeserializeSeed<'de>,
+		T: serde_core::de::DeserializeSeed<'de>,
 	{
 		let next = self.map_key.de.peek_line()?.ok_or(Error::EOF)?;
 		if next != b'[' {
@@ -92,7 +92,7 @@ impl<'de, R: Read<'de>> VariantAccess<'de> for TaggedEnumKeyAcc<'_, '_, 'de, R> 
 
 	fn tuple_variant<V>(self, len: usize, visitor: V) -> Result<V::Value, Self::Error>
 	where
-		V: serde::de::Visitor<'de>,
+		V: serde_core::de::Visitor<'de>,
 	{
 		let _ = self.map_key.de.peek_line()?.ok_or(Error::EOF)?;
 		self.map_key.deserialize_tuple(len, visitor)
@@ -104,7 +104,7 @@ impl<'de, R: Read<'de>> VariantAccess<'de> for TaggedEnumKeyAcc<'_, '_, 'de, R> 
 		_visitor: V,
 	) -> Result<V::Value, Self::Error>
 	where
-		V: serde::de::Visitor<'de>,
+		V: serde_core::de::Visitor<'de>,
 	{
 		Err(Error::new(ErrorCode::UnsupportedMapKey("struct")))
 	}
@@ -120,12 +120,12 @@ impl<'a, 'de, R: Read<'de>> TaggedKey<'a, R> {
 	}
 }
 
-impl<'de, R: Read<'de>> serde::de::Deserializer<'de> for TaggedKey<'_, R> {
+impl<'de, R: Read<'de>> serde_core::de::Deserializer<'de> for TaggedKey<'_, R> {
 	type Error = Error;
 
 	fn deserialize_any<V>(self, visitor: V) -> Result<V::Value, Self::Error>
 	where
-		V: serde::de::Visitor<'de>,
+		V: serde_core::de::Visitor<'de>,
 	{
 		// see the comment in TaggedValue::deserialize_any
 		self.de.deserialize_any(visitor)
@@ -133,119 +133,119 @@ impl<'de, R: Read<'de>> serde::de::Deserializer<'de> for TaggedKey<'_, R> {
 
 	fn deserialize_bool<V>(self, visitor: V) -> Result<V::Value, Self::Error>
 	where
-		V: serde::de::Visitor<'de>,
+		V: serde_core::de::Visitor<'de>,
 	{
 		self.de.deserialize_bool(visitor)
 	}
 
 	fn deserialize_i8<V>(self, visitor: V) -> Result<V::Value, Self::Error>
 	where
-		V: serde::de::Visitor<'de>,
+		V: serde_core::de::Visitor<'de>,
 	{
 		self.de.deserialize_i8(visitor)
 	}
 
 	fn deserialize_i16<V>(self, visitor: V) -> Result<V::Value, Self::Error>
 	where
-		V: serde::de::Visitor<'de>,
+		V: serde_core::de::Visitor<'de>,
 	{
 		self.de.deserialize_i16(visitor)
 	}
 
 	fn deserialize_i32<V>(self, visitor: V) -> Result<V::Value, Self::Error>
 	where
-		V: serde::de::Visitor<'de>,
+		V: serde_core::de::Visitor<'de>,
 	{
 		self.de.deserialize_i32(visitor)
 	}
 
 	fn deserialize_i64<V>(self, visitor: V) -> Result<V::Value, Self::Error>
 	where
-		V: serde::de::Visitor<'de>,
+		V: serde_core::de::Visitor<'de>,
 	{
 		self.de.deserialize_i64(visitor)
 	}
 
 	fn deserialize_i128<V>(self, visitor: V) -> Result<V::Value, Self::Error>
 	where
-		V: serde::de::Visitor<'de>,
+		V: serde_core::de::Visitor<'de>,
 	{
 		self.de.deserialize_i128(visitor)
 	}
 
 	fn deserialize_u8<V>(self, visitor: V) -> Result<V::Value, Self::Error>
 	where
-		V: serde::de::Visitor<'de>,
+		V: serde_core::de::Visitor<'de>,
 	{
 		self.de.deserialize_u8(visitor)
 	}
 
 	fn deserialize_u16<V>(self, visitor: V) -> Result<V::Value, Self::Error>
 	where
-		V: serde::de::Visitor<'de>,
+		V: serde_core::de::Visitor<'de>,
 	{
 		self.de.deserialize_u16(visitor)
 	}
 
 	fn deserialize_u32<V>(self, visitor: V) -> Result<V::Value, Self::Error>
 	where
-		V: serde::de::Visitor<'de>,
+		V: serde_core::de::Visitor<'de>,
 	{
 		self.de.deserialize_u32(visitor)
 	}
 
 	fn deserialize_u64<V>(self, visitor: V) -> Result<V::Value, Self::Error>
 	where
-		V: serde::de::Visitor<'de>,
+		V: serde_core::de::Visitor<'de>,
 	{
 		self.de.deserialize_u64(visitor)
 	}
 
 	fn deserialize_u128<V>(self, visitor: V) -> Result<V::Value, Self::Error>
 	where
-		V: serde::de::Visitor<'de>,
+		V: serde_core::de::Visitor<'de>,
 	{
 		self.de.deserialize_u128(visitor)
 	}
 
 	fn deserialize_f32<V>(self, visitor: V) -> Result<V::Value, Self::Error>
 	where
-		V: serde::de::Visitor<'de>,
+		V: serde_core::de::Visitor<'de>,
 	{
 		self.de.deserialize_f32(visitor)
 	}
 
 	fn deserialize_f64<V>(self, visitor: V) -> Result<V::Value, Self::Error>
 	where
-		V: serde::de::Visitor<'de>,
+		V: serde_core::de::Visitor<'de>,
 	{
 		self.de.deserialize_f64(visitor)
 	}
 
 	fn deserialize_char<V>(self, visitor: V) -> Result<V::Value, Self::Error>
 	where
-		V: serde::de::Visitor<'de>,
+		V: serde_core::de::Visitor<'de>,
 	{
 		self.de.deserialize_char(visitor)
 	}
 
 	fn deserialize_str<V>(self, visitor: V) -> Result<V::Value, Self::Error>
 	where
-		V: serde::de::Visitor<'de>,
+		V: serde_core::de::Visitor<'de>,
 	{
 		self.de.deserialize_str(visitor)
 	}
 
 	fn deserialize_string<V>(self, visitor: V) -> Result<V::Value, Self::Error>
 	where
-		V: serde::de::Visitor<'de>,
+		V: serde_core::de::Visitor<'de>,
 	{
 		self.deserialize_str(visitor)
 	}
 
 	fn deserialize_bytes<V>(self, visitor: V) -> Result<V::Value, Self::Error>
 	where
-		V: serde::de::Visitor<'de>,
+		V: serde_core::de::Visitor<'de>,
 	{
 		let peek = self.de.peek_any().ok_or(Error::EOF)?;
 		match peek {
@@ -268,21 +268,21 @@ impl<'de, R: Read<'de>> serde::de::Deserializer<'de> for TaggedKey<'_, R> {
 
 	fn deserialize_byte_buf<V>(self, visitor: V) -> Result<V::Value, Self::Error>
 	where
-		V: serde::de::Visitor<'de>,
+		V: serde_core::de::Visitor<'de>,
 	{
 		self.deserialize_bytes(visitor)
 	}
 
 	fn deserialize_option<V>(self, visitor: V) -> Result<V::Value, Self::Error>
 	where
-		V: serde::de::Visitor<'de>,
+		V: serde_core::de::Visitor<'de>,
 	{
 		visitor.visit_some(self)
 	}
 
 	fn deserialize_unit<V>(self, visitor: V) -> Result<V::Value, Self::Error>
 	where
-		V: serde::de::Visitor<'de>,
+		V: serde_core::de::Visitor<'de>,
 	{
 		self.de.deserialize_unit(visitor)
 	}
@@ -293,7 +293,7 @@ impl<'de, R: Read<'de>> serde::de::Deserializer<'de> for TaggedKey<'_, R> {
 		visitor: V,
 	) -> Result<V::Value, Self::Error>
 	where
-		V: serde::de::Visitor<'de>,
+		V: serde_core::de::Visitor<'de>,
 	{
 		self.de.deserialize_unit_struct(name, visitor)
 	}
@@ -304,14 +304,14 @@ impl<'de, R: Read<'de>> serde::de::Deserializer<'de> for TaggedKey<'_, R> {
 		visitor: V,
 	) -> Result<V::Value, Self::Error>
 	where
-		V: serde::de::Visitor<'de>,
+		V: serde_core::de::Visitor<'de>,
 	{
 		visitor.visit_newtype_struct(self)
 	}
 
 	fn deserialize_seq<V>(self, visitor: V) -> Result<V::Value, Self::Error>
 	where
-		V: serde::de::Visitor<'de>,
+		V: serde_core::de::Visitor<'de>,
 	{
 		let acc = SeqAcc::new(self.de);
 		let val = visitor.visit_seq(acc)?;
@@ -323,7 +323,7 @@ impl<'de, R: Read<'de>> serde::de::Deserializer<'de> for TaggedKey<'_, R> {
 
 	fn deserialize_tuple<V>(self, _len: usize, visitor: V) -> Result<V::Value, Self::Error>
 	where
-		V: serde::de::Visitor<'de>,
+		V: serde_core::de::Visitor<'de>,
 	{
 		self.deserialize_seq(visitor)
 	}
@@ -335,14 +335,14 @@ impl<'de, R: Read<'de>> serde::de::Deserializer<'de> for TaggedKey<'_, R> {
 		visitor: V,
 	) -> Result<V::Value, Self::Error>
 	where
-		V: serde::de::Visitor<'de>,
+		V: serde_core::de::Visitor<'de>,
 	{
 		self.deserialize_seq(visitor)
 	}
 
 	fn deserialize_map<V>(self, visitor: V) -> Result<V::Value, Self::Error>
 	where
-		V: serde::de::Visitor<'de>,
+		V: serde_core::de::Visitor<'de>,
 	{
 		self.de.deserialize_map(visitor)
 	}
@@ -354,7 +354,7 @@ impl<'de, R: Read<'de>> serde::de::Deserializer<'de> for TaggedKey<'_, R> {
 		visitor: V,
 	) -> Result<V::Value, Self::Error>
 	where
-		V: serde::de::Visitor<'de>,
+		V: serde_core::de::Visitor<'de>,
 	{
 		self.deserialize_map(visitor)
 	}
@@ -366,7 +366,7 @@ impl<'de, R: Read<'de>> serde::de::Deserializer<'de> for TaggedKey<'_, R> {
 		visitor: V,
 	) -> Result<V::Value, Self::Error>
 	where
-		V: serde::de::Visitor<'de>,
+		V: serde_core::de::Visitor<'de>,
 	{
 		let peek = self.de.read.peek().ok_or(Error::EOF)?;
 		if peek == b'"' || peek == b'\'' {
@@ -381,14 +381,14 @@ impl<'de, R: Read<'de>> serde::de::Deserializer<'de> for TaggedKey<'_, R> {
 
 	fn deserialize_identifier<V>(self, visitor: V) -> Result<V::Value, Self::Error>
 	where
-		V: serde::de::Visitor<'de>,
+		V: serde_core::de::Visitor<'de>,
 	{
 		self.de.deserialize_identifier(visitor)
 	}
 
 	fn deserialize_ignored_any<V>(self, visitor: V) -> Result<V::Value, Self::Error>
 	where
-		V: serde::de::Visitor<'de>,
+		V: serde_core::de::Visitor<'de>,
 	{
 		// see comment in TaggedValue::deserialize_ignored_any
 		self.deserialize_seq(visitor)

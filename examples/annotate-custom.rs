@@ -1,6 +1,5 @@
 use annotate_snippets::{AnnotationKind, Group, Level, Renderer, Snippet};
 use serde::{de::Visitor, Deserialize};
-use serde_derive::Deserialize;
 
 #[derive(Debug)]
 #[expect(dead_code)]
@@ -9,7 +8,7 @@ struct Color([u8; 3]);
 impl<'de> Deserialize<'de> for Color {
 	fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
 	where
-		D: serde::Deserializer<'de>,
+		D: serde_core::Deserializer<'de>,
 	{
 		deserializer.deserialize_str(ColorVis)
 	}
@@ -24,9 +23,10 @@ impl Visitor<'_> for ColorVis {
 		f.write_str("a mayfig color")
 	}
 
-	fn visit_str<E: serde::de::Error>(self, v: &str) -> Result<Self::Value, E> {
-		let hex = hex_color(v)
-			.ok_or_else(|| serde::de::Error::custom(format_args!("invalid hex color {:?}", v)))?;
+	fn visit_str<E: serde_core::de::Error>(self, v: &str) -> Result<Self::Value, E> {
+		let hex = hex_color(v).ok_or_else(|| {
+			serde_core::de::Error::custom(format_args!("invalid hex color {:?}", v))
+		})?;
 		Ok(Color(hex))
 	}
 }
@@ -59,7 +59,7 @@ fn hex_color(s: &str) -> Option<[u8; 3]> {
 struct Number(u8);
 
 impl<'de> Deserialize<'de> for Number {
-	fn deserialize<D: serde::Deserializer<'de>>(deserializer: D) -> Result<Self, D::Error> {
+	fn deserialize<D: serde_core::Deserializer<'de>>(deserializer: D) -> Result<Self, D::Error> {
 		deserializer.deserialize_u8(NumberVis)
 	}
 }
@@ -73,11 +73,13 @@ impl Visitor<'_> for NumberVis {
 		f.write_str("a number that is mod 5")
 	}
 
-	fn visit_u8<E: serde::de::Error>(self, v: u8) -> Result<Self::Value, E> {
+	fn visit_u8<E: serde_core::de::Error>(self, v: u8) -> Result<Self::Value, E> {
 		if v.is_multiple_of(5) {
 			Ok(Number(v))
 		} else {
-			Err(serde::de::Error::custom("number has to be a multiple of 5"))
+			Err(serde_core::de::Error::custom(
+				"number has to be a multiple of 5",
+			))
 		}
 	}
 }

@@ -1,6 +1,6 @@
 use super::Value;
 use indexmap::IndexMap;
-use serde::Serialize;
+use serde_core::Serialize;
 use std::{
 	fmt::Debug,
 	hash::Hash,
@@ -85,7 +85,7 @@ impl Hash for Map {
 impl Serialize for Map {
 	fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
 	where
-		S: serde::Serializer,
+		S: serde_core::Serializer,
 	{
 		self.0.serialize(serializer)
 	}

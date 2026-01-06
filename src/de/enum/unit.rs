@@ -1,6 +1,5 @@
-use serde::de::{EnumAccess, VariantAccess};
-
 use crate::{de::read::Read, Deserializer, Error};
+use serde_core::de::{EnumAccess, VariantAccess};
 
 pub struct TaggedUnitEnumAcc<'a, R> {
 	de: &'a mut Deserializer<R>,
@@ -18,7 +17,7 @@ impl<'de, R: Read<'de>> EnumAccess<'de> for TaggedUnitEnumAcc<'_, R> {
 
 	fn variant_seed<V>(self, seed: V) -> Result<(V::Value, Self::Variant), Self::Error>
 	where
-		V: serde::de::DeserializeSeed<'de>,
+		V: serde_core::de::DeserializeSeed<'de>,
 	{
 		let variant = seed.deserialize(&mut *self.de)?;
 		Ok((variant, self))
@@ -35,7 +34,7 @@ impl<'de, R: Read<'de>> VariantAccess<'de> for TaggedUnitEnumAcc<'_, R> {
 	#[expect(unused_variables)]
 	fn newtype_variant_seed<T>(self, seed: T) -> Result<T::Value, Self::Error>
 	where
-		T: serde::de::DeserializeSeed<'de>,
+		T: serde_core::de::DeserializeSeed<'de>,
 	{
 		todo!("nested tagged values");
 	}
@@ -43,7 +42,7 @@ impl<'de, R: Read<'de>> VariantAccess<'de> for TaggedUnitEnumAcc<'_, R> {
 	#[expect(unused_variables)]
 	fn tuple_variant<V>(self, _len: usize, visitor: V) -> Result<V::Value, Self::Error>
 	where
-		V: serde::de::Visitor<'de>,
+		V: serde_core::de::Visitor<'de>,
 	{
 		todo!("nested tagged values");
 	}
@@ -55,7 +54,7 @@ impl<'de, R: Read<'de>> VariantAccess<'de> for TaggedUnitEnumAcc<'_, R> {
 		visitor: V,
 	) -> Result<V::Value, Self::Error>
 	where
-		V: serde::de::Visitor<'de>,
+		V: serde_core::de::Visitor<'de>,
 	{
 		todo!("nested tagged values");
 	}

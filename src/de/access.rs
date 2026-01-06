@@ -3,7 +3,7 @@ use crate::{
 	error::{Error, ErrorCode},
 	Deserializer,
 };
-use serde::de::{MapAccess, SeqAccess};
+use serde_core::de::{MapAccess, SeqAccess};
 
 pub struct SeqAcc<'a, R> {
 	de: &'a mut Deserializer<R>,
@@ -20,7 +20,7 @@ impl<'de, R: Read<'de>> SeqAccess<'de> for SeqAcc<'_, R> {
 
 	fn next_element_seed<T>(&mut self, seed: T) -> Result<Option<T::Value>, Self::Error>
 	where
-		T: serde::de::DeserializeSeed<'de>,
+		T: serde_core::de::DeserializeSeed<'de>,
 	{
 		self.de.discard_commata();
 		if self.de.peek_any().ok_or(Error::EOF)? == b']' {
@@ -47,7 +47,7 @@ impl<'de, R: Read<'de>> MapAccess<'de> for TopMapAcc<'_, R> {
 
 	fn next_key_seed<K>(&mut self, seed: K) -> Result<Option<K::Value>, Self::Error>
 	where
-		K: serde::de::DeserializeSeed<'de>,
+		K: serde_core::de::DeserializeSeed<'de>,
 	{
 		let peek = if self.is_first {
 			self.is_first = false;
@@ -65,7 +65,7 @@ impl<'de, R: Read<'de>> MapAccess<'de> for TopMapAcc<'_, R> {
 
 	fn next_value_seed<V>(&mut self, seed: V) -> Result<V::Value, Self::Error>
 	where
-		V: serde::de::DeserializeSeed<'de>,
+		V: serde_core::de::DeserializeSeed<'de>,
 	{
 		let peek = self.de.peek_line()?.ok_or(Error::EOF)?;
 
@@ -98,7 +98,7 @@ impl<'de, R: Read<'de>> MapAccess<'de> for MapAcc<'_, R> {
 
 	fn next_key_seed<K>(&mut self, seed: K) -> Result<Option<K::Value>, Self::Error>
 	where
-		K: serde::de::DeserializeSeed<'de>,
+		K: serde_core::de::DeserializeSeed<'de>,
 	{
 		if let Ok(Some(b'}')) = self.de.peek_line() {
 			self.de.read.discard();
@@ -123,7 +123,7 @@ impl<'de, R: Read<'de>> MapAccess<'de> for MapAcc<'_, R> {
 
 	fn next_value_seed<V>(&mut self, seed: V) -> Result<V::Value, Self::Error>
 	where
-		V: serde::de::DeserializeSeed<'de>,
+		V: serde_core::de::DeserializeSeed<'de>,
 	{
 		let peek = self.de.peek_line()?.ok_or(Error::EOF)?;
 

@@ -1,6 +1,6 @@
 use super::Serializer;
 use crate::{error::ErrorCode, Error};
-use serde::Serialize;
+use serde_core::Serialize;
 
 pub struct NewtypeVariantSerializer<'a, 'id, W: std::io::Write> {
 	ser: &'a mut Serializer<'id, W>,
@@ -12,7 +12,9 @@ impl<'a, 'id, W: std::io::Write> NewtypeVariantSerializer<'a, 'id, W> {
 	}
 }
 
-impl<'a, 'id, W: std::io::Write> serde::ser::Serializer for NewtypeVariantSerializer<'a, 'id, W> {
+impl<'a, 'id, W: std::io::Write> serde_core::ser::Serializer
+	for NewtypeVariantSerializer<'a, 'id, W>
+{
 	type Ok = ();
 	type Error = Error;
 

@@ -9,15 +9,15 @@ license = "MPL-2.0"
 [dependencies]
 indexmap = { version = "2.12.1", features = ["serde"] }
 itoa = "1.0.15"
-serde = "1.0.228"
+serde_core = "1.0.228"
 thiserror = "2.0.17"
 zmij = "1.0.11"
 
 [dev-dependencies]
 annotate-snippets = "0.12.9"
 anstream = "0.6.21"
+serde = { version = "1.0.228", features = ["derive"] }
 serde_bytes = "0.11.19"
-serde_derive = "1.0.228"
 
 [lints.clippy]
 allow_attributes = "warn"

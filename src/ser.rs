@@ -5,7 +5,7 @@ use self::{
 	r#enum::NewtypeVariantSerializer,
 };
 use crate::{error::ErrorCode, Error};
-use serde::Serialize;
+use serde_core::Serialize;
 
 mod r#enum;
 mod map;
@@ -53,7 +53,7 @@ impl<W: std::io::Write> Serializer<'_, W> {
 	}
 }
 
-impl<W: std::io::Write> serde::ser::Serializer for &mut Serializer<'_, W> {
+impl<W: std::io::Write> serde_core::ser::Serializer for &mut Serializer<'_, W> {
 	type Ok = ();
 	type Error = Error;
 
@@ -275,7 +275,7 @@ impl<W: std::io::Write> serde::ser::Serializer for &mut Serializer<'_, W> {
 	}
 }
 
-impl<W: std::io::Write> serde::ser::SerializeMap for &mut Serializer<'_, W> {
+impl<W: std::io::Write> serde_core::ser::SerializeMap for &mut Serializer<'_, W> {
 	type Ok = ();
 	type Error = Error;
 
@@ -301,11 +301,11 @@ impl<W: std::io::Write> serde::ser::SerializeMap for &mut Serializer<'_, W> {
 	}
 
 	fn end(self) -> Result<Self::Ok, Self::Error> {
-		serde::ser::SerializeStruct::end(self)
+		serde_core::ser::SerializeStruct::end(self)
 	}
 }
 
-impl<W: std::io::Write> serde::ser::SerializeSeq for &mut Serializer<'_, W> {
+impl<W: std::io::Write> serde_core::ser::SerializeSeq for &mut Serializer<'_, W> {
 	type Ok = ();
 	type Error = Error;
 
@@ -325,7 +325,7 @@ impl<W: std::io::Write> serde::ser::SerializeSeq for &mut Serializer<'_, W> {
 	}
 }
 
-impl<W: std::io::Write> serde::ser::SerializeStruct for &mut Serializer<'_, W> {
+impl<W: std::io::Write> serde_core::ser::SerializeStruct for &mut Serializer<'_, W> {
 	type Ok = ();
 	type Error = Error;
 
@@ -356,7 +356,7 @@ impl<W: std::io::Write> serde::ser::SerializeStruct for &mut Serializer<'_, W> {
 	}
 }
 
-impl<W: std::io::Write> serde::ser::SerializeStructVariant for &mut Serializer<'_, W> {
+impl<W: std::io::Write> serde_core::ser::SerializeStructVariant for &mut Serializer<'_, W> {
 	type Ok = ();
 	type Error = Error;
 
@@ -364,15 +364,15 @@ impl<W: std::io::Write> serde::ser::SerializeStructVariant for &mut Serializer<'
 	where
 		T: ?Sized + Serialize,
 	{
-		serde::ser::SerializeStruct::serialize_field(self, key, value)
+		serde_core::ser::SerializeStruct::serialize_field(self, key, value)
 	}
 
 	fn end(self) -> Result<Self::Ok, Self::Error> {
-		serde::ser::SerializeStruct::end(self)
+		serde_core::ser::SerializeStruct::end(self)
 	}
 }
 
-impl<W: std::io::Write> serde::ser::SerializeTuple for &mut Serializer<'_, W> {
+impl<W: std::io::Write> serde_core::ser::SerializeTuple for &mut Serializer<'_, W> {
 	type Ok = ();
 	type Error = Error;
 
@@ -380,15 +380,15 @@ impl<W: std::io::Write> serde::ser::SerializeTuple for &mut Serializer<'_, W> {
 	where
 		T: ?Sized + Serialize,
 	{
-		serde::ser::SerializeSeq::serialize_element(self, value)
+		serde_core::ser::SerializeSeq::serialize_element(self, value)
 	}
 
 	fn end(self) -> Result<Self::Ok, Self::Error> {
-		serde::ser::SerializeSeq::end(self)
+		serde_core::ser::SerializeSeq::end(self)
 	}
 }
 
-impl<W: std::io::Write> serde::ser::SerializeTupleStruct for &mut Serializer<'_, W> {
+impl<W: std::io::Write> serde_core::ser::SerializeTupleStruct for &mut Serializer<'_, W> {
 	type Ok = ();
 	type Error = Error;
 
@@ -396,15 +396,15 @@ impl<W: std::io::Write> serde::ser::SerializeTupleStruct for &mut Serializer<'_,
 	where
 		T: ?Sized + Serialize,
 	{
-		serde::ser::SerializeSeq::serialize_element(self, value)
+		serde_core::ser::SerializeSeq::serialize_element(self, value)
 	}
 
 	fn end(self) -> Result<Self::Ok, Self::Error> {
-		serde::ser::SerializeSeq::end(self)
+		serde_core::ser::SerializeSeq::end(self)
 	}
 }
 
-impl<W: std::io::Write> serde::ser::SerializeTupleVariant for &mut Serializer<'_, W> {
+impl<W: std::io::Write> serde_core::ser::SerializeTupleVariant for &mut Serializer<'_, W> {
 	type Ok = ();
 	type Error = Error;
 
@@ -412,11 +412,11 @@ impl<W: std::io::Write> serde::ser::SerializeTupleVariant for &mut Serializer<'_
 	where
 		T: ?Sized + Serialize,
 	{
-		serde::ser::SerializeSeq::serialize_element(self, value)
+		serde_core::ser::SerializeSeq::serialize_element(self, value)
 	}
 
 	fn end(self) -> Result<Self::Ok, Self::Error> {
-		serde::ser::SerializeSeq::end(self)
+		serde_core::ser::SerializeSeq::end(self)
 	}
 }
 

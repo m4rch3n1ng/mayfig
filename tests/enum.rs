@@ -1,6 +1,6 @@
 use indexmap::IndexMap;
 use mayfig::error::{ErrorCode, Position, Span};
-use serde_derive::Deserialize;
+use serde::Deserialize;
 use std::collections::HashMap;
 
 #[derive(Debug, Deserialize)]

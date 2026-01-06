@@ -1,6 +1,6 @@
 use super::{r#enum::NewtypeVariantSerializer, Serializer};
 use crate::{error::ErrorCode, Error};
-use serde::Serialize;
+use serde_core::Serialize;
 
 pub struct MapKeySerializer<'a, 'id, W: std::io::Write> {
 	ser: &'a mut Serializer<'id, W>,
@@ -12,7 +12,9 @@ impl<'a, 'id, W: std::io::Write> MapKeySerializer<'a, 'id, W> {
 	}
 }
 
-impl<'s, 'id, W: std::io::Write> serde::ser::Serializer for &'s mut MapKeySerializer<'_, 'id, W> {
+impl<'s, 'id, W: std::io::Write> serde_core::ser::Serializer
+	for &'s mut MapKeySerializer<'_, 'id, W>
+{
 	type Ok = ();
 	type Error = Error;
 
@@ -207,7 +209,7 @@ impl<'a, 'id, W: std::io::Write> MapValSerializer<'a, 'id, W> {
 	}
 }
 
-impl<'a, 'id, W: std::io::Write> serde::ser::Serializer for MapValSerializer<'a, 'id, W> {
+impl<'a, 'id, W: std::io::Write> serde_core::ser::Serializer for MapValSerializer<'a, 'id, W> {
 	type Ok = ();
 	type Error = Error;
 

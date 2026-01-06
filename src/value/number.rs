@@ -1,6 +1,5 @@
-use serde::Serialize;
-
 use crate::error::ErrorCode;
+use serde_core::Serialize;
 use std::{
 	fmt::{Debug, Display},
 	hash::Hash,
@@ -41,7 +40,7 @@ impl Number {
 impl Serialize for Number {
 	fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
 	where
-		S: serde::Serializer,
+		S: serde_core::Serializer,
 	{
 		match self.0 {
 			InternalNumber::PosInt(u) => serializer.serialize_u64(u),

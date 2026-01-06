@@ -1,15 +1,12 @@
 //! deserialize mayfig into a rust data structure.
 
 use self::{
-	access::TopMapAcc,
+	access::{MapAcc, SeqAcc, TopMapAcc},
 	r#enum::TaggedEnumValueAcc,
 	read::{Read, Ref, SliceRead, StrRead},
 };
-use crate::{
-	de::access::{MapAcc, SeqAcc},
-	error::{Error, ErrorCode, Span},
-};
-use serde::forward_to_deserialize_any;
+use crate::error::{Error, ErrorCode, Span};
+use serde_core::forward_to_deserialize_any;
 use std::borrow::Cow;
 
 mod access;
@@ -54,7 +51,7 @@ impl<'de> Deserializer<StrRead<'de>> {
 /// [`ErrorCode`] enum
 pub fn from_str<'a, T>(input: &'a str) -> Result<T, Error>
 where
-	T: serde::de::Deserialize<'a>,
+	T: serde_core::de::Deserialize<'a>,
 {
 	let mut deserializer = Deserializer::from_str(input);
 	T::deserialize(&mut deserializer)
@@ -79,7 +76,7 @@ impl<'de> Deserializer<SliceRead<'de>> {
 /// [`ErrorCode`] enum
 pub fn from_slice<'a, T>(input: &'a [u8]) -> Result<T, Error>
 where
-	T: serde::de::Deserialize<'a>,
+	T: serde_core::de::Deserialize<'a>,
 {
 	let mut deserializer = Deserializer::from_slice(input);
 	T::deserialize(&mut deserializer)
@@ -230,7 +227,7 @@ impl<'de, R: Read<'de>> Deserializer<R> {
 
 	fn deserialize_number<'any, V>(&mut self, visitor: V) -> Result<V::Value, Error>
 	where
-		V: serde::de::Visitor<'any>,
+		V: serde_core::de::Visitor<'any>,
 	{
 		let (w, span) = self.num()?;
 		if w.contains('.') || w.contains('e') {
@@ -252,12 +249,12 @@ impl<'de, R: Read<'de>> Deserializer<R> {
 	}
 }
 
-impl<'de, R: Read<'de>> serde::de::Deserializer<'de> for &mut Deserializer<R> {
+impl<'de, R: Read<'de>> serde_core::de::Deserializer<'de> for &mut Deserializer<R> {
 	type Error = Error;
 
 	fn deserialize_any<V>(self, visitor: V) -> Result<V::Value, Self::Error>
 	where
-		V: serde::de::Visitor<'de>,
+		V: serde_core::de::Visitor<'de>,
 	{
 		let peek = self.peek_any().ok_or(Error::EOF)?;
 		if self.indent == 0 || peek == b'{' {
@@ -300,7 +297,7 @@ impl<'de, R: Read<'de>> serde::de::Deserializer<'de> for &mut Deserializer<R> {
 
 	fn deserialize_bool<V>(self, visitor: V) -> Result<V::Value, Self::Error>
 	where
-		V: serde::de::Visitor<'de>,
+		V: serde_core::de::Visitor<'de>,
 	{
 		let (w, span) = self.word()?;
 		let b = parse_bool(&w, span)?;
@@ -309,7 +306,7 @@ impl<'de, R: Read<'de>> serde::de::Deserializer<'de> for &mut Deserializer<R> {
 
 	fn deserialize_u8<V>(self, visitor: V) -> Result<V::Value, Self::Error>
 	where
-		V: serde::de::Visitor<'de>,
+		V: serde_core::de::Visitor<'de>,
 	{
 		let (w, span) = self.num()?;
 		let n = w.parse::<u8>().map_err(|_| {
@@ -321,7 +318,7 @@ impl<'de, R: Read<'de>> serde::de::Deserializer<'de> for &mut Deserializer<R> {
 
 	fn deserialize_u16<V>(self, visitor: V) -> Result<V::Value, Self::Error>
 	where
-		V: serde::de::Visitor<'de>,
+		V: serde_core::de::Visitor<'de>,
 	{
 		let (w, span) = self.num()?;
 		let n = w.parse::<u16>().map_err(|_| {
@@ -333,7 +330,7 @@ impl<'de, R: Read<'de>> serde::de::Deserializer<'de> for &mut Deserializer<R> {
 
 	fn deserialize_u32<V>(self, visitor: V) -> Result<V::Value, Self::Error>
 	where
-		V: serde::de::Visitor<'de>,
+		V: serde_core::de::Visitor<'de>,
 	{
 		let (w, span) = self.num()?;
 		let n = w.parse::<u32>().map_err(|_| {
@@ -345,7 +342,7 @@ impl<'de, R: Read<'de>> serde::de::Deserializer<'de> for &mut Deserializer<R> {
 
 	fn deserialize_u64<V>(self, visitor: V) -> Result<V::Value, Self::Error>
 	where
-		V: serde::de::Visitor<'de>,
+		V: serde_core::de::Visitor<'de>,
 	{
 		let (w, span) = self.num()?;
 		let n = w.parse::<u64>().map_err(|_| {
@@ -357,7 +354,7 @@ impl<'de, R: Read<'de>> serde::de::Deserializer<'de> for &mut Deserializer<R> {
 
 	fn deserialize_i8<V>(self, visitor: V) -> Result<V::Value, Self::Error>
 	where
-		V: serde::de::Visitor<'de>,
+		V: serde_core::de::Visitor<'de>,
 	{
 		let (w, span) = self.num()?;
 		let n = w.parse::<i8>().map_err(|_| {
@@ -369,7 +366,7 @@ impl<'de, R: Read<'de>> serde::de::Deserializer<'de> for &mut Deserializer<R> {
 
 	fn deserialize_i16<V>(self, visitor: V) -> Result<V::Value, Self::Error>
 	where
-		V: serde::de::Visitor<'de>,
+		V: serde_core::de::Visitor<'de>,
 	{
 		let (w, span) = self.num()?;
 		let n = w.parse::<i16>().map_err(|_| {
@@ -381,7 +378,7 @@ impl<'de, R: Read<'de>> serde::de::Deserializer<'de> for &mut Deserializer<R> {
 
 	fn deserialize_i32<V>(self, visitor: V) -> Result<V::Value, Self::Error>
 	where
-		V: serde::de::Visitor<'de>,
+		V: serde_core::de::Visitor<'de>,
 	{
 		let (w, span) = self.num()?;
 		let n = w.parse::<i32>().map_err(|_| {
@@ -393,7 +390,7 @@ impl<'de, R: Read<'de>> serde::de::Deserializer<'de> for &mut Deserializer<R> {
 
 	fn deserialize_i64<V>(self, visitor: V) -> Result<V::Value, Self::Error>
 	where
-		V: serde::de::Visitor<'de>,
+		V: serde_core::de::Visitor<'de>,
 	{
 		let (w, span) = self.num()?;
 		let n = w.parse::<i64>().map_err(|_| {
@@ -405,14 +402,14 @@ impl<'de, R: Read<'de>> serde::de::Deserializer<'de> for &mut Deserializer<R> {
 
 	fn deserialize_f32<V>(self, visitor: V) -> Result<V::Value, Self::Error>
 	where
-		V: serde::de::Visitor<'de>,
+		V: serde_core::de::Visitor<'de>,
 	{
 		self.deserialize_f64(visitor)
 	}
 
 	fn deserialize_f64<V>(self, visitor: V) -> Result<V::Value, Self::Error>
 	where
-		V: serde::de::Visitor<'de>,
+		V: serde_core::de::Visitor<'de>,
 	{
 		let (w, span) = self.num()?;
 		let n = parse_f64(&w, span)?;
@@ -421,14 +418,14 @@ impl<'de, R: Read<'de>> serde::de::Deserializer<'de> for &mut Deserializer<R> {
 
 	fn deserialize_char<V>(self, visitor: V) -> Result<V::Value, Self::Error>
 	where
-		V: serde::de::Visitor<'de>,
+		V: serde_core::de::Visitor<'de>,
 	{
 		self.deserialize_str(visitor)
 	}
 
 	fn deserialize_str<V>(self, visitor: V) -> Result<V::Value, Self::Error>
 	where
-		V: serde::de::Visitor<'de>,
+		V: serde_core::de::Visitor<'de>,
 	{
 		let (r#str, span) = self.str()?;
 		match r#str {
@@ -439,14 +436,14 @@ impl<'de, R: Read<'de>> serde::de::Deserializer<'de> for &mut Deserializer<R> {
 
 	fn deserialize_string<V>(self, visitor: V) -> Result<V::Value, Self::Error>
 	where
-		V: serde::de::Visitor<'de>,
+		V: serde_core::de::Visitor<'de>,
 	{
 		self.deserialize_str(visitor)
 	}
 
 	fn deserialize_bytes<V>(self, visitor: V) -> Result<V::Value, Self::Error>
 	where
-		V: serde::de::Visitor<'de>,
+		V: serde_core::de::Visitor<'de>,
 	{
 		let peek = self.read.peek().ok_or(Error::EOF)?;
 		match peek {
@@ -468,21 +465,21 @@ impl<'de, R: Read<'de>> serde::de::Deserializer<'de> for &mut Deserializer<R> {
 
 	fn deserialize_byte_buf<V>(self, visitor: V) -> Result<V::Value, Self::Error>
 	where
-		V: serde::de::Visitor<'de>,
+		V: serde_core::de::Visitor<'de>,
 	{
 		self.deserialize_bytes(visitor)
 	}
 
 	fn deserialize_option<V>(self, visitor: V) -> Result<V::Value, Self::Error>
 	where
-		V: serde::de::Visitor<'de>,
+		V: serde_core::de::Visitor<'de>,
 	{
 		visitor.visit_some(self)
 	}
 
 	fn deserialize_unit<V>(self, _visitor: V) -> Result<V::Value, Self::Error>
 	where
-		V: serde::de::Visitor<'de>,
+		V: serde_core::de::Visitor<'de>,
 	{
 		Err(Error::new(ErrorCode::UnsupportedUnit))
 	}
@@ -493,7 +490,7 @@ impl<'de, R: Read<'de>> serde::de::Deserializer<'de> for &mut Deserializer<R> {
 		_visitor: V,
 	) -> Result<V::Value, Self::Error>
 	where
-		V: serde::de::Visitor<'de>,
+		V: serde_core::de::Visitor<'de>,
 	{
 		Err(Error::new(ErrorCode::UnsupportedUnit))
 	}
@@ -504,14 +501,14 @@ impl<'de, R: Read<'de>> serde::de::Deserializer<'de> for &mut Deserializer<R> {
 		visitor: V,
 	) -> Result<V::Value, Self::Error>
 	where
-		V: serde::de::Visitor<'de>,
+		V: serde_core::de::Visitor<'de>,
 	{
 		visitor.visit_newtype_struct(self)
 	}
 
 	fn deserialize_seq<V>(self, visitor: V) -> Result<V::Value, Self::Error>
 	where
-		V: serde::de::Visitor<'de>,
+		V: serde_core::de::Visitor<'de>,
 	{
 		self.indent += 1;
 
@@ -552,7 +549,7 @@ impl<'de, R: Read<'de>> serde::de::Deserializer<'de> for &mut Deserializer<R> {
 
 	fn deserialize_tuple<V>(self, _len: usize, visitor: V) -> Result<V::Value, Self::Error>
 	where
-		V: serde::de::Visitor<'de>,
+		V: serde_core::de::Visitor<'de>,
 	{
 		self.deserialize_seq(visitor)
 	}
@@ -564,14 +561,14 @@ impl<'de, R: Read<'de>> serde::de::Deserializer<'de> for &mut Deserializer<R> {
 		visitor: V,
 	) -> Result<V::Value, Self::Error>
 	where
-		V: serde::de::Visitor<'de>,
+		V: serde_core::de::Visitor<'de>,
 	{
 		self.deserialize_seq(visitor)
 	}
 
 	fn deserialize_map<V>(self, visitor: V) -> Result<V::Value, Self::Error>
 	where
-		V: serde::de::Visitor<'de>,
+		V: serde_core::de::Visitor<'de>,
 	{
 		let start = self.read.position();
 
@@ -621,7 +618,7 @@ impl<'de, R: Read<'de>> serde::de::Deserializer<'de> for &mut Deserializer<R> {
 		visitor: V,
 	) -> Result<V::Value, Self::Error>
 	where
-		V: serde::de::Visitor<'de>,
+		V: serde_core::de::Visitor<'de>,
 	{
 		self.deserialize_map(visitor)
 	}
@@ -633,7 +630,7 @@ impl<'de, R: Read<'de>> serde::de::Deserializer<'de> for &mut Deserializer<R> {
 		visitor: V,
 	) -> Result<V::Value, Self::Error>
 	where
-		V: serde::de::Visitor<'de>,
+		V: serde_core::de::Visitor<'de>,
 	{
 		let peek = self.read.peek().ok_or(Error::EOF)?;
 		if peek == b'"' || peek == b'\'' {
@@ -652,7 +649,7 @@ impl<'de, R: Read<'de>> serde::de::Deserializer<'de> for &mut Deserializer<R> {
 
 	fn deserialize_identifier<V>(self, visitor: V) -> Result<V::Value, Self::Error>
 	where
-		V: serde::de::Visitor<'de>,
+		V: serde_core::de::Visitor<'de>,
 	{
 		let (identifier, span) = self.identifier()?;
 		match identifier {

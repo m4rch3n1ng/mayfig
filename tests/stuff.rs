@@ -1,5 +1,5 @@
 use mayfig::error::ErrorCode;
-use serde_derive::Deserialize;
+use serde::Deserialize;
 use std::{collections::HashMap, ops::Deref};
 
 #[derive(Debug, Deserialize)]

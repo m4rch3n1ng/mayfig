@@ -1,10 +1,10 @@
 use super::Value;
-use serde::Serialize;
+use serde_core::Serialize;
 
 impl Serialize for Value {
 	fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
 	where
-		S: serde::Serializer,
+		S: serde_core::Serializer,
 	{
 		match self {
 			Value::String(s) => serializer.serialize_str(s),
