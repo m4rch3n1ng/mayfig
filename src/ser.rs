@@ -128,14 +128,14 @@ impl<W: std::io::Write> serde::ser::Serializer for &mut Serializer<'_, W> {
 	}
 
 	fn serialize_f32(self, v: f32) -> Result<Self::Ok, Self::Error> {
-		let mut buffer = ryu::Buffer::new();
+		let mut buffer = zmij::Buffer::new();
 		let s = buffer.format(v);
 		self.writer.write_all(s.as_bytes())?;
 		Ok(())
 	}
 
 	fn serialize_f64(self, v: f64) -> Result<Self::Ok, Self::Error> {
-		let mut buffer = ryu::Buffer::new();
+		let mut buffer = zmij::Buffer::new();
 		let s = buffer.format(v);
 		self.writer.write_all(s.as_bytes())?;
 		Ok(())
