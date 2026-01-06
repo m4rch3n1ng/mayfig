@@ -6,17 +6,33 @@ readme = "readme.md"
 repository = "https://github.com/m4rch3n1ng/mayfig"
 license = "MPL-2.0"
 
+[[example]]
+name = "value"
+required-features = ["value"]
+
+[[test]]
+name = "value"
+required-features = ["value"]
+
 [dependencies]
-indexmap = { version = "2.12.1", features = ["serde"] }
+indexmap = { version = "2.12.1", features = ["serde"], optional = true }
 itoa = "1.0.15"
 serde_core = "1.0.228"
 zmij = "1.0.11"
 
 [dev-dependencies]
+indexmap = { version = "2.12.1", features = ["serde"] }
 annotate-snippets = "0.12.9"
 anstream = "0.6.21"
 serde = { version = "1.0.228", features = ["derive"] }
 serde_bytes = "0.11.19"
+
+[package.metadata.docs.rs]
+all-features = true
+
+[features]
+default = []
+value = ["dep:indexmap"]
 
 [lints.clippy]
 allow_attributes = "warn"

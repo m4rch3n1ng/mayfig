@@ -9,9 +9,9 @@ jobs:
         with:
           components: clippy
       - name: build
-        run: cargo clippy -- -D warnings
+        run: cargo clippy --all-features -- -D warnings
       - name: test
-        run: cargo test
+        run: cargo test --all-features
   fmt:
     runs-on: ubuntu-latest
     steps:

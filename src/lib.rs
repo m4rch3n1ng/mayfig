@@ -39,9 +39,12 @@
 //! for a more thorough explanation take a look at the readme on
 //! [`github`](https://github.com/m4rch3n1ng/mayfig) or on crates.io.
 
+#![cfg_attr(docsrs, feature(doc_cfg))]
+
 pub mod de;
 pub mod error;
 pub mod ser;
+#[cfg(feature = "value")]
 pub mod value;
 
 #[doc(inline)]
@@ -51,4 +54,5 @@ pub use error::Error;
 #[doc(inline)]
 pub use ser::{to_string, to_vec, to_writer, Serializer};
 #[doc(inline)]
+#[cfg(feature = "value")]
 pub use value::Value;

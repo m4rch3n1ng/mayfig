@@ -1,5 +1,4 @@
 use indexmap::IndexMap;
-use mayfig::{value::Map, Value};
 use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Deserialize, Serialize, PartialEq, Eq)]
@@ -193,6 +192,7 @@ fn more() {
 	assert_eq!(ser3, DE_SER_3);
 }
 
+#[cfg(feature = "value")]
 const R1: &str = r#"val = "test"
 test = 20
 v {
@@ -202,7 +202,10 @@ v {
 "#;
 
 #[test]
+#[cfg(feature = "value")]
 fn value() {
+	use mayfig::{value::Map, Value};
+
 	let ref1 = Value::Map(Map::from([
 		(Value::from("val"), Value::from("test")),
 		(Value::from("test"), Value::from(20)),
