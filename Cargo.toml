@@ -10,7 +10,6 @@ license = "MPL-2.0"
 indexmap = { version = "2.12.1", features = ["serde"] }
 itoa = "1.0.15"
 serde_core = "1.0.228"
-thiserror = "2.0.17"
 zmij = "1.0.11"
 
 [dev-dependencies]
