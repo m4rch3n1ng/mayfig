@@ -8,31 +8,31 @@
 //! ```text
 //! input {
 //!     keyboard {
-//!         # xkb_file = "~/.config/keymap/may.xkb"
+//!         # xkb-file = "~/.config/keymap/may.xkb"
 //!
-//!         repeat_delay = 600
-//!         repeat_rate = 25
+//!         repeat-delay = 600
+//!         repeat-rate = 25
 //!     }
 //!
 //!     touchpad {
 //!         tap = true
 //!
-//!         natural_scroll = true
-//!         scroll_method = "two_finger"
+//!         natural-scroll = true
+//!         # scroll-method = "two-finger"
 //!     }
 //! }
 //!
 //! cursor {
-//!     xcursor_theme = "Bibata-Modern-Classic"
-//!     xcursor_size = 24
+//!     xcursor-theme = "Bibata-Modern-Classic"
+//!     xcursor-size = 24
 //! }
 //!
 //! bind {
-//!     "mod escape" = "quit"
-//!     "mod q" = "close"
+//!     mod+escape = "quit"
+//!     mod+q = "close"
 //!
-//!     "mod t" = "spawn" [ "kitty" ]
-//!     "mod n" = "spawn" [ "firefox" ]
+//!     mod+t = "spawn" [ "kitty" ]
+//!     mod+n = "spawn" [ "firefox" ]
 //! }
 //! ```
 //!
