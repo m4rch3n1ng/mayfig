@@ -41,7 +41,7 @@ two =
 fn is_not_newline() {
 	let t1 = mayfig::from_str::<Tst>(NO1);
 	let e2 = t1.unwrap_err();
-	assert!(matches!(e2.code(), ErrorCode::ExpectedNewline(_)));
+	assert!(matches!(e2.code(), ErrorCode::ExpectedNewline('t')));
 	assert_eq!(
 		e2.span(),
 		Some(Span::Point(Position {
