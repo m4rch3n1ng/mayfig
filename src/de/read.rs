@@ -180,6 +180,7 @@ impl<'de, R: std::io::Read> Read<'de> for IoRead<R> {
 		let quote = self.next()?.ok_or(Error::EOF)?;
 		debug_assert!(matches!(quote, '"' | '\''), "is {:?}", quote);
 
+		let raw = quote == '\'';
 		let r#ref = loop {
 			let peek = self.peek()?.ok_or(Error::EOF)?;
 
@@ -190,7 +191,7 @@ impl<'de, R: std::io::Read> Read<'de> for IoRead<R> {
 				let point = self.position();
 				let code = ErrorCode::UnescapedControl(peek);
 				return Err(Error::with_point(code, point, peek));
-			} else if peek == '\\' {
+			} else if !raw && peek == '\\' {
 				self.discard();
 				parse_escape(self, scratch)?;
 			} else {
@@ -308,6 +309,7 @@ impl<'de> Read<'de> for StrRead<'de> {
 		let quote = self.next()?.ok_or(Error::EOF)?;
 		debug_assert!(matches!(quote, '"' | '\''), "is {:?}", quote);
 
+		let raw = quote == '\'';
 		let mut start = self.position().index;
 		let r#ref = loop {
 			let peek = self.peek()?.ok_or(Error::EOF)?;
@@ -331,7 +333,7 @@ impl<'de> Read<'de> for StrRead<'de> {
 				let point = self.position();
 				let code = ErrorCode::UnescapedControl(peek);
 				return Err(Error::with_point(code, point, peek));
-			} else if peek == '\\' {
+			} else if !raw && peek == '\\' {
 				let slice = self.slice(start);
 				scratch.push_str(slice);
 

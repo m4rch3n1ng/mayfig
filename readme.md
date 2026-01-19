@@ -99,10 +99,13 @@ tiling-exceptions = [
 
 ```properties
 # strings have to be escaped with quotes
-# single and double quoted strings are the
-# same and do not make a difference
 st1 = "this is a string"
-st2 = 'single quoted strings work too'
+# normal strings are double quoted strings,
+# while raw use single quotes
+st2 = 'this is a raw string'
+# raw strings do not parse or handle escapes,
+# their content will be reproduced exactly
+regex = '\d+'
 
 map {
     # keys are also strings, but quotes are optional,

@@ -101,3 +101,22 @@ fn delim() {
 	assert_de!(V3 as V => v3, v3.t, ("test".into(), 20, "test".into()));
 	assert_de!(W3 as W => w3, w3.w, &["one", "two", "three"]);
 }
+
+#[derive(Debug, Deserialize)]
+struct Match {
+	regex: String,
+}
+
+const R1: &str = r#"
+regex = '\d+'
+"#;
+
+const R2: &str = r#"
+regex = '/(r#)?[_\p{XID_Start}][_\p{XID_Continue}]*/u'
+"#;
+
+#[test]
+fn raw() {
+	assert_de!(R1 as Match => r1, r1.regex, r"\d+");
+	assert_de!(R2 as Match => r2, r2.regex, r"/(r#)?[_\p{XID_Start}][_\p{XID_Continue}]*/u");
+}
