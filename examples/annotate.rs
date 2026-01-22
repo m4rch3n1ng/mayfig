@@ -25,17 +25,14 @@ m {
 "#;
 
 fn main() {
-	// blocked on https://github.com/rust-lang/annotate-snippets-rs/issues/25
-	let with_error = WITH_ERROR.replace('\t', "    ");
-
-	let thing = mayfig::from_str::<WithError>(&with_error);
+	let thing = mayfig::from_str::<WithError>(WITH_ERROR);
 	let thing = match thing {
 		Ok(thing) => thing,
 		Err(err) => {
 			let code = err.code().to_string();
 			let message = if let Some(span) = err.span() {
 				Level::ERROR.secondary_title(code.as_str()).element(
-					Snippet::source(&with_error)
+					Snippet::source(WITH_ERROR)
 						.path("test/test.mf")
 						.fold(true)
 						.annotation(AnnotationKind::Primary.span(span.range())),
