@@ -60,9 +60,9 @@ impl<'de, R: Read<'de>> VariantAccess<'de> for TaggedEnumValueAcc<'_, 'de, R> {
 		T: serde_core::de::DeserializeSeed<'de>,
 	{
 		let next = self.de.peek_line()?.ok_or(Error::EOF)?;
-		if next != b'[' && next != b'{' {
+		if next != '[' && next != '{' {
 			let point = self.de.read.position();
-			let code = ErrorCode::ExpectedSeq(self.de.read.peek_char()?);
+			let code = ErrorCode::ExpectedSeq(next);
 			return Err(Error::with_point(code, point));
 		}
 
@@ -79,8 +79,8 @@ impl<'de, R: Read<'de>> VariantAccess<'de> for TaggedEnumValueAcc<'_, 'de, R> {
 
 			let seq_end_point = self.de.read.position();
 
-			if peek != b']' {
-				let code = ErrorCode::ExpectedSeqEnd(self.de.read.peek_char()?);
+			if peek != ']' {
+				let code = ErrorCode::ExpectedSeqEnd(peek);
 				return Err(Error::with_point(code, seq_end_point));
 			}
 
@@ -139,9 +139,9 @@ impl<'a, 'de, R: Read<'de>> TaggedValue<'a, R> {
 		}
 
 		let peek = self.de.read.peek().ok_or(Error::EOF)?;
-		if peek != b'[' {
+		if peek != '[' {
 			let point = self.de.read.position();
-			let code = ErrorCode::ExpectedSeq(self.de.read.peek_char()?);
+			let code = ErrorCode::ExpectedSeq(peek);
 			Err(Error::with_point(code, point))
 		} else {
 			self.de.read.discard();
@@ -306,18 +306,18 @@ impl<'de, R: Read<'de>> serde_core::de::Deserializer<'de> for &mut TaggedValue<'
 		self.assert_bracket()?;
 		let peek = self.de.peek_any().ok_or(Error::EOF)?;
 		match peek {
-			b'"' | b'\'' => {
-				let r#ref = self.de.str_bytes()?;
+			'"' | '\'' => {
+				let (r#ref, sp) = self.de.str_bytes()?;
 				match r#ref {
-					Ref::Borrow(b) => visitor.visit_borrowed_bytes(b),
-					Ref::Scratch(s) => visitor.visit_bytes(s),
+					Ref::Borrow(b) => visitor.visit_borrowed_bytes(b).map_err(|e| add_span(e, sp)),
+					Ref::Scratch(s) => visitor.visit_bytes(s).map_err(|e| add_span(e, sp)),
 				}
 			}
-			b'0'..=b'9' => self.deserialize_seq(visitor),
-			b']' => visitor.visit_borrowed_bytes(&[]),
+			'0'..='9' => self.deserialize_seq(visitor),
+			']' => visitor.visit_borrowed_bytes(&[]),
 			_ => {
 				let point = self.de.read.position();
-				let code = ErrorCode::ExpectedBytes(self.de.read.peek_char()?);
+				let code = ErrorCode::ExpectedBytes(peek);
 				Err(Error::with_point(code, point))
 			}
 		}
@@ -337,7 +337,7 @@ impl<'de, R: Read<'de>> serde_core::de::Deserializer<'de> for &mut TaggedValue<'
 	{
 		self.assert_bracket()?;
 		let peek = self.de.read.peek().ok_or(Error::EOF)?;
-		if peek == b']' {
+		if peek == ']' {
 			visitor.visit_none()
 		} else {
 			visitor.visit_some(self)
@@ -416,9 +416,9 @@ impl<'de, R: Read<'de>> serde_core::de::Deserializer<'de> for &mut TaggedValue<'
 		V: serde_core::de::Visitor<'de>,
 	{
 		let peek = self.de.read.peek().ok_or(Error::EOF)?;
-		if peek == b'[' {
+		if peek == '[' {
 			self.de.read.discard();
-		} else if peek == b'{' {
+		} else if peek == '{' {
 			self.is_map = true;
 		}
 
@@ -448,12 +448,12 @@ impl<'de, R: Read<'de>> serde_core::de::Deserializer<'de> for &mut TaggedValue<'
 	{
 		self.assert_bracket()?;
 		let peek = self.de.read.peek().ok_or(Error::EOF)?;
-		if peek == b'"' || peek == b'\'' {
+		if peek == '"' || peek == '\'' {
 			let acc = TaggedUnitEnumAcc::new(&mut *self.de);
 			visitor.visit_enum(acc)
 		} else {
 			let point = self.de.read.position();
-			let code = ErrorCode::ExpectedEnum(self.de.read.peek_char()?);
+			let code = ErrorCode::ExpectedEnum(peek);
 			Err(Error::with_point(code, point))
 		}
 	}

@@ -214,11 +214,11 @@ pub struct Position {
 	pub line: usize,
 	/// column at which the error occured
 	///
-	/// 1-indexed
+	/// 1-indexed, in chars
 	pub col: usize,
 	/// absolute index of the position
 	///
-	/// 0-indexed
+	/// 0-indexed, in bytes
 	pub index: usize,
 }
 

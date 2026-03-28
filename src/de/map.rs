@@ -29,9 +29,9 @@ impl<'de, R: Read<'de>> serde_core::de::Deserializer<'de> for &mut MapKey<'_, R>
 	{
 		let peek = self.de.peek_any().ok_or(Error::EOF)?;
 		match peek {
-			b'[' => self.deserialize_seq(visitor),
-			b'{' => self.deserialize_map(visitor),
-			b'0'..=b'9' | b'.' | b'-' | b'+' => self.de.deserialize_number(visitor),
+			'[' => self.deserialize_seq(visitor),
+			'{' => self.deserialize_map(visitor),
+			'0'..='9' | '.' | '-' | '+' => self.de.deserialize_number(visitor),
 			_ => {
 				let start = self.de.read.position();
 				let (ident, span) = self.de.identifier()?;
@@ -40,7 +40,7 @@ impl<'de, R: Read<'de>> serde_core::de::Deserializer<'de> for &mut MapKey<'_, R>
 					Ref::Scratch(s) => Cow::Owned(s.to_owned()),
 				};
 
-				if let Ok(Some(b'[')) = self.de.peek_line() {
+				if let Ok(Some('[')) = self.de.peek_line() {
 					let tagged = TaggedEnumKeyAcc::with_tag(self, ident);
 					visitor.visit_enum(tagged).map_err(|err| {
 						let end = self.de.read.position();
@@ -275,7 +275,7 @@ impl<'de, R: Read<'de>> serde_core::de::Deserializer<'de> for &mut MapKey<'_, R>
 		V: serde_core::de::Visitor<'de>,
 	{
 		let peek = self.de.read.peek().ok_or(Error::EOF)?;
-		if peek.is_ascii_alphabetic() || peek == b'"' || peek == b'\'' {
+		if peek.is_ascii_alphabetic() || peek == '"' || peek == '\'' {
 			let start = self.de.read.position();
 			let acc = TaggedEnumKeyAcc::new(self);
 			visitor.visit_enum(acc).map_err(|err| {
@@ -284,7 +284,7 @@ impl<'de, R: Read<'de>> serde_core::de::Deserializer<'de> for &mut MapKey<'_, R>
 			})
 		} else {
 			let point = self.de.read.position();
-			let code = ErrorCode::ExpectedEnum(self.de.read.peek_char()?);
+			let code = ErrorCode::ExpectedEnum(peek);
 			Err(Error::with_point(code, point))
 		}
 	}

@@ -44,24 +44,3 @@ fn bytes() {
 	assert_eq!(b2.e, E::Byt(Cow::Owned(vec![0, 1, 3, 4])));
 	assert!(matches!(b2.s, Cow::Owned(_)));
 }
-
-#[derive(Debug, Deserialize)]
-struct Wtf<'a> {
-	#[serde(with = "serde_bytes")]
-	#[serde(borrow)]
-	uh: Cow<'a, [u8]>,
-}
-
-const WTF: &[u8] = &[
-	b'u', b'h', b' ', b'=', b' ', b'"', 255, 255, 128, 255, b'"', b'\n',
-];
-
-#[test]
-#[expect(invalid_from_utf8)]
-fn fucked() {
-	assert!(std::str::from_utf8(WTF).is_err());
-
-	let wtf = mayfig::from_slice::<Wtf>(WTF).unwrap();
-	assert_eq!(&*wtf.uh, &[255, 255, 128, 255]);
-	assert!(matches!(wtf.uh, Cow::Borrowed(_)));
-}

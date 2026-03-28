@@ -2,6 +2,7 @@ use super::{fake::FakeStringDeserializer, unit::TaggedUnitEnumAcc};
 use crate::{
 	de::{
 		access::SeqAcc,
+		add_span,
 		map::MapKey,
 		read::{Read, Ref},
 	},
@@ -63,9 +64,9 @@ impl<'de, R: Read<'de>> VariantAccess<'de> for TaggedEnumKeyAcc<'_, '_, 'de, R> 
 		T: serde_core::de::DeserializeSeed<'de>,
 	{
 		let next = self.map_key.de.peek_line()?.ok_or(Error::EOF)?;
-		if next != b'[' {
+		if next != '[' {
 			let point = self.map_key.de.read.position();
-			let code = ErrorCode::ExpectedSeq(self.map_key.de.read.peek_char()?);
+			let code = ErrorCode::ExpectedSeq(next);
 			return Err(Error::with_point(code, point));
 		}
 		self.map_key.de.read.discard();
@@ -78,9 +79,9 @@ impl<'de, R: Read<'de>> VariantAccess<'de> for TaggedEnumKeyAcc<'_, '_, 'de, R> 
 
 		self.map_key.de.discard_commata();
 		let peek = self.map_key.de.peek_any().ok_or(Error::EOF)?;
-		if peek != b']' {
+		if peek != ']' {
 			let point = self.map_key.de.read.position();
-			let code = ErrorCode::ExpectedSeqEnd(self.map_key.de.read.peek_char()?);
+			let code = ErrorCode::ExpectedSeqEnd(next);
 			return Err(Error::with_point(code, point));
 		}
 		self.map_key.de.read.discard();
@@ -249,18 +250,18 @@ impl<'de, R: Read<'de>> serde_core::de::Deserializer<'de> for TaggedKey<'_, R> {
 	{
 		let peek = self.de.peek_any().ok_or(Error::EOF)?;
 		match peek {
-			b'"' | b'\'' => {
-				let r#ref = self.de.str_bytes()?;
+			'"' | '\'' => {
+				let (r#ref, sp) = self.de.str_bytes()?;
 				match r#ref {
-					Ref::Borrow(b) => visitor.visit_borrowed_bytes(b),
-					Ref::Scratch(s) => visitor.visit_bytes(s),
+					Ref::Borrow(b) => visitor.visit_borrowed_bytes(b).map_err(|e| add_span(e, sp)),
+					Ref::Scratch(s) => visitor.visit_bytes(s).map_err(|e| add_span(e, sp)),
 				}
 			}
-			b'0'..=b'9' => self.deserialize_seq(visitor),
-			b']' => visitor.visit_borrowed_bytes(&[]),
+			'0'..='9' => self.deserialize_seq(visitor),
+			']' => visitor.visit_borrowed_bytes(&[]),
 			_ => {
 				let point = self.de.read.position();
-				let code = ErrorCode::ExpectedBytes(self.de.read.peek_char()?);
+				let code = ErrorCode::ExpectedBytes(peek);
 				Err(Error::with_point(code, point))
 			}
 		}
@@ -369,12 +370,12 @@ impl<'de, R: Read<'de>> serde_core::de::Deserializer<'de> for TaggedKey<'_, R> {
 		V: serde_core::de::Visitor<'de>,
 	{
 		let peek = self.de.read.peek().ok_or(Error::EOF)?;
-		if peek == b'"' || peek == b'\'' {
+		if peek == '"' || peek == '\'' {
 			let acc = TaggedUnitEnumAcc::new(&mut *self.de);
 			visitor.visit_enum(acc)
 		} else {
 			let point = self.de.read.position();
-			let code = ErrorCode::ExpectedEnum(self.de.read.peek_char()?);
+			let code = ErrorCode::ExpectedEnum(peek);
 			Err(Error::with_point(code, point))
 		}
 	}

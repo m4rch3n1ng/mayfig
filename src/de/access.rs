@@ -23,7 +23,7 @@ impl<'de, R: Read<'de>> SeqAccess<'de> for SeqAcc<'_, R> {
 		T: serde_core::de::DeserializeSeed<'de>,
 	{
 		self.de.discard_commata();
-		if self.de.peek_any().ok_or(Error::EOF)? == b']' {
+		if self.de.peek_any().ok_or(Error::EOF)? == ']' {
 			return Ok(None);
 		}
 
@@ -69,11 +69,11 @@ impl<'de, R: Read<'de>> MapAccess<'de> for TopMapAcc<'_, R> {
 	{
 		let peek = self.de.peek_line()?.ok_or(Error::EOF)?;
 
-		if peek == b'=' {
+		if peek == '=' {
 			self.de.read.discard();
-		} else if peek != b'{' {
+		} else if peek != '{' {
 			let point = self.de.read.position();
-			let code = ErrorCode::ExpectedValue(self.de.read.peek_char()?);
+			let code = ErrorCode::ExpectedValue(peek);
 			return Err(Error::with_point(code, point));
 		}
 
@@ -100,7 +100,7 @@ impl<'de, R: Read<'de>> MapAccess<'de> for MapAcc<'_, R> {
 	where
 		K: serde_core::de::DeserializeSeed<'de>,
 	{
-		if let Ok(Some(b'}')) = self.de.peek_line() {
+		if let Ok(Some('}')) = self.de.peek_line() {
 			self.de.read.discard();
 			return Ok(None);
 		}
@@ -112,7 +112,7 @@ impl<'de, R: Read<'de>> MapAccess<'de> for MapAcc<'_, R> {
 			self.de.peek_newline()?
 		};
 
-		if peek.ok_or(Error::EOF)? == b'}' {
+		if peek.ok_or(Error::EOF)? == '}' {
 			self.de.read.discard();
 			return Ok(None);
 		}
@@ -127,11 +127,11 @@ impl<'de, R: Read<'de>> MapAccess<'de> for MapAcc<'_, R> {
 	{
 		let peek = self.de.peek_line()?.ok_or(Error::EOF)?;
 
-		if peek == b'=' {
+		if peek == '=' {
 			self.de.read.discard();
-		} else if peek != b'{' {
+		} else if peek != '{' {
 			let point = self.de.read.position();
-			let code = ErrorCode::ExpectedValue(self.de.read.peek_char()?);
+			let code = ErrorCode::ExpectedValue(peek);
 			return Err(Error::with_point(code, point));
 		}
 

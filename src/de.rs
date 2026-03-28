@@ -3,7 +3,7 @@
 use self::{
 	access::{MapAcc, SeqAcc, TopMapAcc},
 	r#enum::TaggedEnumValueAcc,
-	read::{Read, Ref, SliceRead, StrRead},
+	read::{Read, Ref, StrRead},
 };
 use crate::error::{Error, ErrorCode, Span};
 use serde_core::forward_to_deserialize_any;
@@ -18,7 +18,7 @@ mod read;
 pub struct Deserializer<R> {
 	read: R,
 	indent: usize,
-	scratch: Vec<u8>,
+	scratch: String,
 }
 
 impl<'de, R: Read<'de>> Deserializer<R> {
@@ -26,7 +26,7 @@ impl<'de, R: Read<'de>> Deserializer<R> {
 		Deserializer {
 			read,
 			indent: 0,
-			scratch: Vec::new(),
+			scratch: String::new(),
 		}
 	}
 }
@@ -57,48 +57,23 @@ where
 	T::deserialize(&mut deserializer)
 }
 
-impl<'de> Deserializer<SliceRead<'de>> {
-	/// create a mayfig deserializer from a byte slice.
-	pub fn from_slice(input: &'de [u8]) -> Self {
-		let read = SliceRead::new(input);
-		Deserializer::new(read)
-	}
-}
-
-/// deserialize a type `T` from a mayfig byte slice
-///
-/// # errors
-///
-/// this returns an error if the structure of the input does not match the
-/// structure of `T`, or if the `Deserialize` impl of `T` returns an error.
-///
-/// for more info on possible errors take a look at the
-/// [`ErrorCode`] enum
-pub fn from_slice<'a, T>(input: &'a [u8]) -> Result<T, Error>
-where
-	T: serde_core::de::Deserialize<'a>,
-{
-	let mut deserializer = Deserializer::from_slice(input);
-	T::deserialize(&mut deserializer)
-}
-
 impl<'de, R: Read<'de>> Deserializer<R> {
 	/// discard comment
 	fn discard_comment(&mut self) {
-		debug_assert_eq!(self.read.peek(), Some(b'#'));
+		debug_assert_eq!(self.read.peek(), Some('#'));
 		while let Some(peek) = self.read.peek() {
 			self.read.discard();
-			if peek == b'\n' {
+			if peek == '\n' {
 				break;
 			}
 		}
 	}
 
 	/// peek next character that isn't a whitespace
-	fn peek_any(&mut self) -> Option<u8> {
+	fn peek_any(&mut self) -> Option<char> {
 		loop {
 			let peek = self.read.peek()?;
-			if peek == b'#' {
+			if peek == '#' {
 				self.discard_comment();
 			} else if read::is_whitespace(peek) {
 				self.read.discard();
@@ -111,11 +86,11 @@ impl<'de, R: Read<'de>> Deserializer<R> {
 	/// peek next character on the current line, that isn't whitespace.
 	///
 	/// returns an [`Error::UnexpectedNewline`] error if nothing is found before a new line
-	fn peek_line(&mut self) -> Result<Option<u8>, Error> {
+	fn peek_line(&mut self) -> Result<Option<char>, Error> {
 		while let Some(peek) = self.read.peek() {
 			if read::is_whitespace_line(peek) {
 				self.read.discard();
-			} else if peek == b'\n' || peek == b'#' {
+			} else if peek == '\n' || peek == '#' {
 				let point = self.read.position();
 				let code = ErrorCode::UnexpectedNewline;
 				return Err(Error::with_point(code, point));
@@ -130,22 +105,22 @@ impl<'de, R: Read<'de>> Deserializer<R> {
 	/// peek next character on the next line, that isn't whitespace.
 	///
 	/// returns an [`Error::ExpectedNewline`] error if something was found before the linebreak
-	fn peek_newline(&mut self) -> Result<Option<u8>, Error> {
+	fn peek_newline(&mut self) -> Result<Option<char>, Error> {
 		let mut is_newline = false;
 		while let Some(peek) = self.read.peek() {
 			if read::is_whitespace_line(peek) {
 				self.read.discard();
-			} else if peek == b'#' {
+			} else if peek == '#' {
 				is_newline = true;
 				self.discard_comment();
-			} else if peek == b'\n' {
+			} else if peek == '\n' {
 				is_newline = true;
 				self.read.discard();
 			} else if is_newline {
 				return Ok(Some(peek));
 			} else {
 				let point = self.read.position();
-				let code = ErrorCode::ExpectedNewline(self.read.peek_char()?);
+				let code = ErrorCode::ExpectedNewline(peek);
 				return Err(Error::with_point(code, point));
 			}
 		}
@@ -154,7 +129,7 @@ impl<'de, R: Read<'de>> Deserializer<R> {
 	}
 
 	fn discard_commata(&mut self) {
-		while self.peek_any().is_some_and(|peek| peek == b',') {
+		while self.peek_any().is_some_and(|peek| peek == ',') {
 			self.read.discard();
 		}
 	}
@@ -165,10 +140,10 @@ impl<'de, R: Read<'de>> Deserializer<R> {
 
 		let r#ref = self.read.num(&mut self.scratch)?;
 		if r#ref.is_empty() {
-			let _ = self.read.peek().ok_or(Error::EOF)?;
+			let peek = self.read.peek().ok_or(Error::EOF)?;
 
 			let point = self.read.position();
-			let code = ErrorCode::ExpectedNumeric(self.read.peek_char()?);
+			let code = ErrorCode::ExpectedNumeric(peek);
 			Err(Error::with_point(code, point))
 		} else {
 			let span = Span::Span(start, self.read.position());
@@ -186,9 +161,9 @@ impl<'de, R: Read<'de>> Deserializer<R> {
 
 	fn str<'s>(&'s mut self) -> Result<(Ref<'de, 's, str>, Span), Error> {
 		let peek = self.read.peek().ok_or(Error::EOF)?;
-		if peek != b'"' && peek != b'\'' {
+		if peek != '"' && peek != '\'' {
 			let point = self.read.position();
-			let code = ErrorCode::ExpectedQuote(self.read.peek_char()?);
+			let code = ErrorCode::ExpectedQuote(peek);
 			return Err(Error::with_point(code, point));
 		}
 
@@ -198,18 +173,20 @@ impl<'de, R: Read<'de>> Deserializer<R> {
 		Ok((str, Span::Span(start, self.read.position())))
 	}
 
-	fn str_bytes<'s>(&'s mut self) -> Result<Ref<'de, 's, [u8]>, Error> {
-		self.scratch.clear();
-		self.read.str_bytes(&mut self.scratch)
+	fn str_bytes<'s>(&'s mut self) -> Result<(Ref<'de, 's, [u8]>, Span), Error> {
+		match self.str()? {
+			(Ref::Borrow(s), span) => Ok((Ref::Borrow(s.as_bytes()), span)),
+			(Ref::Scratch(s), span) => Ok((Ref::Scratch(s.as_bytes()), span)),
+		}
 	}
 
 	fn identifier<'s>(&'s mut self) -> Result<(Ref<'de, 's, str>, Span), Error> {
 		let peek = self.read.peek().ok_or(Error::EOF)?;
-		if peek == b'"' || peek == b'\'' {
+		if peek == '"' || peek == '\'' {
 			return self.str();
-		} else if !peek.is_ascii_alphabetic() && peek != b'_' {
+		} else if !peek.is_ascii_alphabetic() && peek != '_' {
 			let point = self.read.position();
-			let code = ErrorCode::ExpectedAsciiAlphabetic(self.read.peek_char()?);
+			let code = ErrorCode::ExpectedAsciiAlphabetic(peek);
 			return Err(Error::with_point(code, point));
 		}
 
@@ -248,13 +225,13 @@ impl<'de, R: Read<'de>> serde_core::de::Deserializer<'de> for &mut Deserializer<
 		V: serde_core::de::Visitor<'de>,
 	{
 		let peek = self.peek_any().ok_or(Error::EOF)?;
-		if self.indent == 0 || peek == b'{' {
+		if self.indent == 0 || peek == '{' {
 			self.deserialize_map(visitor)
-		} else if peek == b'[' {
+		} else if peek == '[' {
 			self.deserialize_seq(visitor)
-		} else if let b'0'..=b'9' | b'.' | b'-' | b'+' = peek {
+		} else if let '0'..='9' | '.' | '-' | '+' = peek {
 			self.deserialize_number(visitor)
-		} else if peek == b'"' || peek == b'\'' {
+		} else if peek == '"' || peek == '\'' {
 			let start = self.read.position();
 			let (str, span) = self.str()?;
 			let str = match str {
@@ -262,7 +239,7 @@ impl<'de, R: Read<'de>> serde_core::de::Deserializer<'de> for &mut Deserializer<
 				Ref::Scratch(s) => Cow::Owned(s.to_owned()),
 			};
 
-			if let Ok(Some(b'[')) = self.peek_line() {
+			if let Ok(Some('[')) = self.peek_line() {
 				let tagged = TaggedEnumValueAcc::with_tag(self, str);
 				visitor.visit_enum(tagged).map_err(|err| {
 					let end = self.read.position();
@@ -438,17 +415,17 @@ impl<'de, R: Read<'de>> serde_core::de::Deserializer<'de> for &mut Deserializer<
 	{
 		let peek = self.read.peek().ok_or(Error::EOF)?;
 		match peek {
-			b'"' | b'\'' => {
-				let r#ref = self.str_bytes()?;
+			'"' | '\'' => {
+				let (r#ref, sp) = self.str_bytes()?;
 				match r#ref {
-					Ref::Borrow(b) => visitor.visit_borrowed_bytes(b),
-					Ref::Scratch(s) => visitor.visit_bytes(s),
+					Ref::Borrow(b) => visitor.visit_borrowed_bytes(b).map_err(|e| add_span(e, sp)),
+					Ref::Scratch(s) => visitor.visit_bytes(s).map_err(|e| add_span(e, sp)),
 				}
 			}
-			b'[' => self.deserialize_seq(visitor),
+			'[' => self.deserialize_seq(visitor),
 			_ => {
 				let point = self.read.position();
-				let code = ErrorCode::ExpectedBytes(self.read.peek_char()?);
+				let code = ErrorCode::ExpectedBytes(peek);
 				Err(Error::with_point(code, point))
 			}
 		}
@@ -504,9 +481,9 @@ impl<'de, R: Read<'de>> serde_core::de::Deserializer<'de> for &mut Deserializer<
 		self.indent += 1;
 
 		let next = self.read.peek().ok_or(Error::EOF)?;
-		if next != b'[' {
+		if next != '[' {
 			let point = self.read.position();
-			let code = ErrorCode::ExpectedSeq(self.read.peek_char()?);
+			let code = ErrorCode::ExpectedSeq(next);
 			return Err(Error::with_point(code, point));
 		}
 
@@ -528,8 +505,8 @@ impl<'de, R: Read<'de>> serde_core::de::Deserializer<'de> for &mut Deserializer<
 			add_span(err, Span::Span(start, end))
 		})?;
 
-		if next != b']' {
-			let code = ErrorCode::ExpectedSeqEnd(self.read.peek_char()?);
+		if next != ']' {
+			let code = ErrorCode::ExpectedSeqEnd(next);
 			return Err(Error::with_point(code, seq_end));
 		}
 
@@ -564,7 +541,7 @@ impl<'de, R: Read<'de>> serde_core::de::Deserializer<'de> for &mut Deserializer<
 		let start = self.read.position();
 
 		let peek = self.peek_any();
-		let value = if let Some(b'{') = peek {
+		let value = if let Some('{') = peek {
 			self.indent += 1;
 
 			let start = self.read.position();
@@ -580,10 +557,10 @@ impl<'de, R: Read<'de>> serde_core::de::Deserializer<'de> for &mut Deserializer<
 
 			Ok(val)
 		} else if self.indent != 0 {
-			let _ = peek.ok_or(Error::EOF)?;
+			let peek = peek.ok_or(Error::EOF)?;
 
 			let point = self.read.position();
-			let code = ErrorCode::ExpectedMap(self.read.peek_char()?);
+			let code = ErrorCode::ExpectedMap(peek);
 			return Err(Error::with_point(code, point));
 		} else {
 			self.indent += 1;
@@ -624,7 +601,7 @@ impl<'de, R: Read<'de>> serde_core::de::Deserializer<'de> for &mut Deserializer<
 		V: serde_core::de::Visitor<'de>,
 	{
 		let peek = self.read.peek().ok_or(Error::EOF)?;
-		if peek == b'"' || peek == b'\'' {
+		if peek == '"' || peek == '\'' {
 			let start = self.read.position();
 			let acc = TaggedEnumValueAcc::new(self);
 			visitor.visit_enum(acc).map_err(|err| {
@@ -633,7 +610,7 @@ impl<'de, R: Read<'de>> serde_core::de::Deserializer<'de> for &mut Deserializer<
 			})
 		} else {
 			let point = self.read.position();
-			let code = ErrorCode::ExpectedEnum(self.read.peek_char()?);
+			let code = ErrorCode::ExpectedEnum(peek);
 			Err(Error::with_point(code, point))
 		}
 	}
