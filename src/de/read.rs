@@ -1,5 +1,11 @@
 use crate::error::{Error, ErrorCode, Position};
-use std::{iter::Peekable, ops::Deref, str::CharIndices};
+use std::{
+	io::Bytes,
+	iter::{Map, Peekable},
+	ops::Deref,
+	str::CharIndices,
+};
+use utf8_decode::TryDecoder;
 
 impl Position {
 	fn new() -> Self {
@@ -68,6 +74,141 @@ pub trait Read<'de> {
 	fn word<'s>(&mut self, scratch: &'s mut String) -> Result<Ref<'de, 's, str>, Error>;
 
 	fn str<'s>(&mut self, scratch: &'s mut String) -> Result<Ref<'de, 's, str>, Error>;
+}
+
+type MappedBytes<R> = Map<Bytes<R>, fn(Result<u8, std::io::Error>) -> Result<u8, Error>>;
+
+pub struct IoRead<R: std::io::Read> {
+	iter: TryDecoder<MappedBytes<R>>,
+	peek: Option<char>,
+	pos: Position,
+}
+
+impl<R: std::io::Read> IoRead<R> {
+	#[expect(
+		clippy::unbuffered_bytes,
+		reason = "responsibility of the user, don't want to double-buffer"
+	)]
+	pub fn new(read: R) -> Self {
+		IoRead {
+			iter: TryDecoder::new(read.bytes().map(|x| x.map_err(Error::from))),
+			peek: None,
+			pos: Position::new(),
+		}
+	}
+}
+
+impl<'de, R: std::io::Read> Read<'de> for IoRead<R> {
+	fn peek(&mut self) -> Result<Option<char>, Error> {
+		if let Some(peek) = self.peek {
+			Ok(Some(peek))
+		} else {
+			let peek = self.iter.next().transpose()?;
+			self.peek = peek;
+			Ok(peek)
+		}
+	}
+
+	fn next(&mut self) -> Result<Option<char>, Error> {
+		if let Some(peek) = self.peek.take() {
+			self.pos.next(peek);
+			Ok(Some(peek))
+		} else {
+			let next = self.iter.next().transpose()?;
+			Ok(next.inspect(|ch| self.pos.next(*ch)))
+		}
+	}
+
+	fn position(&mut self) -> Position {
+		self.pos
+	}
+
+	fn num<'s>(&mut self, scratch: &'s mut String) -> Result<Ref<'de, 's, str>, Error> {
+		if let Some(peek @ '+' | peek @ '-') = self.peek()? {
+			scratch.push(peek);
+			self.discard();
+		}
+
+		if let Some(peek @ '.') = self.peek()? {
+			scratch.push(peek);
+			self.discard();
+
+			if let Some('a'..='z' | 'A'..='Z') = self.peek()? {
+				while let Some(peek @ 'a'..='z' | peek @ 'A'..='Z') = self.peek()? {
+					scratch.push(peek);
+					self.discard();
+				}
+
+				return Ok(Ref::Scratch(scratch));
+			}
+		}
+
+		while let Some(peek) = self.peek()? {
+			if let '0'..='9' | '.' | 'e' | '-' | '+' = peek {
+				scratch.push(peek);
+				self.discard();
+			} else if is_delimiter(peek) {
+				break;
+			} else {
+				let point = self.position();
+				let code = ErrorCode::ExpectedNumeric(peek);
+				return Err(Error::with_point(code, point));
+			}
+		}
+
+		Ok(Ref::Scratch(scratch))
+	}
+
+	fn word<'s>(&mut self, scratch: &'s mut String) -> Result<Ref<'de, 's, str>, Error> {
+		while let Some(peek) = self.peek()? {
+			if is_word(peek) {
+				scratch.push(peek);
+				self.discard();
+			} else if is_delimiter(peek) {
+				break;
+			} else {
+				let point = self.position();
+				let code = ErrorCode::ExpectedWordContinue(peek);
+				return Err(Error::with_point(code, point));
+			}
+		}
+
+		Ok(Ref::Scratch(scratch))
+	}
+
+	fn str<'s>(&mut self, scratch: &'s mut String) -> Result<Ref<'de, 's, str>, Error> {
+		let quote = self.next()?.ok_or(Error::EOF)?;
+		debug_assert!(matches!(quote, '"' | '\''), "is {:?}", quote);
+
+		let r#ref = loop {
+			let peek = self.peek()?.ok_or(Error::EOF)?;
+
+			if peek == quote {
+				self.discard();
+				break Ref::Scratch(&**scratch);
+			} else if peek.is_ascii_control() {
+				let point = self.position();
+				let code = ErrorCode::UnescapedControl(peek);
+				return Err(Error::with_point(code, point));
+			} else if peek == '\\' {
+				self.discard();
+				parse_escape(self, scratch)?;
+			} else {
+				scratch.push(peek);
+				self.discard();
+			}
+		};
+
+		if let Some(peek) = self.peek()? {
+			if !is_delimiter(peek) {
+				let point = self.position();
+				let code = ErrorCode::ExpectedDelimiter(peek);
+				return Err(Error::with_point(code, point));
+			}
+		}
+
+		Ok(r#ref)
+	}
 }
 
 pub struct StrRead<'de> {

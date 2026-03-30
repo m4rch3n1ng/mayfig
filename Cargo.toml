@@ -18,6 +18,7 @@ required-features = ["value"]
 indexmap = { version = "2.12.1", features = ["serde"], optional = true }
 itoa = "1.0.15"
 serde_core = "1.0.228"
+utf8-decode = "2.0.0"
 zmij = "1.0.11"
 
 [dev-dependencies]

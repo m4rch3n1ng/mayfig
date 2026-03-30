@@ -3,7 +3,7 @@
 use self::{
 	access::{MapAcc, SeqAcc, TopMapAcc},
 	r#enum::TaggedEnumValueAcc,
-	read::{Read, Ref, StrRead},
+	read::{IoRead, Read, Ref, StrRead},
 };
 use crate::error::{Error, ErrorCode, Span};
 use serde_core::forward_to_deserialize_any;
@@ -29,6 +29,62 @@ impl<'de, R: Read<'de>> Deserializer<R> {
 			scratch: String::new(),
 		}
 	}
+}
+
+impl<R: std::io::Read> Deserializer<IoRead<R>> {
+	/// create a mayfig deserializer from an i/o stream.
+	///
+	/// see [`mayfig::from_reader`](crate::from_reader) for more information.
+	pub fn from_reader(input: R) -> Self {
+		let read = IoRead::new(input);
+		Deserializer::new(read)
+	}
+}
+
+/// deserialize a type `T` from an i/o stream of mayfig.
+///
+/// the mayfig crate deserializes directly from the stream without buffering,
+/// which means when reading from a source against which short reads are not
+/// efficient, like [`File`](std::fs::File), you will have to apply your own
+/// buffering via something like [`BufReader`](std::io::BufReader).
+///
+/// # Errors
+///
+/// this returns an error if the structure of the input does not match the
+/// structure of `T`, if the `Deserialize` impl of `T` returns an error or
+/// if the underlying stream returns yields invalid utf-8 or returns an error.
+///
+/// for more info on possible errors take a look at the [`ErrorCode`] enum.
+///
+/// # Examples
+///
+/// ```no_run
+/// use serde::Deserialize;
+/// use std::{fs::File, io::BufReader};
+///
+/// #[derive(Debug, Deserialize)]
+/// struct Config {
+///     pub theme: String,
+///     pub autosave: bool,
+/// }
+///
+/// # fn main() -> Result<(), Box<dyn std::error::Error>> {
+/// let file = File::open("config.mf")?;
+/// let file = BufReader::new(file);
+///
+/// let conf = mayfig::from_reader::<_, Config>(file)?;
+/// println!("{:?}", conf);
+///
+/// # Ok(())
+/// # }
+/// ```
+pub fn from_reader<R, T>(input: R) -> Result<T, Error>
+where
+	R: std::io::Read,
+	T: serde_core::de::DeserializeOwned,
+{
+	let mut deserializer = Deserializer::from_reader(input);
+	T::deserialize(&mut deserializer)
 }
 
 impl<'de> Deserializer<StrRead<'de>> {

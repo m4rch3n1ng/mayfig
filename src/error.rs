@@ -84,13 +84,21 @@ impl From<std::io::Error> for Error {
 	}
 }
 
+impl From<utf8_decode::Utf8Error> for Error {
+	fn from(_value: utf8_decode::Utf8Error) -> Self {
+		let code = ErrorCode::InvalidUtf8;
+		Error::new(code)
+	}
+}
+
 /// a mayfig error code
 #[derive(Debug)]
 #[non_exhaustive]
 pub enum ErrorCode {
 	/// failed to write into a [`Write`](std::io::Write).
 	///
-	/// can currently only occur when serializing with [`to_writer`](crate::to_writer).
+	/// can only occur when deserializing with [`from_reader`](crate::from_reader)
+	/// or serializing with [`to_writer`](crate::to_writer)
 	Io(std::io::Error),
 
 	/// unexpected end of file while parsing

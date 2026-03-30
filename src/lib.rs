@@ -104,7 +104,7 @@ pub mod ser;
 pub mod value;
 
 #[doc(inline)]
-pub use de::{from_str, Deserializer};
+pub use de::{from_reader, from_str, Deserializer};
 #[doc(inline)]
 pub use error::Error;
 #[doc(inline)]
