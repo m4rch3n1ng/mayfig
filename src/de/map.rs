@@ -4,6 +4,7 @@ use super::{
 	read::{Read, Ref},
 };
 use crate::{
+	de::read,
 	error::{Error, ErrorCode, Span},
 	Deserializer,
 };
@@ -275,7 +276,7 @@ impl<'de, R: Read<'de>> serde_core::de::Deserializer<'de> for &mut MapKey<'_, R>
 		V: serde_core::de::Visitor<'de>,
 	{
 		let peek = self.de.read.peek().ok_or(Error::EOF)?;
-		if peek.is_ascii_alphabetic() || peek == '"' || peek == '\'' {
+		if read::is_word_start(peek) || peek == '"' || peek == '\'' {
 			let start = self.de.read.position();
 			let acc = TaggedEnumKeyAcc::new(self);
 			visitor.visit_enum(acc).map_err(|err| {

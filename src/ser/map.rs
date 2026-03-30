@@ -1,5 +1,5 @@
 use super::{r#enum::NewtypeVariantSerializer, Serializer};
-use crate::{error::ErrorCode, Error};
+use crate::{de::read, error::ErrorCode, Error};
 use serde_core::Serialize;
 
 pub struct MapKeySerializer<'a, 'id, W: std::io::Write> {
@@ -78,8 +78,7 @@ impl<'s, 'id, W: std::io::Write> serde_core::ser::Serializer
 
 	fn serialize_str(self, v: &str) -> Result<Self::Ok, Self::Error> {
 		let mut vit = v.chars();
-		let is_ident =
-			vit.next().is_some_and(char::is_alphabetic) && vit.all(char::is_alphanumeric);
+		let is_ident = vit.next().is_some_and(read::is_word_start) && vit.all(read::is_word);
 		if is_ident {
 			self.ser.writer.write_all(v.as_bytes())?;
 		} else {
