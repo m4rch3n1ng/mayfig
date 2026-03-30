@@ -53,11 +53,13 @@ impl<'de, 's> From<Ref<'de, 's, str>> for String {
 }
 
 pub trait Read<'de> {
-	fn peek(&mut self) -> Option<char>;
+	fn peek(&mut self) -> Result<Option<char>, Error>;
 
-	fn next(&mut self) -> Option<char>;
+	fn next(&mut self) -> Result<Option<char>, Error>;
 
-	fn discard(&mut self);
+	fn discard(&mut self) {
+		let _ = self.next();
+	}
 
 	fn position(&mut self) -> Position;
 
@@ -91,16 +93,12 @@ impl<'de> StrRead<'de> {
 }
 
 impl<'de> Read<'de> for StrRead<'de> {
-	fn peek(&mut self) -> Option<char> {
-		self.iter.peek().map(|x| x.1)
+	fn peek(&mut self) -> Result<Option<char>, Error> {
+		Ok(self.iter.peek().map(|x| x.1))
 	}
 
-	fn next(&mut self) -> Option<char> {
-		self.iter.next().map(|x| x.1).inspect(|x| self.pos.next(*x))
-	}
-
-	fn discard(&mut self) {
-		let _ = self.next();
+	fn next(&mut self) -> Result<Option<char>, Error> {
+		Ok(self.iter.next().map(|x| x.1).inspect(|x| self.pos.next(*x)))
 	}
 
 	fn position(&mut self) -> Position {
@@ -110,15 +108,15 @@ impl<'de> Read<'de> for StrRead<'de> {
 	fn num<'s>(&mut self, _scratch: &'s mut String) -> Result<Ref<'de, 's, str>, Error> {
 		let start = self.position().index;
 
-		if let Some('+' | '-') = self.peek() {
+		if let Some('+' | '-') = self.peek()? {
 			self.discard();
 		}
 
-		if let Some('.') = self.peek() {
+		if let Some('.') = self.peek()? {
 			self.discard();
 
-			if let Some('a'..='z' | 'A'..='Z') = self.peek() {
-				while let Some('a'..='z' | 'A'..='Z') = self.peek() {
+			if let Some('a'..='z' | 'A'..='Z') = self.peek()? {
+				while let Some('a'..='z' | 'A'..='Z') = self.peek()? {
 					self.discard();
 				}
 
@@ -128,7 +126,7 @@ impl<'de> Read<'de> for StrRead<'de> {
 			}
 		}
 
-		while let Some(peek) = self.peek() {
+		while let Some(peek) = self.peek()? {
 			if let '0'..='9' | '.' | 'e' | '-' | '+' = peek {
 				self.discard();
 			} else if is_delimiter(peek) {
@@ -148,7 +146,7 @@ impl<'de> Read<'de> for StrRead<'de> {
 	fn word<'s>(&mut self, _scratch: &'s mut String) -> Result<Ref<'de, 's, str>, Error> {
 		let start = self.position().index;
 
-		while let Some(peek) = self.peek() {
+		while let Some(peek) = self.peek()? {
 			if is_word(peek) {
 				self.discard();
 			} else if is_delimiter(peek) {
@@ -166,12 +164,12 @@ impl<'de> Read<'de> for StrRead<'de> {
 	}
 
 	fn str<'s>(&mut self, scratch: &'s mut String) -> Result<Ref<'de, 's, str>, Error> {
-		let quote = self.next().ok_or(Error::EOF)?;
+		let quote = self.next()?.ok_or(Error::EOF)?;
 		debug_assert!(matches!(quote, '"' | '\''), "is {:?}", quote);
 
 		let mut start = self.position().index;
 		let r#ref = loop {
-			let peek = self.peek().ok_or(Error::EOF)?;
+			let peek = self.peek()?.ok_or(Error::EOF)?;
 
 			if peek == quote {
 				if scratch.is_empty() {
@@ -205,7 +203,7 @@ impl<'de> Read<'de> for StrRead<'de> {
 			}
 		};
 
-		if let Some(peek) = self.peek() {
+		if let Some(peek) = self.peek()? {
 			if !is_delimiter(peek) {
 				let point = self.position();
 				let code = ErrorCode::ExpectedDelimiter(peek);
@@ -218,7 +216,7 @@ impl<'de> Read<'de> for StrRead<'de> {
 }
 
 fn parse_escape<'de, R: Read<'de>>(read: &mut R, scratch: &mut String) -> Result<(), Error> {
-	let peek = read.peek().ok_or(Error::EOF)?;
+	let peek = read.peek()?.ok_or(Error::EOF)?;
 	match peek {
 		'"' => scratch.push('"'),
 		'\'' => scratch.push('\''),

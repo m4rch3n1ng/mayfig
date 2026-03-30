@@ -84,35 +84,38 @@ where
 
 impl<'de, R: Read<'de>> Deserializer<R> {
 	/// discard comment
-	fn discard_comment(&mut self) {
-		debug_assert_eq!(self.read.peek(), Some('#'));
-		while let Some(peek) = self.read.peek() {
+	fn discard_comment(&mut self) -> Result<(), Error> {
+		debug_assert_eq!(self.read.peek()?, Some('#'));
+		while let Some(peek) = self.read.peek()? {
 			self.read.discard();
 			if peek == '\n' {
 				break;
 			}
 		}
+
+		Ok(())
 	}
 
 	/// peek next character that isn't a whitespace
-	fn peek_any(&mut self) -> Option<char> {
-		loop {
-			let peek = self.read.peek()?;
+	fn peek_any(&mut self) -> Result<Option<char>, Error> {
+		while let Some(peek) = self.read.peek()? {
 			if peek == '#' {
-				self.discard_comment();
+				self.discard_comment()?;
 			} else if read::is_whitespace(peek) {
 				self.read.discard();
 			} else {
-				return Some(peek);
+				return Ok(Some(peek));
 			}
 		}
+
+		Ok(None)
 	}
 
 	/// peek next character on the current line, that isn't whitespace.
 	///
 	/// returns an [`Error::UnexpectedNewline`] error if nothing is found before a new line
 	fn peek_line(&mut self) -> Result<Option<char>, Error> {
-		while let Some(peek) = self.read.peek() {
+		while let Some(peek) = self.read.peek()? {
 			if read::is_whitespace_line(peek) {
 				self.read.discard();
 			} else if peek == '\n' || peek == '#' {
@@ -132,12 +135,12 @@ impl<'de, R: Read<'de>> Deserializer<R> {
 	/// returns an [`Error::ExpectedNewline`] error if something was found before the linebreak
 	fn peek_newline(&mut self) -> Result<Option<char>, Error> {
 		let mut is_newline = false;
-		while let Some(peek) = self.read.peek() {
+		while let Some(peek) = self.read.peek()? {
 			if read::is_whitespace_line(peek) {
 				self.read.discard();
 			} else if peek == '#' {
 				is_newline = true;
-				self.discard_comment();
+				self.discard_comment()?;
 			} else if peek == '\n' {
 				is_newline = true;
 				self.read.discard();
@@ -153,10 +156,12 @@ impl<'de, R: Read<'de>> Deserializer<R> {
 		Ok(None)
 	}
 
-	fn discard_commata(&mut self) {
-		while self.peek_any().is_some_and(|peek| peek == ',') {
+	fn discard_commata(&mut self) -> Result<(), Error> {
+		while self.peek_any()?.is_some_and(|peek| peek == ',') {
 			self.read.discard();
 		}
+
+		Ok(())
 	}
 
 	fn num<'s>(&'s mut self) -> Result<(Ref<'de, 's, str>, Span), Error> {
@@ -165,7 +170,7 @@ impl<'de, R: Read<'de>> Deserializer<R> {
 
 		let r#ref = self.read.num(&mut self.scratch)?;
 		if r#ref.is_empty() {
-			let peek = self.read.peek().ok_or(Error::EOF)?;
+			let peek = self.read.peek()?.ok_or(Error::EOF)?;
 
 			let point = self.read.position();
 			let code = ErrorCode::ExpectedNumeric(peek);
@@ -185,7 +190,7 @@ impl<'de, R: Read<'de>> Deserializer<R> {
 	}
 
 	fn str<'s>(&'s mut self) -> Result<(Ref<'de, 's, str>, Span), Error> {
-		let peek = self.read.peek().ok_or(Error::EOF)?;
+		let peek = self.read.peek()?.ok_or(Error::EOF)?;
 		if peek != '"' && peek != '\'' {
 			let point = self.read.position();
 			let code = ErrorCode::ExpectedQuote(peek);
@@ -206,7 +211,7 @@ impl<'de, R: Read<'de>> Deserializer<R> {
 	}
 
 	fn identifier<'s>(&'s mut self) -> Result<(Ref<'de, 's, str>, Span), Error> {
-		let peek = self.read.peek().ok_or(Error::EOF)?;
+		let peek = self.read.peek()?.ok_or(Error::EOF)?;
 		if peek == '"' || peek == '\'' {
 			return self.str();
 		} else if !read::is_word_start(peek) {
@@ -249,7 +254,7 @@ impl<'de, R: Read<'de>> serde_core::de::Deserializer<'de> for &mut Deserializer<
 	where
 		V: serde_core::de::Visitor<'de>,
 	{
-		let peek = self.peek_any().ok_or(Error::EOF)?;
+		let peek = self.peek_any()?.ok_or(Error::EOF)?;
 		if self.indent == 0 || peek == '{' {
 			self.deserialize_map(visitor)
 		} else if peek == '[' {
@@ -438,7 +443,7 @@ impl<'de, R: Read<'de>> serde_core::de::Deserializer<'de> for &mut Deserializer<
 	where
 		V: serde_core::de::Visitor<'de>,
 	{
-		let peek = self.read.peek().ok_or(Error::EOF)?;
+		let peek = self.read.peek()?.ok_or(Error::EOF)?;
 		match peek {
 			'"' | '\'' => {
 				let (r#ref, sp) = self.str_bytes()?;
@@ -505,7 +510,7 @@ impl<'de, R: Read<'de>> serde_core::de::Deserializer<'de> for &mut Deserializer<
 	{
 		self.indent += 1;
 
-		let next = self.read.peek().ok_or(Error::EOF)?;
+		let next = self.read.peek()?.ok_or(Error::EOF)?;
 		if next != '[' {
 			let point = self.read.position();
 			let code = ErrorCode::ExpectedSeq(next);
@@ -518,8 +523,8 @@ impl<'de, R: Read<'de>> serde_core::de::Deserializer<'de> for &mut Deserializer<
 		let seq = SeqAcc::new(self);
 		let val = visitor.visit_seq(seq);
 
-		self.discard_commata();
-		let next = self.peek_any().ok_or(Error::EOF)?;
+		self.discard_commata()?;
+		let next = self.peek_any()?.ok_or(Error::EOF)?;
 
 		// point for seq end check
 		let seq_end = self.read.position();
@@ -565,7 +570,7 @@ impl<'de, R: Read<'de>> serde_core::de::Deserializer<'de> for &mut Deserializer<
 	{
 		let start = self.read.position();
 
-		let peek = self.peek_any();
+		let peek = self.peek_any()?;
 		let value = if let Some('{') = peek {
 			self.indent += 1;
 
@@ -625,7 +630,7 @@ impl<'de, R: Read<'de>> serde_core::de::Deserializer<'de> for &mut Deserializer<
 	where
 		V: serde_core::de::Visitor<'de>,
 	{
-		let peek = self.read.peek().ok_or(Error::EOF)?;
+		let peek = self.read.peek()?.ok_or(Error::EOF)?;
 		if peek == '"' || peek == '\'' {
 			let start = self.read.position();
 			let acc = TaggedEnumValueAcc::new(self);

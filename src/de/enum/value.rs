@@ -74,8 +74,8 @@ impl<'de, R: Read<'de>> VariantAccess<'de> for TaggedEnumValueAcc<'_, 'de, R> {
 		let val = seed.deserialize(&mut variant);
 
 		let val = if !variant.is_map {
-			self.de.discard_commata();
-			let peek = self.de.peek_any().ok_or(Error::EOF)?;
+			self.de.discard_commata()?;
+			let peek = self.de.peek_any()?.ok_or(Error::EOF)?;
 
 			let seq_end_point = self.de.read.position();
 
@@ -138,7 +138,7 @@ impl<'a, 'de, R: Read<'de>> TaggedValue<'a, R> {
 			return Ok(());
 		}
 
-		let peek = self.de.read.peek().ok_or(Error::EOF)?;
+		let peek = self.de.read.peek()?.ok_or(Error::EOF)?;
 		if peek != '[' {
 			let point = self.de.read.position();
 			let code = ErrorCode::ExpectedSeq(peek);
@@ -147,7 +147,7 @@ impl<'a, 'de, R: Read<'de>> TaggedValue<'a, R> {
 			self.de.read.discard();
 
 			self.bracket_assert = true;
-			let _ = self.de.peek_any().ok_or(Error::EOF);
+			let _ = self.de.peek_any()?.ok_or(Error::EOF);
 
 			Ok(())
 		}
@@ -304,7 +304,7 @@ impl<'de, R: Read<'de>> serde_core::de::Deserializer<'de> for &mut TaggedValue<'
 		V: serde_core::de::Visitor<'de>,
 	{
 		self.assert_bracket()?;
-		let peek = self.de.peek_any().ok_or(Error::EOF)?;
+		let peek = self.de.peek_any()?.ok_or(Error::EOF)?;
 		match peek {
 			'"' | '\'' => {
 				let (r#ref, sp) = self.de.str_bytes()?;
@@ -336,7 +336,7 @@ impl<'de, R: Read<'de>> serde_core::de::Deserializer<'de> for &mut TaggedValue<'
 		V: serde_core::de::Visitor<'de>,
 	{
 		self.assert_bracket()?;
-		let peek = self.de.read.peek().ok_or(Error::EOF)?;
+		let peek = self.de.read.peek()?.ok_or(Error::EOF)?;
 		if peek == ']' {
 			visitor.visit_none()
 		} else {
@@ -385,7 +385,7 @@ impl<'de, R: Read<'de>> serde_core::de::Deserializer<'de> for &mut TaggedValue<'
 		let acc = SeqAcc::new(self.de);
 		let val = visitor.visit_seq(acc)?;
 
-		self.de.discard_commata();
+		self.de.discard_commata()?;
 
 		Ok(val)
 	}
@@ -415,7 +415,7 @@ impl<'de, R: Read<'de>> serde_core::de::Deserializer<'de> for &mut TaggedValue<'
 	where
 		V: serde_core::de::Visitor<'de>,
 	{
-		let peek = self.de.read.peek().ok_or(Error::EOF)?;
+		let peek = self.de.read.peek()?.ok_or(Error::EOF)?;
 		if peek == '[' {
 			self.de.read.discard();
 		} else if peek == '{' {
@@ -447,7 +447,7 @@ impl<'de, R: Read<'de>> serde_core::de::Deserializer<'de> for &mut TaggedValue<'
 		V: serde_core::de::Visitor<'de>,
 	{
 		self.assert_bracket()?;
-		let peek = self.de.read.peek().ok_or(Error::EOF)?;
+		let peek = self.de.read.peek()?.ok_or(Error::EOF)?;
 		if peek == '"' || peek == '\'' {
 			let acc = TaggedUnitEnumAcc::new(&mut *self.de);
 			visitor.visit_enum(acc)
