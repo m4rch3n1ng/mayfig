@@ -103,7 +103,7 @@ impl<'de, R: Read<'de>> Deserializer<R> {
 			} else if read::is_whitespace(peek) {
 				self.read.discard();
 			} else {
-				break Some(peek);
+				return Some(peek);
 			}
 		}
 	}
@@ -112,21 +112,19 @@ impl<'de, R: Read<'de>> Deserializer<R> {
 	///
 	/// returns an [`Error::UnexpectedNewline`] error if nothing is found before a new line
 	fn peek_line(&mut self) -> Result<Option<u8>, Error> {
-		loop {
-			let Some(peek) = self.read.peek() else {
-				break Ok(None);
-			};
-
+		while let Some(peek) = self.read.peek() {
 			if read::is_whitespace_line(peek) {
 				self.read.discard();
 			} else if peek == b'\n' || peek == b'#' {
 				let point = self.read.position();
 				let code = ErrorCode::UnexpectedNewline;
-				break Err(Error::with_point(code, point));
+				return Err(Error::with_point(code, point));
 			} else {
-				break Ok(Some(peek));
+				return Ok(Some(peek));
 			}
 		}
+
+		Ok(None)
 	}
 
 	/// peek next character on the next line, that isn't whitespace.
@@ -134,11 +132,7 @@ impl<'de, R: Read<'de>> Deserializer<R> {
 	/// returns an [`Error::ExpectedNewline`] error if something was found before the linebreak
 	fn peek_newline(&mut self) -> Result<Option<u8>, Error> {
 		let mut is_newline = false;
-		loop {
-			let Some(peek) = self.read.peek() else {
-				break Ok(None);
-			};
-
+		while let Some(peek) = self.read.peek() {
 			if read::is_whitespace_line(peek) {
 				self.read.discard();
 			} else if peek == b'#' {
@@ -148,13 +142,15 @@ impl<'de, R: Read<'de>> Deserializer<R> {
 				is_newline = true;
 				self.read.discard();
 			} else if is_newline {
-				break Ok(Some(peek));
+				return Ok(Some(peek));
 			} else {
 				let point = self.read.position();
 				let code = ErrorCode::ExpectedNewline(self.read.peek_char()?);
-				break Err(Error::with_point(code, point));
+				return Err(Error::with_point(code, point));
 			}
 		}
+
+		Ok(None)
 	}
 
 	fn discard_commata(&mut self) {
