@@ -73,12 +73,12 @@ impl<'de, R: Read<'de>> VariantAccess<'de> for TaggedEnumKeyAcc<'_, '_, 'de, R> 
 
 		self.map_key.de.indent += 1;
 
-		self.map_key.de.peek_any().ok_or(Error::EOF)?;
+		self.map_key.de.peek_any()?.ok_or(Error::EOF)?;
 		let variant = TaggedKey::new(&mut *self.map_key.de);
 		let val = seed.deserialize(variant)?;
 
-		self.map_key.de.discard_commata();
-		let peek = self.map_key.de.peek_any().ok_or(Error::EOF)?;
+		self.map_key.de.discard_commata()?;
+		let peek = self.map_key.de.peek_any()?.ok_or(Error::EOF)?;
 		if peek != ']' {
 			let point = self.map_key.de.read.position();
 			let code = ErrorCode::ExpectedSeqEnd(next);
@@ -248,7 +248,7 @@ impl<'de, R: Read<'de>> serde_core::de::Deserializer<'de> for TaggedKey<'_, R> {
 	where
 		V: serde_core::de::Visitor<'de>,
 	{
-		let peek = self.de.peek_any().ok_or(Error::EOF)?;
+		let peek = self.de.peek_any()?.ok_or(Error::EOF)?;
 		match peek {
 			'"' | '\'' => {
 				let (r#ref, sp) = self.de.str_bytes()?;
@@ -317,7 +317,7 @@ impl<'de, R: Read<'de>> serde_core::de::Deserializer<'de> for TaggedKey<'_, R> {
 		let acc = SeqAcc::new(self.de);
 		let val = visitor.visit_seq(acc)?;
 
-		self.de.discard_commata();
+		self.de.discard_commata()?;
 
 		Ok(val)
 	}
@@ -369,7 +369,7 @@ impl<'de, R: Read<'de>> serde_core::de::Deserializer<'de> for TaggedKey<'_, R> {
 	where
 		V: serde_core::de::Visitor<'de>,
 	{
-		let peek = self.de.read.peek().ok_or(Error::EOF)?;
+		let peek = self.de.read.peek()?.ok_or(Error::EOF)?;
 		if peek == '"' || peek == '\'' {
 			let acc = TaggedUnitEnumAcc::new(&mut *self.de);
 			visitor.visit_enum(acc)

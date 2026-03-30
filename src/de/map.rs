@@ -28,7 +28,7 @@ impl<'de, R: Read<'de>> serde_core::de::Deserializer<'de> for &mut MapKey<'_, R>
 	where
 		V: serde_core::de::Visitor<'de>,
 	{
-		let peek = self.de.peek_any().ok_or(Error::EOF)?;
+		let peek = self.de.peek_any()?.ok_or(Error::EOF)?;
 		match peek {
 			'[' => self.deserialize_seq(visitor),
 			'{' => self.deserialize_map(visitor),
@@ -275,7 +275,7 @@ impl<'de, R: Read<'de>> serde_core::de::Deserializer<'de> for &mut MapKey<'_, R>
 	where
 		V: serde_core::de::Visitor<'de>,
 	{
-		let peek = self.de.read.peek().ok_or(Error::EOF)?;
+		let peek = self.de.read.peek()?.ok_or(Error::EOF)?;
 		if read::is_word_start(peek) || peek == '"' || peek == '\'' {
 			let start = self.de.read.position();
 			let acc = TaggedEnumKeyAcc::new(self);

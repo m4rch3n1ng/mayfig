@@ -22,8 +22,8 @@ impl<'de, R: Read<'de>> SeqAccess<'de> for SeqAcc<'_, R> {
 	where
 		T: serde_core::de::DeserializeSeed<'de>,
 	{
-		self.de.discard_commata();
-		if self.de.peek_any().ok_or(Error::EOF)? == ']' {
+		self.de.discard_commata()?;
+		if self.de.peek_any()?.ok_or(Error::EOF)? == ']' {
 			return Ok(None);
 		}
 
@@ -51,7 +51,7 @@ impl<'de, R: Read<'de>> MapAccess<'de> for TopMapAcc<'_, R> {
 	{
 		let peek = if self.is_first {
 			self.is_first = false;
-			self.de.peek_any()
+			self.de.peek_any()?
 		} else {
 			self.de.peek_newline()?
 		};
@@ -107,7 +107,7 @@ impl<'de, R: Read<'de>> MapAccess<'de> for MapAcc<'_, R> {
 
 		let peek = if self.is_first {
 			self.is_first = false;
-			self.de.peek_any()
+			self.de.peek_any()?
 		} else {
 			self.de.peek_newline()?
 		};
