@@ -149,7 +149,7 @@ impl<'de> Read<'de> for StrRead<'de> {
 		let start = self.position().index;
 
 		while let Some(peek) = self.peek() {
-			if peek.is_ascii_alphanumeric() || peek == '_' || peek == '-' || peek == '+' {
+			if is_word(peek) {
 				self.discard();
 			} else if is_delimiter(peek) {
 				break;
@@ -250,6 +250,14 @@ fn is_delimiter(ch: char) -> bool {
 		|| ch == '['
 		|| ch == ']'
 		|| ch == '#'
+}
+
+pub fn is_word(ch: char) -> bool {
+	is_word_start(ch) || ch.is_ascii_digit() || ch == '+' || ch == '-'
+}
+
+pub fn is_word_start(ch: char) -> bool {
+	ch.is_ascii_alphabetic() || ch == '_'
 }
 
 pub fn is_whitespace(ch: char) -> bool {

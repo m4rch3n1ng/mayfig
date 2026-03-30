@@ -12,7 +12,7 @@ use std::borrow::Cow;
 mod access;
 mod r#enum;
 mod map;
-mod read;
+pub(crate) mod read;
 
 /// a mayfig deseralizer.
 pub struct Deserializer<R> {
@@ -184,7 +184,7 @@ impl<'de, R: Read<'de>> Deserializer<R> {
 		let peek = self.read.peek().ok_or(Error::EOF)?;
 		if peek == '"' || peek == '\'' {
 			return self.str();
-		} else if !peek.is_ascii_alphabetic() && peek != '_' {
+		} else if !read::is_word_start(peek) {
 			let point = self.read.position();
 			let code = ErrorCode::ExpectedAsciiAlphabetic(peek);
 			return Err(Error::with_point(code, point));
