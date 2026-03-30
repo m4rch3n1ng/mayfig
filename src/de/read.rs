@@ -312,9 +312,7 @@ impl<'de> Read<'de> for StrRead<'de> {
 }
 
 fn parse_escape<'de, R: Read<'de>>(read: &mut R, scratch: &mut Vec<u8>) -> Result<(), Error> {
-	let point = read.position();
 	let peek = read.peek().ok_or(Error::EOF)?;
-
 	match peek {
 		b'"' => scratch.push(b'"'),
 		b'\'' => scratch.push(b'\''),
@@ -327,6 +325,7 @@ fn parse_escape<'de, R: Read<'de>>(read: &mut R, scratch: &mut Vec<u8>) -> Resul
 		b'f' => scratch.push(b'\x0c'),
 		b'u' => todo!("unicode escape"),
 		_ => {
+			let point = read.position();
 			let code = ErrorCode::UnknownEscape(read.peek_char()?);
 			return Err(Error::with_point(code, point));
 		}

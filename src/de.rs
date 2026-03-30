@@ -84,12 +84,12 @@ where
 
 impl<'de, R: Read<'de>> Deserializer<R> {
 	/// discard comment
-	fn discard_comment(&mut self) -> Option<()> {
-		loop {
-			let peek = self.read.peek()?;
+	fn discard_comment(&mut self) {
+		debug_assert_eq!(self.read.peek(), Some(b'#'));
+		while let Some(peek) = self.read.peek() {
 			self.read.discard();
 			if peek == b'\n' {
-				break Some(());
+				break;
 			}
 		}
 	}
@@ -99,8 +99,7 @@ impl<'de, R: Read<'de>> Deserializer<R> {
 		loop {
 			let peek = self.read.peek()?;
 			if peek == b'#' {
-				self.read.discard();
-				self.discard_comment()?;
+				self.discard_comment();
 			} else if read::is_whitespace(peek) {
 				self.read.discard();
 			} else {
@@ -144,11 +143,7 @@ impl<'de, R: Read<'de>> Deserializer<R> {
 				self.read.discard();
 			} else if peek == b'#' {
 				is_newline = true;
-				self.read.discard();
-
-				if self.discard_comment().is_none() {
-					break Ok(None);
-				}
+				self.discard_comment();
 			} else if peek == b'\n' {
 				is_newline = true;
 				self.read.discard();
