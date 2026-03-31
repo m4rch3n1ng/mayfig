@@ -26,7 +26,7 @@ pub enum Value {
 	Map(Map),
 	/// represents a mayfig tagged enum
 	///
-	/// # warning
+	/// # Warning
 	///
 	/// serializing this variant via serde will leak the
 	/// `tag` string due to a [serde limitation](https://github.com/serde-rs/serde/issues/2218).

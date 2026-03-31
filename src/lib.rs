@@ -1,6 +1,8 @@
 //! # mayfig
 //!
-//! `mayfig` is a config format designed for the [`mayland`](https://github.com/m4rch3n1ng/mayland) compositor.
+//! `mayfig` is a config format designed for the
+//! [`mayland`](https://github.com/m4rch3n1ng/mayland) wayland compositor, though
+//! it can also be used on its own.
 //!
 //! mayfig is, at its core, a `key=value` config format and is
 //! supposed to look similar-ish to toml, hyprlang and the sway config format.
@@ -38,8 +40,62 @@
 //!
 //! for a more thorough explanation take a look at the readme on
 //! [`github`](https://github.com/m4rch3n1ng/mayfig) or on crates.io.
+//!
+//! ## Deserialization and Serialization
+//!
+//! to deserialize or serialize a type, that type will have to implement the
+//! [`serde`](https://serde.rs) traits `Deserialize` or `Serialize`.
+//!
+//! an example of deserializing with mayfig may look like this:
+//!
+//! ```
+//! use serde::Deserialize;
+//!
+//! #[derive(Debug, Deserialize)]
+//! struct Config {
+//!     pub theme: String,
+//!     pub autosave: bool,
+//! }
+//!
+//! # fn main() -> Result<(), Box<dyn std::error::Error>> {
+//! let config = r#"
+//! theme = "solarized-light"
+//! autosave = true
+//! "#;
+//!
+//! let conf = mayfig::from_str::<Config>(config)?;
+//! println!("{:?}", conf);
+//!
+//! # Ok(())
+//! # }
+//! ```
+//!
+//! and serialization may look like this:
+//!
+//! ```
+//! use serde::Serialize;
+//!
+//! #[derive(Debug, Serialize)]
+//! struct Config {
+//!     pub theme: String,
+//!     pub autosave: bool,
+//! }
+//!
+//! # fn main() -> Result<(), Box<dyn std::error::Error>> {
+//! let conf = Config {
+//!     theme: "solarized-light".to_owned(),
+//!     autosave: true,
+//! };
+//!
+//! let string = mayfig::to_string(&conf)?;
+//! println!("{}", string);
+//!
+//! # Ok(())
+//! # }
+//! ```
 
 #![cfg_attr(docsrs, feature(doc_cfg))]
+#![warn(missing_docs)]
 
 pub mod de;
 pub mod error;

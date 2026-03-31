@@ -33,6 +33,8 @@ impl<'de, R: Read<'de>> Deserializer<R> {
 
 impl<'de> Deserializer<StrRead<'de>> {
 	/// create a mayfig deserializer from a `&str`.
+	///
+	/// see [`mayfig::from_str`](crate::from_str) for more information.
 	#[expect(clippy::should_implement_trait)]
 	pub fn from_str(input: &'de str) -> Self {
 		let read = StrRead::new(input);
@@ -42,13 +44,36 @@ impl<'de> Deserializer<StrRead<'de>> {
 
 /// deserialize a type `T` from a mayfig `&str`
 ///
-/// # errors
+/// # Errors
 ///
 /// this returns an error if the structure of the input does not match the
 /// structure of `T`, or if the `Deserialize` impl of `T` returns an error.
 ///
-/// for more info on possible errors take a look at the
-/// [`ErrorCode`] enum
+/// for more info on possible errors take a look at the [`ErrorCode`] enum.
+///
+/// # Examples
+///
+/// ```
+/// use serde::Deserialize;
+///
+/// #[derive(Debug, Deserialize)]
+/// struct Config {
+///     pub theme: String,
+///     pub autosave: bool,
+/// }
+///
+/// # fn main() -> Result<(), Box<dyn std::error::Error>> {
+/// let string = r#"
+/// theme = "solarized-light"
+/// autosave = true
+/// "#;
+///
+/// let conf = mayfig::from_str::<Config>(string)?;
+/// println!("{:?}", conf);
+///
+/// # Ok(())
+/// # }
+/// ```
 pub fn from_str<'a, T>(input: &'a str) -> Result<T, Error>
 where
 	T: serde_core::de::Deserialize<'a>,

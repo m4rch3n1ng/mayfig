@@ -424,11 +424,38 @@ impl<W: std::io::Write> serde_core::ser::SerializeTupleVariant for &mut Serializ
 ///
 /// if you want to configure the serialization, you can use the [`Serializer`] struct.
 ///
-/// # errors
+/// # Errors
 ///
 /// can return an error if `T`'s impl of `Serialize` returns an error, if
 /// `T` contains a map with keys that are structs, maps or enum struct variants
 /// or if the [`Write`](std::io::Write) impl of `W` returns an error.
+///
+/// # Examples
+///
+/// ```no_run
+/// use serde::Serialize;
+/// use std::{fs::File, io::BufWriter};
+///
+/// #[derive(Debug, Serialize)]
+/// struct Config {
+///     pub theme: String,
+///     pub autosave: bool,
+/// }
+///
+/// # fn main() -> Result<(), Box<dyn std::error::Error>> {
+/// let file = File::open("config.mf")?;
+/// let file = BufWriter::new(file);
+///
+/// let conf = Config {
+///     theme: "solarized-light".to_owned(),
+///     autosave: true,
+/// };
+///
+/// mayfig::to_writer(file, &conf)?;
+///
+/// # Ok(())
+/// # }
+/// ```
 pub fn to_writer<W, T>(writer: W, value: &T) -> Result<(), Error>
 where
 	W: std::io::Write,
@@ -442,10 +469,34 @@ where
 ///
 /// if you want to configure the serialization, you can use the [`Serializer`] struct.
 ///
-/// # errors
+/// # Errors
 ///
 /// can return an error if `T`'s impl of `Serialize` returns an error or if
 /// `T` contains a map with keys that are structs, maps or enum struct variants.
+///
+/// # Examples
+///
+/// ```
+/// use serde::Serialize;
+///
+/// #[derive(Debug, Serialize)]
+/// struct Config {
+///     pub theme: String,
+///     pub autosave: bool,
+/// }
+///
+/// # fn main() -> Result<(), Box<dyn std::error::Error>> {
+/// let conf = Config {
+///     theme: "solarized-light".to_owned(),
+///     autosave: true,
+/// };
+///
+/// let vec = mayfig::to_vec(&conf)?;
+/// println!("{:?}", vec);
+///
+/// # Ok(())
+/// # }
+/// ```
 pub fn to_vec<T: ?Sized + Serialize>(value: &T) -> Result<Vec<u8>, Error> {
 	let mut vec = Vec::with_capacity(128);
 
@@ -455,14 +506,38 @@ pub fn to_vec<T: ?Sized + Serialize>(value: &T) -> Result<Vec<u8>, Error> {
 	Ok(vec)
 }
 
-/// serialize the given struct as `mayfig` into a string.
+/// serialize the given type into a `mayfig` string.
 ///
 /// if you want to configure the serialization, you can use the [`Serializer`] struct.
 ///
-/// # errors
+/// # Errors
 ///
 /// can return an error if `T`'s impl of `Serialize` returns an error or if
 /// `T` contains a map with keys that are structs, maps or enum struct variants.
+///
+/// # Examples
+///
+/// ```
+/// use serde::Serialize;
+///
+/// #[derive(Debug, Serialize)]
+/// struct Config {
+///     pub theme: String,
+///     pub autosave: bool,
+/// }
+///
+/// # fn main() -> Result<(), Box<dyn std::error::Error>> {
+/// let conf = Config {
+///     theme: "solarized-light".to_owned(),
+///     autosave: true,
+/// };
+///
+/// let string = mayfig::to_string(&conf)?;
+/// println!("{}", string);
+///
+/// # Ok(())
+/// # }
+/// ```
 pub fn to_string<T: ?Sized + Serialize>(value: &T) -> Result<String, Error> {
 	let mut buf = Vec::with_capacity(128);
 
