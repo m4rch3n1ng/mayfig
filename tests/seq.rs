@@ -1,5 +1,7 @@
 use serde::Deserialize;
 
+mod maytest;
+
 #[derive(Debug, Deserialize)]
 struct T {
 	t: Vec<u8>,
@@ -29,17 +31,10 @@ t = [
 
 #[test]
 fn num() {
-	let t1 = mayfig::from_str::<T>(T1).unwrap();
-	assert_eq!(&t1.t, &[2, 4]);
-
-	let t2 = mayfig::from_str::<T>(T2).unwrap();
-	assert_eq!(&t2.t, &[2, 4]);
-
-	let t3 = mayfig::from_str::<T>(T3).unwrap();
-	assert_eq!(&t3.t, &[2, 4]);
-
-	let t4 = mayfig::from_str::<T>(T4).unwrap();
-	assert_eq!(&t4.t, &[2, 4]);
+	assert_de!(T1 as T => t1, t1.t, [2, 4]);
+	assert_de!(T2 as T => t2, t2.t, [2, 4]);
+	assert_de!(T3 as T => t3, t3.t, [2, 4]);
+	assert_de!(T4 as T => t4, t4.t, [2, 4]);
 }
 
 #[derive(Debug, Deserialize)]

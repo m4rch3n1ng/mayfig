@@ -1,6 +1,8 @@
 use indexmap::{indexmap, IndexMap};
 use serde::{Deserialize, Serialize};
 
+mod maytest;
+
 #[derive(Debug, PartialEq, Eq, Deserialize, Serialize)]
 #[serde(rename_all = "snake_case")]
 struct Thing {
@@ -44,9 +46,7 @@ _variant [ 1 ] = 1
 fn underscores() {
 	let val = indexmap! { Underscores::Variant(0) => 0, Underscores::Variant(1) => 1 };
 
-	let de = mayfig::from_str::<IndexMap<Underscores, u8>>(UNDERSCORES).unwrap();
-	assert_eq!(de, val);
-
+	let de = assert_de!(UNDERSCORES as IndexMap::<Underscores, u8>, val);
 	let ser = mayfig::to_string(&de).unwrap();
 	assert_eq!(ser, UNDERSCORES);
 }

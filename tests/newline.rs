@@ -1,6 +1,8 @@
 use mayfig::error::{ErrorCode, Position, Span};
 use serde::Deserialize;
 
+mod maytest;
+
 #[derive(Debug, Deserialize, PartialEq)]
 struct Tst {
 	one: i32,
@@ -18,11 +20,8 @@ two = 4
 
 #[test]
 fn is_newline() {
-	let t1 = mayfig::from_str::<Tst>(IS1).unwrap();
-	assert_eq!(t1, Tst { one: 20, two: 4.4 });
-
-	let t2 = mayfig::from_str::<Tst>(IS2).unwrap();
-	assert_eq!(t2, Tst { one: -2, two: 4.0 });
+	assert_de!(IS1 as Tst, Tst { one: 20, two: 4.4 });
+	assert_de!(IS2 as Tst, Tst { one: -2, two: 4.0 });
 }
 
 const NO1: &str = r#"
@@ -37,25 +36,23 @@ two =
 
 #[test]
 fn is_not_newline() {
-	let e1 = mayfig::from_str::<Tst>(NO1).unwrap_err();
-	assert!(matches!(e1.code(), ErrorCode::ExpectedNewline('t')));
-	assert_eq!(
-		e1.span(),
-		Some(Span::Point(Position {
+	assert_err!(
+		NO1 as Tst,
+		ErrorCode::ExpectedNewline('t'),
+		Span::Point(Position {
 			line: 2,
 			col: 10,
 			index: 10
-		}))
+		})
 	);
 
-	let e2 = mayfig::from_str::<Tst>(NO2).unwrap_err();
-	assert!(matches!(e2.code(), ErrorCode::UnexpectedNewline));
-	assert_eq!(
-		e2.span(),
-		Some(Span::Point(Position {
+	assert_err!(
+		NO2 as Tst,
+		ErrorCode::UnexpectedNewline,
+		Span::Point(Position {
 			line: 3,
 			col: 6,
 			index: 14
-		}))
+		})
 	);
 }

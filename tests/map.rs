@@ -1,6 +1,8 @@
 use serde::Deserialize;
 use std::collections::{BTreeMap, HashMap};
 
+mod maytest;
+
 #[derive(Debug, Deserialize)]
 struct T {
 	n: N,
@@ -29,14 +31,9 @@ n = {
 
 #[test]
 fn nested_struct() {
-	let t1 = mayfig::from_str::<T>(T1).unwrap();
-	assert_eq!(t1.n, N { t: 20 });
-
-	let t2 = mayfig::from_str::<T>(T2).unwrap();
-	assert_eq!(t2.n, N { t: 20 });
-
-	let t3 = mayfig::from_str::<T>(T3).unwrap();
-	assert_eq!(t3.n, N { t: 20 });
+	assert_de!(T1 as T => t1, t1.n, N { t: 20 });
+	assert_de!(T2 as T => t2, t2.n, N { t: 20 });
+	assert_de!(T3 as T => t3, t3.n, N { t: 20 });
 }
 
 #[derive(Debug, Deserialize)]

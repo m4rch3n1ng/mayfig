@@ -1,6 +1,8 @@
 use mayfig::error::{ErrorCode, Position, Span};
 use serde::Deserialize;
 
+mod maytest;
+
 #[derive(Debug, Deserialize)]
 struct T {
 	t: String,
@@ -20,20 +22,14 @@ t = ""
 
 #[test]
 fn string() {
-	let t1 = mayfig::from_str::<T>(T1).unwrap();
-	assert_eq!(t1.t, "test");
-
-	let t2 = mayfig::from_str::<T>(T2).unwrap();
-	assert_eq!(t2.t, "\t\\\t");
-
-	let t3 = mayfig::from_str::<T>(T3).unwrap();
-	assert_eq!(t3.t, "");
+	assert_de!(T1 as T => t1, t1.t, "test");
+	assert_de!(T2 as T => t2, t2.t, "\t\\\t");
+	assert_de!(T3 as T => t3, t3.t, "");
 }
 
 #[derive(Debug, Deserialize)]
-struct V<'a> {
-	#[serde(borrow)]
-	t: (&'a str, u32, &'a str),
+struct V {
+	t: (String, u32, String),
 }
 
 const V1: &str = r#"
@@ -49,9 +45,8 @@ t = [ "test" 20 "test" ]
 "#;
 
 #[derive(Debug, Deserialize)]
-struct W<'a> {
-	#[serde(borrow)]
-	w: Vec<&'a str>,
+struct W {
+	w: Vec<String>,
 }
 
 const W1: &str = r#"
@@ -68,37 +63,27 @@ w = [ "one" "two" "three" ]
 
 #[test]
 fn delim() {
-	let e1 = mayfig::from_str::<V>(V1).unwrap_err();
-	assert!(matches!(e1.code(), ErrorCode::ExpectedDelimiter('2')));
-	assert_eq!(
-		e1.span(),
-		Some(Span::Point(Position {
+	assert_err!(
+		V1 as V,
+		ErrorCode::ExpectedDelimiter('2'),
+		Span::Point(Position {
 			line: 2,
 			col: 13,
 			index: 13
-		}))
+		})
 	);
-
-	let e2 = mayfig::from_str::<W>(W1).unwrap_err();
-	assert!(matches!(e2.code(), ErrorCode::ExpectedDelimiter('"')));
-	assert_eq!(
-		e2.span(),
-		Some(Span::Point(Position {
+	assert_err!(
+		W1 as W,
+		ErrorCode::ExpectedDelimiter('"'),
+		Span::Point(Position {
 			line: 2,
 			col: 12,
 			index: 12
-		}))
+		})
 	);
 
-	let v2 = mayfig::from_str::<V>(V2).unwrap();
-	assert_eq!(v2.t, ("test", 20, "test"));
-
-	let w2 = mayfig::from_str::<W>(W2).unwrap();
-	assert_eq!(&w2.w, &["one", "two", "three"]);
-
-	let v3 = mayfig::from_str::<V>(V3).unwrap();
-	assert_eq!(v3.t, ("test", 20, "test"));
-
-	let w3 = mayfig::from_str::<W>(W3).unwrap();
-	assert_eq!(&w3.w, &["one", "two", "three"]);
+	assert_de!(V2 as V => v2, v2.t, ("test".into(), 20, "test".into()));
+	assert_de!(W2 as W => w2, w2.w, &["one", "two", "three"]);
+	assert_de!(V3 as V => v3, v3.t, ("test".into(), 20, "test".into()));
+	assert_de!(W3 as W => w3, w3.w, &["one", "two", "three"]);
 }

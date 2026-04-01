@@ -1,12 +1,13 @@
-use indexmap::IndexMap;
+use indexmap::{indexmap, IndexMap};
 use mayfig::error::{ErrorCode, Position, Span};
 use serde::Deserialize;
 use std::collections::HashMap;
 
+mod maytest;
+
 #[derive(Debug, Deserialize)]
-struct Tag<'a> {
-	#[serde(borrow)]
-	t: Tagged<'a>,
+struct Tag {
+	t: Tagged,
 }
 
 #[derive(Debug, Deserialize, PartialEq, Eq)]
@@ -16,15 +17,12 @@ struct Inline {
 
 #[derive(Debug, Deserialize, PartialEq, Eq)]
 #[serde(rename_all = "snake_case")]
-enum Tagged<'a> {
+enum Tagged {
 	Un,
 	Ws(usize),
-	#[serde(borrow)]
-	Ex(Vec<&'a str>),
-	St {
-		code: i32,
-	},
-	Tp(u32, &'a str, bool),
+	Ex(Vec<String>),
+	St { code: i32 },
+	Tp(u32, String, bool),
 	In(Inline),
 }
 
@@ -75,40 +73,24 @@ t = "ws" [
 
 #[test]
 fn tagged() {
-	let t1 = mayfig::from_str::<Tag>(T1).unwrap();
-	assert_eq!(t1.t, Tagged::Ws(4));
-
-	let t2 = mayfig::from_str::<Tag>(T2).unwrap();
-	assert_eq!(t2.t, Tagged::Ex(vec!["one", "two", "three"]));
-
-	let t3 = mayfig::from_str::<Tag>(T3).unwrap();
-	assert_eq!(t3.t, Tagged::St { code: 200 });
-
-	let t4 = mayfig::from_str::<Tag>(T4).unwrap();
-	assert!(matches!(t4.t, Tagged::Tp(0, "two", false)));
-
-	let t5 = mayfig::from_str::<Tag>(T5).unwrap();
-	assert_eq!(t5.t, Tagged::In(Inline { f: -2 }));
-
-	let t6 = mayfig::from_str::<Tag>(T6).unwrap();
-	assert_eq!(t6.t, Tagged::In(Inline { f: -4 }));
-
-	let t7 = mayfig::from_str::<Tag>(T7).unwrap_err();
-	assert!(matches!(t7.code(), ErrorCode::UnexpectedNewline));
-	assert_eq!(
-		t7.span(),
-		Some(Span::Point(Position {
+	assert_de!(T1 as Tag => t1, t1.t, Tagged::Ws(4));
+	assert_de!(T2 as Tag => t2, t2.t, Tagged::Ex(vec!["one".into(), "two".into(), "three".into()]));
+	assert_de!(T3 as Tag => t3, t3.t, Tagged::St { code: 200 });
+	assert_de!(T4 as Tag => t4, t4.t, Tagged::Tp(0, "two".into(), false));
+	assert_de!(T5 as Tag => t5, t5.t, Tagged::In(Inline { f: -2 }));
+	assert_de!(T6 as Tag => t6, t6.t, Tagged::In(Inline { f: -4 }));
+	assert_err!(
+		T7 as Tag,
+		ErrorCode::UnexpectedNewline,
+		Span::Point(Position {
 			line: 2,
 			col: 9,
 			index: 9
-		}))
+		})
 	);
 
-	let t8 = mayfig::from_str::<Tag>(T8).unwrap();
-	assert_eq!(t8.t, Tagged::Un);
-
-	let t9 = mayfig::from_str::<Tag>(T9).unwrap();
-	assert_eq!(t9.t, Tagged::Ws(4));
+	assert_de!(T8 as Tag => t8, t8.t, Tagged::Un);
+	assert_de!(T9 as Tag => t9, t9.t, Tagged::Ws(4));
 }
 
 #[derive(Debug, Deserialize, PartialEq, Eq, Hash)]
@@ -217,16 +199,14 @@ meta [ "right" ] = "move" [ "right" ]
 
 #[test]
 fn nested() {
-	let nested = mayfig::from_str::<IndexMap<Bind, Action>>(NESTED).unwrap();
-	let nested = nested.into_iter().collect::<Vec<_>>();
-	assert_eq!(
-		&nested,
-		&[
-			(Bind::Meta(Key::Tab), Action::Cycle(Navigation::Next)),
-			(Bind::Ctrl(Key::Tab), Action::Cycle(Navigation::Prev)),
-			(Bind::Meta(Key::Left), Action::Move(Direction::Left)),
-			(Bind::Meta(Key::Right), Action::Move(Direction::Right)),
-		]
+	assert_de!(
+		NESTED as IndexMap::<Bind, Action>,
+		indexmap! {
+			Bind::Meta(Key::Tab) => Action::Cycle(Navigation::Next),
+			Bind::Ctrl(Key::Tab) => Action::Cycle(Navigation::Prev),
+			Bind::Meta(Key::Left) => Action::Move(Direction::Left),
+			Bind::Meta(Key::Right) => Action::Move(Direction::Right),
+		}
 	);
 }
 
@@ -243,13 +223,11 @@ const OPTIONAL: &str = r#"
 
 #[test]
 fn optional() {
-	let optional = mayfig::from_str::<IndexMap<String, Movement>>(OPTIONAL).unwrap();
-	let optional = optional.into_iter().collect::<Vec<_>>();
-	assert_eq!(
-		&optional,
-		&[
-			("one".to_owned(), Movement::Maximize(Some("one".to_owned()))),
-			("two".to_owned(), Movement::Maximize(None)),
-		]
+	assert_de!(
+		OPTIONAL as IndexMap::<String, Movement>,
+		indexmap! {
+			"one".to_owned() => Movement::Maximize(Some("one".to_owned())),
+			"two".to_owned() => Movement::Maximize(None),
+		}
 	);
 }

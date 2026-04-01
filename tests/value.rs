@@ -1,5 +1,7 @@
 use mayfig::{value::Map, Value};
 
+mod maytest;
+
 const V1: &str = r#"
 map {
 	v = .inf
@@ -37,8 +39,7 @@ fn value() {
 			Value::String("string".to_owned()),
 		),
 	]));
-	let v2 = mayfig::from_str::<Value>(V1).unwrap();
-	assert_eq!(v1, v2);
+	assert_de!(V1 as Value, v1);
 
 	let t1 = Value::Map(Map::from([
 		(
@@ -56,8 +57,7 @@ fn value() {
 			(Value::Tagged("what".to_owned(), vec![Value::from(2)])),
 		),
 	]));
-	let t2 = mayfig::from_str::<Value>(TAG).unwrap();
-	assert_eq!(t1, t2);
+	assert_de!(TAG as Value, t1);
 }
 
 const IGNORED: &str = r#"
