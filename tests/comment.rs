@@ -1,11 +1,12 @@
 use serde::Deserialize;
 
-#[derive(Debug, Deserialize)]
-struct C<'a> {
+mod maytest;
+
+#[derive(Debug, PartialEq, Eq, Deserialize)]
+struct C {
 	t: u64,
 	v: Vec<u64>,
-	#[serde(borrow)]
-	s: Vec<&'a str>,
+	s: Vec<String>,
 }
 
 const C1: &str = r#"
@@ -28,13 +29,20 @@ s = [
 
 #[test]
 fn comm() {
-	let c1 = mayfig::from_str::<C>(C1).unwrap();
-	assert_eq!(c1.t, 20);
-	assert_eq!(c1.v, &[0, 1, 2, 3]);
-	assert_eq!(c1.s, Vec::<&str>::new());
-
-	let c2 = mayfig::from_str::<C>(C2).unwrap();
-	assert_eq!(c2.t, 0);
-	assert_eq!(c2.v, &[0, 1, 2]);
-	assert_eq!(c2.s, &["test"]);
+	assert_de!(
+		C1 as C,
+		C {
+			t: 20,
+			v: vec![0, 1, 2, 3],
+			s: vec![]
+		}
+	);
+	assert_de!(
+		C2 as C,
+		C {
+			t: 0,
+			v: vec![0, 1, 2],
+			s: vec!["test".to_owned()]
+		}
+	);
 }

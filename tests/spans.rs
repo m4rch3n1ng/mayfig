@@ -1,5 +1,8 @@
 use mayfig::error::{ErrorCode, Position, Span};
 use serde::{de::Visitor, Deserialize};
+use std::io::Cursor;
+
+mod maytest;
 
 #[derive(Debug, Deserialize)]
 #[expect(dead_code)]
@@ -95,11 +98,10 @@ c = "008080"
 
 #[test]
 fn custom_spans() {
-	let e1 = mayfig::from_str::<N>(N1).unwrap_err();
-	assert!(matches!(e1.code(), ErrorCode::Custom(_)));
-	assert_eq!(
-		e1.span(),
-		Some(Span::Span(
+	assert_err!(
+		N1 as N,
+		ErrorCode::Custom(_),
+		Span::Span(
 			Position {
 				line: 2,
 				col: 5,
@@ -110,17 +112,19 @@ fn custom_spans() {
 				col: 7,
 				index: 7
 			}
-		))
+		)
 	);
 
 	let _ = mayfig::from_str::<N>(N2).unwrap();
-	let _ = mayfig::from_str::<C>(C1).unwrap();
+	let _ = mayfig::from_reader::<_, N>(Cursor::new(N2)).unwrap();
 
-	let e2 = mayfig::from_str::<C>(C2).unwrap_err();
-	assert!(matches!(e2.code(), ErrorCode::Custom(_)));
-	assert_eq!(
-		e2.span(),
-		Some(Span::Span(
+	let _ = mayfig::from_str::<C>(C1).unwrap();
+	let _ = mayfig::from_reader::<_, C>(Cursor::new(C1)).unwrap();
+
+	assert_err!(
+		C2 as C,
+		ErrorCode::Custom(_),
+		Span::Span(
 			Position {
 				line: 2,
 				col: 5,
@@ -131,6 +135,6 @@ fn custom_spans() {
 				col: 13,
 				index: 13
 			}
-		))
+		)
 	);
 }
