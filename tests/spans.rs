@@ -95,8 +95,7 @@ c = "008080"
 
 #[test]
 fn custom_spans() {
-	let n1 = mayfig::from_str::<N>(N1);
-	let e1 = n1.unwrap_err();
+	let e1 = mayfig::from_str::<N>(N1).unwrap_err();
 	assert!(matches!(e1.code(), ErrorCode::Custom(_)));
 	assert_eq!(
 		e1.span(),
@@ -114,14 +113,10 @@ fn custom_spans() {
 		))
 	);
 
-	let n2 = mayfig::from_str::<N>(N2);
-	let _ = n2.unwrap();
+	let _ = mayfig::from_str::<N>(N2).unwrap();
+	let _ = mayfig::from_str::<C>(C1).unwrap();
 
-	let c1 = mayfig::from_str::<C>(C1);
-	let _ = c1.unwrap();
-
-	let c2 = mayfig::from_str::<C>(C2);
-	let e2 = c2.unwrap_err();
+	let e2 = mayfig::from_str::<C>(C2).unwrap_err();
 	assert!(matches!(e2.code(), ErrorCode::Custom(_)));
 	assert_eq!(
 		e2.span(),

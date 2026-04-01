@@ -1,4 +1,4 @@
-use mayfig::error::ErrorCode;
+use mayfig::error::{ErrorCode, Position, Span};
 use serde::Deserialize;
 use std::{collections::HashMap, ops::Deref};
 
@@ -27,8 +27,7 @@ t = "test"
 
 #[test]
 fn newtype() {
-	let t1 = mayfig::from_str::<N>(N1);
-	let t1 = t1.unwrap();
+	let t1 = mayfig::from_str::<N>(N1).unwrap();
 	assert_eq!(*t1.v, (20, -20));
 	assert_eq!(*t1.t, "test");
 }
@@ -46,12 +45,10 @@ const O2: &str = r#""#;
 
 #[test]
 fn option() {
-	let o1 = mayfig::from_str::<O>(O1);
-	let o1 = o1.unwrap();
+	let o1 = mayfig::from_str::<O>(O1).unwrap();
 	assert_eq!(o1.t, Some(20));
 
-	let o2 = mayfig::from_str::<O>(O2);
-	let o2 = o2.unwrap();
+	let o2 = mayfig::from_str::<O>(O2).unwrap();
 	assert_eq!(o2.t, None);
 }
 
@@ -74,15 +71,29 @@ t = ""
 
 #[test]
 fn char() {
-	let v1 = mayfig::from_str::<V>(V1);
-	let v1 = v1.unwrap();
+	let v1 = mayfig::from_str::<V>(V1).unwrap();
 	assert_eq!(v1.t, 'c');
 
-	let v2 = mayfig::from_str::<V>(V2);
-	assert!(v2.is_err());
+	let e2 = mayfig::from_str::<V>(V2).unwrap_err();
+	assert!(matches!(e2.code(), ErrorCode::Custom(_)));
+	assert_eq!(
+		e2.span(),
+		Some(Span::Span(
+			Position {
+				line: 2,
+				col: 5,
+				index: 5
+			},
+			Position {
+				line: 2,
+				col: 9,
+				index: 9
+			}
+		))
+	);
 
-	let v3 = mayfig::from_str::<V>(V3);
-	assert!(v3.is_err());
+	let e3 = mayfig::from_str::<V>(V3).unwrap_err();
+	assert!(matches!(e3.code(), ErrorCode::Custom(_)));
 }
 
 #[derive(Debug, Deserialize)]
@@ -109,20 +120,16 @@ b = TRUE
 #[test]
 #[expect(clippy::bool_assert_comparison)]
 fn bool() {
-	let b1 = mayfig::from_str::<B>(B1);
-	let b1 = b1.unwrap();
+	let b1 = mayfig::from_str::<B>(B1).unwrap();
 	assert_eq!(b1.b, true);
 
-	let b2 = mayfig::from_str::<B>(B2);
-	let e2 = b2.unwrap_err();
+	let e2 = mayfig::from_str::<B>(B2).unwrap_err();
 	assert!(matches!(e2.code(), ErrorCode::InvalidBool(_)));
 
-	let b3 = mayfig::from_str::<B>(B3);
-	let b3 = b3.unwrap();
+	let b3 = mayfig::from_str::<B>(B3).unwrap();
 	assert_eq!(b3.b, false);
 
-	let b4 = mayfig::from_str::<B>(B4);
-	let b4 = b4.unwrap();
+	let b4 = mayfig::from_str::<B>(B4).unwrap();
 	assert_eq!(b4.b, true);
 }
 
@@ -157,28 +164,22 @@ f = -.inf
 
 #[test]
 fn f64() {
-	let f1 = mayfig::from_str::<F>(F1);
-	let f1 = f1.unwrap();
+	let f1 = mayfig::from_str::<F>(F1).unwrap();
 	assert_eq!(f1.f, 2.4);
 
-	let f2 = mayfig::from_str::<F>(F2);
-	let f2 = f2.unwrap();
+	let f2 = mayfig::from_str::<F>(F2).unwrap();
 	assert_eq!(f2.f, 0.2);
 
-	let f3 = mayfig::from_str::<F>(F3);
-	let e3 = f3.unwrap_err();
+	let e3 = mayfig::from_str::<F>(F3).unwrap_err();
 	assert!(matches!(e3.code(), ErrorCode::InvalidNum(_)));
 
-	let f4 = mayfig::from_str::<F>(F4);
-	let e4 = f4.unwrap_err();
+	let e4 = mayfig::from_str::<F>(F4).unwrap_err();
 	assert!(matches!(e4.code(), ErrorCode::UnsupportedNaN));
 
-	let f5 = mayfig::from_str::<F>(F5);
-	let f5 = f5.unwrap();
+	let f5 = mayfig::from_str::<F>(F5).unwrap();
 	assert_eq!(f5.f, f64::INFINITY);
 
-	let f6 = mayfig::from_str::<F>(F6);
-	let f6 = f6.unwrap();
+	let f6 = mayfig::from_str::<F>(F6).unwrap();
 	assert_eq!(f6.f, f64::NEG_INFINITY);
 }
 
@@ -205,8 +206,7 @@ m {
 
 #[test]
 fn tuple() {
-	let t1 = mayfig::from_str::<T>(T1);
-	let t1 = t1.unwrap();
+	let t1 = mayfig::from_str::<T>(T1).unwrap();
 	assert_eq!(t1.t, (0, 1));
 
 	assert_eq!(t1.m.len(), 2);

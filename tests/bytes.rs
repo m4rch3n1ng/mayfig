@@ -32,15 +32,13 @@ e = "byt" [ 0 1 3 4 ]
 
 #[test]
 fn bytes() {
-	let b1 = mayfig::from_str::<Byt>(B1);
-	let b1 = b1.unwrap();
+	let b1 = mayfig::from_str::<Byt>(B1).unwrap();
 	assert_eq!(b1.s, "test".as_bytes());
 	assert_eq!(b1.s, b1.v);
 	assert_eq!(b1.e, E::Byt(Cow::Borrowed("val".as_bytes())));
 	assert!(matches!(b1.s, Cow::Borrowed(_)));
 
-	let b2 = mayfig::from_str::<Byt>(B2);
-	let b2 = b2.unwrap();
+	let b2 = mayfig::from_str::<Byt>(B2).unwrap();
 	assert_eq!(b2.s, "ä字".as_bytes());
 	assert_eq!(b2.s, b2.v);
 	assert_eq!(b2.e, E::Byt(Cow::Owned(vec![0, 1, 3, 4])));
@@ -63,8 +61,7 @@ const WTF: &[u8] = &[
 fn fucked() {
 	assert!(std::str::from_utf8(WTF).is_err());
 
-	let wtf = mayfig::from_slice::<Wtf>(WTF);
-	let wtf = wtf.unwrap();
+	let wtf = mayfig::from_slice::<Wtf>(WTF).unwrap();
 	assert_eq!(&*wtf.uh, &[255, 255, 128, 255]);
 	assert!(matches!(wtf.uh, Cow::Borrowed(_)));
 }

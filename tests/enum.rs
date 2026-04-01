@@ -75,32 +75,25 @@ t = "ws" [
 
 #[test]
 fn tagged() {
-	let t1 = mayfig::from_str::<Tag>(T1);
-	let t1 = t1.unwrap();
+	let t1 = mayfig::from_str::<Tag>(T1).unwrap();
 	assert_eq!(t1.t, Tagged::Ws(4));
 
-	let t2 = mayfig::from_str::<Tag>(T2);
-	let t2 = t2.unwrap();
+	let t2 = mayfig::from_str::<Tag>(T2).unwrap();
 	assert_eq!(t2.t, Tagged::Ex(vec!["one", "two", "three"]));
 
-	let t3 = mayfig::from_str::<Tag>(T3);
-	let t3 = t3.unwrap();
+	let t3 = mayfig::from_str::<Tag>(T3).unwrap();
 	assert_eq!(t3.t, Tagged::St { code: 200 });
 
-	let t4 = mayfig::from_str::<Tag>(T4);
-	let t4 = t4.unwrap();
+	let t4 = mayfig::from_str::<Tag>(T4).unwrap();
 	assert!(matches!(t4.t, Tagged::Tp(0, "two", false)));
 
-	let t5 = mayfig::from_str::<Tag>(T5);
-	let t5 = t5.unwrap();
+	let t5 = mayfig::from_str::<Tag>(T5).unwrap();
 	assert_eq!(t5.t, Tagged::In(Inline { f: -2 }));
 
-	let t6 = mayfig::from_str::<Tag>(T6);
-	let t6 = t6.unwrap();
+	let t6 = mayfig::from_str::<Tag>(T6).unwrap();
 	assert_eq!(t6.t, Tagged::In(Inline { f: -4 }));
 
-	let t7 = mayfig::from_str::<Tag>(T7);
-	let t7 = t7.unwrap_err();
+	let t7 = mayfig::from_str::<Tag>(T7).unwrap_err();
 	assert!(matches!(t7.code(), ErrorCode::UnexpectedNewline));
 	assert_eq!(
 		t7.span(),
@@ -111,12 +104,10 @@ fn tagged() {
 		}))
 	);
 
-	let t8 = mayfig::from_str::<Tag>(T8);
-	let t8 = t8.unwrap();
+	let t8 = mayfig::from_str::<Tag>(T8).unwrap();
 	assert_eq!(t8.t, Tagged::Un);
 
-	let t9 = mayfig::from_str::<Tag>(T9);
-	let t9 = t9.unwrap();
+	let t9 = mayfig::from_str::<Tag>(T9).unwrap();
 	assert_eq!(t9.t, Tagged::Ws(4));
 }
 
@@ -157,8 +148,7 @@ map {
 
 #[test]
 fn map() {
-	let m1 = mayfig::from_str::<Map>(M1);
-	let m1 = m1.unwrap();
+	let m1 = mayfig::from_str::<Map>(M1).unwrap();
 	assert_eq!(m1.map.len(), 5);
 	assert_eq!(m1.map.get(&M::Tag), Some(&V::Val(20, 40)));
 	assert_eq!(m1.map.get(&M::Key("test")), Some(&V::Str { val: 20 }));

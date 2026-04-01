@@ -20,16 +20,13 @@ t = ""
 
 #[test]
 fn string() {
-	let t1 = mayfig::from_str::<T>(T1);
-	let t1 = t1.unwrap();
+	let t1 = mayfig::from_str::<T>(T1).unwrap();
 	assert_eq!(t1.t, "test");
 
-	let t2 = mayfig::from_str::<T>(T2);
-	let t2 = t2.unwrap();
+	let t2 = mayfig::from_str::<T>(T2).unwrap();
 	assert_eq!(t2.t, "\t\\\t");
 
-	let t3 = mayfig::from_str::<T>(T3);
-	let t3 = t3.unwrap();
+	let t3 = mayfig::from_str::<T>(T3).unwrap();
 	assert_eq!(t3.t, "");
 }
 
@@ -71,8 +68,7 @@ w = [ "one" "two" "three" ]
 
 #[test]
 fn delim() {
-	let v1 = mayfig::from_str::<V>(V1);
-	let e1 = v1.unwrap_err();
+	let e1 = mayfig::from_str::<V>(V1).unwrap_err();
 	assert!(matches!(e1.code(), ErrorCode::ExpectedDelimiter('2')));
 	assert_eq!(
 		e1.span(),
@@ -83,8 +79,7 @@ fn delim() {
 		}))
 	);
 
-	let w1 = mayfig::from_str::<W>(W1);
-	let e2 = w1.unwrap_err();
+	let e2 = mayfig::from_str::<W>(W1).unwrap_err();
 	assert!(matches!(e2.code(), ErrorCode::ExpectedDelimiter('"')));
 	assert_eq!(
 		e2.span(),
@@ -95,19 +90,15 @@ fn delim() {
 		}))
 	);
 
-	let v2 = mayfig::from_str::<V>(V2);
-	let v2 = v2.unwrap();
+	let v2 = mayfig::from_str::<V>(V2).unwrap();
 	assert_eq!(v2.t, ("test", 20, "test"));
 
-	let w2 = mayfig::from_str::<W>(W2);
-	let w2 = w2.unwrap();
+	let w2 = mayfig::from_str::<W>(W2).unwrap();
 	assert_eq!(&w2.w, &["one", "two", "three"]);
 
-	let v3 = mayfig::from_str::<V>(V3);
-	let v3 = v3.unwrap();
+	let v3 = mayfig::from_str::<V>(V3).unwrap();
 	assert_eq!(v3.t, ("test", 20, "test"));
 
-	let w3 = mayfig::from_str::<W>(W3);
-	let w3 = w3.unwrap();
+	let w3 = mayfig::from_str::<W>(W3).unwrap();
 	assert_eq!(&w3.w, &["one", "two", "three"]);
 }

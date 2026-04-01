@@ -18,12 +18,10 @@ two = 4
 
 #[test]
 fn is_newline() {
-	let t1 = mayfig::from_str::<Tst>(IS1);
-	let t1 = t1.unwrap();
+	let t1 = mayfig::from_str::<Tst>(IS1).unwrap();
 	assert_eq!(t1, Tst { one: 20, two: 4.4 });
 
-	let t2 = mayfig::from_str::<Tst>(IS2);
-	let t2 = t2.unwrap();
+	let t2 = mayfig::from_str::<Tst>(IS2).unwrap();
 	assert_eq!(t2, Tst { one: -2, two: 4.0 });
 }
 
@@ -39,11 +37,10 @@ two =
 
 #[test]
 fn is_not_newline() {
-	let t1 = mayfig::from_str::<Tst>(NO1);
-	let e2 = t1.unwrap_err();
-	assert!(matches!(e2.code(), ErrorCode::ExpectedNewline('t')));
+	let e1 = mayfig::from_str::<Tst>(NO1).unwrap_err();
+	assert!(matches!(e1.code(), ErrorCode::ExpectedNewline('t')));
 	assert_eq!(
-		e2.span(),
+		e1.span(),
 		Some(Span::Point(Position {
 			line: 2,
 			col: 10,
@@ -51,8 +48,7 @@ fn is_not_newline() {
 		}))
 	);
 
-	let t2 = mayfig::from_str::<Tst>(NO2);
-	let e2 = t2.unwrap_err();
+	let e2 = mayfig::from_str::<Tst>(NO2).unwrap_err();
 	assert!(matches!(e2.code(), ErrorCode::UnexpectedNewline));
 	assert_eq!(
 		e2.span(),

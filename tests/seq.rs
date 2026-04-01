@@ -29,20 +29,16 @@ t = [
 
 #[test]
 fn num() {
-	let t1 = mayfig::from_str::<T>(T1);
-	let t1 = t1.unwrap();
+	let t1 = mayfig::from_str::<T>(T1).unwrap();
 	assert_eq!(&t1.t, &[2, 4]);
 
-	let t2 = mayfig::from_str::<T>(T2);
-	let t2 = t2.unwrap();
+	let t2 = mayfig::from_str::<T>(T2).unwrap();
 	assert_eq!(&t2.t, &[2, 4]);
 
-	let t3 = mayfig::from_str::<T>(T3);
-	let t3 = t3.unwrap();
+	let t3 = mayfig::from_str::<T>(T3).unwrap();
 	assert_eq!(&t3.t, &[2, 4]);
 
-	let t4 = mayfig::from_str::<T>(T4);
-	let t4 = t4.unwrap();
+	let t4 = mayfig::from_str::<T>(T4).unwrap();
 	assert_eq!(&t4.t, &[2, 4]);
 }
 
@@ -66,11 +62,9 @@ v = [
 
 #[test]
 fn string() {
-	let v1 = mayfig::from_str::<V>(V1);
-	let v1 = v1.unwrap();
+	let v1 = mayfig::from_str::<V>(V1).unwrap();
 	assert_eq!(v1.v, ("test", 2, "three"));
 
-	let v2 = mayfig::from_str::<V>(V2);
-	let v2 = v2.unwrap();
+	let v2 = mayfig::from_str::<V>(V2).unwrap();
 	assert_eq!(v2.v, ("test", 2, "three"));
 }

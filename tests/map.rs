@@ -29,16 +29,13 @@ n = {
 
 #[test]
 fn nested_struct() {
-	let t1 = mayfig::from_str::<T>(T1);
-	let t1 = t1.unwrap();
+	let t1 = mayfig::from_str::<T>(T1).unwrap();
 	assert_eq!(t1.n, N { t: 20 });
 
-	let t2 = mayfig::from_str::<T>(T2);
-	let t2 = t2.unwrap();
+	let t2 = mayfig::from_str::<T>(T2).unwrap();
 	assert_eq!(t2.n, N { t: 20 });
 
-	let t3 = mayfig::from_str::<T>(T3);
-	let t3 = t3.unwrap();
+	let t3 = mayfig::from_str::<T>(T3).unwrap();
 	assert_eq!(t3.n, N { t: 20 });
 }
 
@@ -69,8 +66,7 @@ m = {
 
 #[test]
 fn map() {
-	let m1 = mayfig::from_str::<M<u32>>(M1);
-	let m1 = m1.unwrap();
+	let m1 = mayfig::from_str::<M<u32>>(M1).unwrap();
 	assert_eq!(m1.m.len(), 6);
 	assert_eq!(m1.m.get("v"), Some(&20));
 	assert_eq!(m1.m.get("t"), Some(&40));
@@ -79,8 +75,7 @@ fn map() {
 	assert_eq!(m1.m.get("mod+a"), Some(&41));
 	assert_eq!(m1.m.get("alt-a"), Some(&22));
 
-	let m2 = mayfig::from_str::<M<&str>>(M2);
-	let m2 = m2.unwrap();
+	let m2 = mayfig::from_str::<M<&str>>(M2).unwrap();
 	assert_eq!(m2.m.len(), 3);
 	assert_eq!(m2.m.get("v"), Some(&"one"));
 	assert_eq!(m2.m.get("t"), Some(&"two"));
@@ -108,8 +103,7 @@ v {
 
 #[test]
 fn weird_keys() {
-	let m2 = mayfig::from_str::<S>(S);
-	let m2 = m2.unwrap();
+	let m2 = mayfig::from_str::<S>(S).unwrap();
 
 	assert_eq!(m2.t.len(), 2);
 	assert_eq!(m2.t.get(&(0, 0)), Some(&(1, 1)));

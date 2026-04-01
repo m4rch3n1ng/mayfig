@@ -28,14 +28,12 @@ s = [
 
 #[test]
 fn comm() {
-	let c1 = mayfig::from_str::<C>(C1);
-	let c1 = c1.unwrap();
+	let c1 = mayfig::from_str::<C>(C1).unwrap();
 	assert_eq!(c1.t, 20);
 	assert_eq!(c1.v, &[0, 1, 2, 3]);
 	assert_eq!(c1.s, Vec::<&str>::new());
 
-	let c2 = mayfig::from_str::<C>(C2);
-	let c2 = c2.unwrap();
+	let c2 = mayfig::from_str::<C>(C2).unwrap();
 	assert_eq!(c2.t, 0);
 	assert_eq!(c2.v, &[0, 1, 2]);
 	assert_eq!(c2.s, &["test"]);
