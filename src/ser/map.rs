@@ -1,6 +1,87 @@
 use super::{r#enum::NewtypeVariantSerializer, Serializer};
-use crate::{de::read, error::ErrorCode, Error};
+use crate::{de::read, error::ErrorCode, ser::SerializeRegex, Error};
 use serde_core::Serialize;
+
+pub enum SerializeMap<'a, 'id, W> {
+	Regex(SerializeRegex<'a, 'id, W>),
+	Map(&'a mut Serializer<'id, W>),
+}
+
+impl<W: std::io::Write> serde_core::ser::SerializeMap for SerializeMap<'_, '_, W> {
+	type Ok = ();
+	type Error = Error;
+
+	fn serialize_key<T>(&mut self, key: &T) -> Result<(), Self::Error>
+	where
+		T: ?Sized + Serialize,
+	{
+		match self {
+			SerializeMap::Regex(x) => x.serialize_key(key),
+			SerializeMap::Map(x) => x.serialize_key(key),
+		}
+	}
+
+	fn serialize_value<T>(&mut self, value: &T) -> Result<(), Self::Error>
+	where
+		T: ?Sized + Serialize,
+	{
+		match self {
+			SerializeMap::Regex(x) => x.serialize_value(value),
+			SerializeMap::Map(x) => x.serialize_value(value),
+		}
+	}
+
+	fn end(self) -> Result<Self::Ok, Self::Error> {
+		match self {
+			SerializeMap::Regex(x) => x.end(),
+			SerializeMap::Map(x) => x.end(),
+		}
+	}
+}
+
+impl<W: std::io::Write> serde_core::ser::SerializeStruct for SerializeMap<'_, '_, W> {
+	type Ok = ();
+	type Error = Error;
+
+	fn serialize_field<T>(&mut self, key: &'static str, value: &T) -> Result<(), Self::Error>
+	where
+		T: ?Sized + Serialize,
+	{
+		match self {
+			SerializeMap::Regex(x) => x.serialize_field(key, value),
+			SerializeMap::Map(x) => x.serialize_field(key, value),
+		}
+	}
+
+	fn end(self) -> Result<Self::Ok, Self::Error> {
+		match self {
+			SerializeMap::Regex(x) => x.end(),
+			SerializeMap::Map(x) => x.end(),
+		}
+	}
+}
+
+impl<W: std::io::Write> serde_core::ser::SerializeStructVariant for SerializeMap<'_, '_, W> {
+	type Ok = ();
+	type Error = Error;
+
+	fn serialize_field<T>(&mut self, key: &'static str, value: &T) -> Result<(), Self::Error>
+	where
+		T: ?Sized + Serialize,
+	{
+		match self {
+			SerializeMap::Regex(x) => x.serialize_field(key, value),
+			SerializeMap::Map(x) => x.serialize_field(key, value),
+		}
+	}
+
+	fn end(self) -> Result<Self::Ok, Self::Error> {
+		match self {
+			SerializeMap::Regex(x) => x.end(),
+			SerializeMap::Map(x) => x.end(),
+		}
+	}
+}
 
 pub struct MapKeySerializer<'a, 'id, W: std::io::Write> {
 	ser: &'a mut Serializer<'id, W>,
@@ -181,10 +262,14 @@ impl<'s, 'id, W: std::io::Write> serde_core::ser::Serializer
 
 	fn serialize_struct(
 		self,
-		_name: &'static str,
+		name: &'static str,
 		_len: usize,
 	) -> Result<Self::SerializeStruct, Self::Error> {
-		Err(Error::new(ErrorCode::UnsupportedMapKey("struct")))
+		if crate::regex::is_regex(name) {
+			Err(Error::new(ErrorCode::UnsupportedMapKey("regex")))
+		} else {
+			Err(Error::new(ErrorCode::UnsupportedMapKey("struct")))
+		}
 	}
 
 	fn serialize_struct_variant(
@@ -212,13 +297,13 @@ impl<'a, 'id, W: std::io::Write> serde_core::ser::Serializer for MapValSerialize
 	type Ok = ();
 	type Error = Error;
 
-	type SerializeMap = &'a mut Serializer<'id, W>;
+	type SerializeMap = SerializeMap<'a, 'id, W>;
 	type SerializeSeq = &'a mut Serializer<'id, W>;
 	type SerializeTuple = &'a mut Serializer<'id, W>;
 	type SerializeTupleStruct = &'a mut Serializer<'id, W>;
 	type SerializeTupleVariant = &'a mut Serializer<'id, W>;
-	type SerializeStruct = &'a mut Serializer<'id, W>;
-	type SerializeStructVariant = &'a mut Serializer<'id, W>;
+	type SerializeStruct = SerializeMap<'a, 'id, W>;
+	type SerializeStructVariant = SerializeMap<'a, 'id, W>;
 
 	fn serialize_bool(self, v: bool) -> Result<Self::Ok, Self::Error> {
 		self.ser.writer.write_all(b" = ")?;
@@ -376,8 +461,12 @@ impl<'a, 'id, W: std::io::Write> serde_core::ser::Serializer for MapValSerialize
 		name: &'static str,
 		len: usize,
 	) -> Result<Self::SerializeStruct, Self::Error> {
-		self.ser.indent_level += 1;
-		self.ser.serialize_struct(name, len)
+		if crate::regex::is_regex(name) {
+			self.ser.writer.write_all(b" = ")?;
+			Ok(SerializeMap::Regex(SerializeRegex::new(self.ser)))
+		} else {
+			self.serialize_map(Some(len))
+		}
 	}
 
 	fn serialize_struct_variant(

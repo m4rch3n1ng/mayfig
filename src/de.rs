@@ -5,7 +5,10 @@ use self::{
 	r#enum::TaggedEnumValueAcc,
 	read::{IoRead, Read, Ref, StrRead},
 };
-use crate::error::{Error, ErrorCode, Span};
+use crate::{
+	error::{Error, ErrorCode, Span},
+	regex::de::RegexMapAcc,
+};
 use serde_core::forward_to_deserialize_any;
 use std::borrow::Cow;
 
@@ -266,6 +269,18 @@ impl<'de, R: Read<'de>> Deserializer<R> {
 		}
 	}
 
+	fn regex<'s>(&'s mut self) -> Result<(Ref<'de, 's, str>, Ref<'de, 's, str>), Error> {
+		let peek = self.read.peek()?.ok_or(Error::EOF)?;
+		if peek != '/' {
+			let point = self.read.position();
+			let code = ErrorCode::ExpectedRegex(peek);
+			return Err(Error::with_point(code, point, peek));
+		}
+
+		self.scratch.clear();
+		self.read.regex(&mut self.scratch)
+	}
+
 	fn identifier<'s>(&'s mut self) -> Result<(Ref<'de, 's, str>, Span), Error> {
 		let peek = self.read.peek()?.ok_or(Error::EOF)?;
 		if peek == '"' || peek == '\'' {
@@ -338,6 +353,9 @@ impl<'de, R: Read<'de>> serde_core::de::Deserializer<'de> for &mut Deserializer<
 				}
 				.map_err(|err| add_span(err, span))
 			}
+		} else if peek == '/' {
+			let (regex, flags) = self.regex()?;
+			visitor.visit_map(RegexMapAcc::new(regex, flags))
 		} else {
 			let (word, span) = self.word()?;
 			if let Ok(b) = parse_bool(&word, span) {
@@ -667,14 +685,20 @@ impl<'de, R: Read<'de>> serde_core::de::Deserializer<'de> for &mut Deserializer<
 
 	fn deserialize_struct<V>(
 		self,
-		_name: &'static str,
+		name: &'static str,
 		_fields: &'static [&'static str],
 		visitor: V,
 	) -> Result<V::Value, Self::Error>
 	where
 		V: serde_core::de::Visitor<'de>,
 	{
-		self.deserialize_map(visitor)
+		if crate::regex::is_regex(name) {
+			let (regex, flags) = self.regex()?;
+			let mapacc = crate::regex::de::RegexDeserializer::new(regex, flags);
+			visitor.visit_map(mapacc)
+		} else {
+			self.deserialize_map(visitor)
+		}
 	}
 
 	fn deserialize_enum<V>(

@@ -1,5 +1,5 @@
 use super::Serializer;
-use crate::{error::ErrorCode, Error};
+use crate::{error::ErrorCode, ser::SerializeMap, Error};
 use serde_core::Serialize;
 
 pub struct NewtypeVariantSerializer<'a, 'id, W: std::io::Write> {
@@ -18,13 +18,13 @@ impl<'a, 'id, W: std::io::Write> serde_core::ser::Serializer
 	type Ok = ();
 	type Error = Error;
 
-	type SerializeMap = &'a mut Serializer<'id, W>;
+	type SerializeMap = SerializeMap<'a, 'id, W>;
 	type SerializeSeq = &'a mut Serializer<'id, W>;
 	type SerializeTuple = &'a mut Serializer<'id, W>;
 	type SerializeTupleStruct = &'a mut Serializer<'id, W>;
 	type SerializeTupleVariant = &'a mut Serializer<'id, W>;
-	type SerializeStruct = &'a mut Serializer<'id, W>;
-	type SerializeStructVariant = &'a mut Serializer<'id, W>;
+	type SerializeStruct = SerializeMap<'a, 'id, W>;
+	type SerializeStructVariant = SerializeMap<'a, 'id, W>;
 
 	fn serialize_bool(self, v: bool) -> Result<Self::Ok, Self::Error> {
 		self.ser.writer.write_all(b" [ ")?;
@@ -205,10 +205,11 @@ impl<'a, 'id, W: std::io::Write> serde_core::ser::Serializer
 
 	fn serialize_struct(
 		self,
-		_name: &'static str,
+		name: &'static str,
 		len: usize,
 	) -> Result<Self::SerializeStruct, Self::Error> {
-		self.serialize_map(Some(len))
+		self.ser.indent_level += 1;
+		self.ser.serialize_struct(name, len)
 	}
 
 	#[expect(unused_variables)]

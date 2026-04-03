@@ -4,7 +4,7 @@ use serde_core::{
 	Deserialize,
 };
 
-struct ValueVisitor;
+pub(crate) struct ValueVisitor;
 
 impl<'de> Deserialize<'de> for Value {
 	fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
@@ -92,7 +92,15 @@ impl<'de> Visitor<'de> for ValueVisitor {
 	where
 		A: serde_core::de::MapAccess<'de>,
 	{
+		let key = match crate::regex::de::VisitMap::next_key_seed(&mut vis)? {
+			Some(crate::regex::de::VisitMap::Regex(regex)) => return Ok(Value::Regex(regex)),
+			Some(crate::regex::de::VisitMap::Key(key)) => key,
+			None => return Ok(Value::Map(Map::new())),
+		};
+
 		let mut map = Map::new();
+		map.insert(key, vis.next_value()?);
+
 		while let Some((key, val)) = vis.next_entry()? {
 			map.insert(key, val);
 		}

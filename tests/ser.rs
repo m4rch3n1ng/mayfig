@@ -1,4 +1,5 @@
 use indexmap::IndexMap;
+use mayfig::Regex;
 use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Deserialize, Serialize, PartialEq, Eq)]
@@ -192,12 +193,43 @@ fn more() {
 	assert_eq!(ser3, DE_SER_3);
 }
 
+#[derive(Debug, Deserialize, Serialize, PartialEq, Eq)]
+struct Regexes {
+	x: Regex,
+	y: Regex,
+}
+
+const R1: &str = r#"x = /test/
+y = /\d+/v
+"#;
+
+#[test]
+fn regex() {
+	let r#ref = Regexes {
+		x: Regex {
+			regex: "test".to_owned(),
+			flags: String::new(),
+		},
+		y: Regex {
+			regex: r"\d+".to_owned(),
+			flags: "v".to_owned(),
+		},
+	};
+
+	let de = mayfig::from_str::<Regexes>(R1).unwrap();
+	assert_eq!(de, r#ref);
+
+	let ser = mayfig::to_string(&de).unwrap();
+	assert_eq!(ser, R1);
+}
+
 #[cfg(feature = "value")]
-const R1: &str = r#"val = "test"
+const V1: &str = r#"val = "test"
 test = 20
 v {
 	t = [ 0 1 2 ]
 	t [ "test" ] = false
+	r = /\d+\//v
 }
 "#;
 
@@ -220,13 +252,20 @@ fn value() {
 					Value::Tagged("t".to_owned(), vec![Value::from("test")]),
 					Value::Bool(false),
 				),
+				(
+					Value::from("r"),
+					Value::Regex(Regex {
+						regex: r"\d+\/".to_owned(),
+						flags: "v".to_owned(),
+					}),
+				),
 			])),
 		),
 	]));
 
-	let val = mayfig::from_str::<mayfig::Value>(R1).unwrap();
+	let val = mayfig::from_str::<mayfig::Value>(V1).unwrap();
 	assert_eq!(val, ref1);
 
 	let ser = mayfig::to_string(&val).unwrap();
-	assert_eq!(ser, R1);
+	assert_eq!(ser, V1);
 }

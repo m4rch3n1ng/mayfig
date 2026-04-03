@@ -256,14 +256,18 @@ impl<'de, R: Read<'de>> serde_core::de::Deserializer<'de> for &mut MapKey<'_, R>
 
 	fn deserialize_struct<V>(
 		self,
-		_name: &'static str,
+		name: &'static str,
 		_fields: &'static [&'static str],
 		_visitor: V,
 	) -> Result<V::Value, Self::Error>
 	where
 		V: serde_core::de::Visitor<'de>,
 	{
-		Err(Error::new(ErrorCode::UnsupportedMapKey("struct")))
+		if crate::regex::is_regex(name) {
+			Err(Error::new(ErrorCode::UnsupportedMapKey("regex")))
+		} else {
+			Err(Error::new(ErrorCode::UnsupportedMapKey("struct")))
+		}
 	}
 
 	fn deserialize_enum<V>(

@@ -427,14 +427,22 @@ impl<'de, R: Read<'de>> serde_core::de::Deserializer<'de> for &mut TaggedValue<'
 
 	fn deserialize_struct<V>(
 		self,
-		_name: &'static str,
-		_fields: &'static [&'static str],
+		name: &'static str,
+		fields: &'static [&'static str],
 		visitor: V,
 	) -> Result<V::Value, Self::Error>
 	where
 		V: serde_core::de::Visitor<'de>,
 	{
-		self.deserialize_map(visitor)
+		let peek = self.de.read.peek()?.ok_or(Error::EOF)?;
+		if peek == '[' {
+			self.de.read.discard();
+			let _ = self.de.peek_any()?;
+
+			self.de.deserialize_struct(name, fields, visitor)
+		} else {
+			self.deserialize_map(visitor)
+		}
 	}
 
 	fn deserialize_enum<V>(

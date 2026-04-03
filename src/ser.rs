@@ -1,10 +1,10 @@
 //! serialize into mayfig
 
 use self::{
-	map::{MapKeySerializer, MapValSerializer},
+	map::{MapKeySerializer, MapValSerializer, SerializeMap},
 	r#enum::NewtypeVariantSerializer,
 };
-use crate::{error::ErrorCode, Error};
+use crate::{error::ErrorCode, regex::ser::SerializeRegex, Error};
 use serde_core::Serialize;
 
 mod r#enum;
@@ -15,7 +15,7 @@ pub struct Serializer<'id, W> {
 	/// current level of indentation
 	indent_level: usize,
 	indent: &'id [u8],
-	writer: W,
+	pub(crate) writer: W,
 }
 
 impl<W: std::io::Write> Serializer<'static, W> {
@@ -53,14 +53,14 @@ impl<W: std::io::Write> Serializer<'_, W> {
 	}
 }
 
-impl<W: std::io::Write> serde_core::ser::Serializer for &mut Serializer<'_, W> {
+impl<'a, 'id, W: std::io::Write> serde_core::ser::Serializer for &'a mut Serializer<'id, W> {
 	type Ok = ();
 	type Error = Error;
 
-	type SerializeMap = Self;
+	type SerializeMap = SerializeMap<'a, 'id, W>;
 	type SerializeSeq = Self;
-	type SerializeStruct = Self;
-	type SerializeStructVariant = Self;
+	type SerializeStruct = SerializeMap<'a, 'id, W>;
+	type SerializeStructVariant = SerializeMap<'a, 'id, W>;
 	type SerializeTuple = Self;
 	type SerializeTupleStruct = Self;
 	type SerializeTupleVariant = Self;
@@ -246,19 +246,23 @@ impl<W: std::io::Write> serde_core::ser::Serializer for &mut Serializer<'_, W> {
 
 	fn serialize_map(self, _len: Option<usize>) -> Result<Self::SerializeMap, Self::Error> {
 		if self.indent_level == 0 {
-			Ok(self)
+			Ok(SerializeMap::Map(self))
 		} else {
 			self.writer.write_all(b" {\n")?;
-			Ok(self)
+			Ok(SerializeMap::Map(self))
 		}
 	}
 
 	fn serialize_struct(
 		self,
-		_name: &'static str,
+		name: &'static str,
 		len: usize,
 	) -> Result<Self::SerializeStruct, Self::Error> {
-		self.serialize_map(Some(len))
+		if crate::regex::is_regex(name) {
+			Ok(SerializeMap::Regex(SerializeRegex::new(self)))
+		} else {
+			self.serialize_map(Some(len))
+		}
 	}
 
 	fn serialize_struct_variant(

@@ -74,6 +74,11 @@ pub trait Read<'de> {
 	fn word<'s>(&mut self, scratch: &'s mut String) -> Result<Ref<'de, 's, str>, Error>;
 
 	fn str<'s>(&mut self, scratch: &'s mut String) -> Result<Ref<'de, 's, str>, Error>;
+
+	fn regex<'s>(
+		&mut self,
+		scratch: &'s mut String,
+	) -> Result<(Ref<'de, 's, str>, Ref<'de, 's, str>), Error>;
 }
 
 type MappedBytes<R> = Map<Bytes<R>, fn(Result<u8, std::io::Error>) -> Result<u8, Error>>;
@@ -209,6 +214,39 @@ impl<'de, R: std::io::Read> Read<'de> for IoRead<R> {
 		}
 
 		Ok(r#ref)
+	}
+
+	fn regex<'s>(
+		&mut self,
+		scratch: &'s mut String,
+	) -> Result<(Ref<'de, 's, str>, Ref<'de, 's, str>), Error> {
+		debug_assert_eq!(self.peek()?, Some('/'));
+		self.discard();
+
+		let split = loop {
+			let ch = self.peek()?.ok_or(Error::EOF)?;
+
+			if ch == '/' {
+				self.discard();
+				break scratch.len();
+			} else if ch == '\\' {
+				scratch.push(ch);
+				self.discard();
+				let next = self.next()?.ok_or(Error::EOF)?;
+				scratch.push(next);
+			} else {
+				scratch.push(ch);
+				self.discard();
+			}
+		};
+
+		while let Some(peek @ 'a'..='z' | peek @ 'A'..='Z') = self.peek()? {
+			scratch.push(peek);
+			self.discard();
+		}
+
+		let (regex, flags) = scratch.split_at(split);
+		Ok((Ref::Scratch(regex), Ref::Scratch(flags)))
 	}
 }
 
@@ -355,6 +393,38 @@ impl<'de> Read<'de> for StrRead<'de> {
 		}
 
 		Ok(r#ref)
+	}
+
+	fn regex<'s>(
+		&mut self,
+		_scratch: &'s mut String,
+	) -> Result<(Ref<'de, 's, str>, Ref<'de, 's, str>), Error> {
+		debug_assert_eq!(self.peek()?, Some('/'));
+		self.discard();
+
+		let start = self.position().index;
+		let regex = loop {
+			let ch = self.peek()?.ok_or(Error::EOF)?;
+
+			if ch == '/' {
+				let slice = self.slice(start);
+				self.discard();
+				break Ref::Borrow(slice);
+			} else if ch == '\\' {
+				self.discard();
+				self.discard();
+			} else {
+				self.discard();
+			}
+		};
+
+		let start = self.position().index;
+		while let Some('a'..='z' | 'A'..='Z') = self.peek()? {
+			self.discard();
+		}
+
+		let flags = Ref::Borrow(self.slice(start));
+		Ok((regex, flags))
 	}
 }
 

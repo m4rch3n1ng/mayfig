@@ -12,6 +12,7 @@ impl Serialize for Value {
 			Value::Bool(b) => serializer.serialize_bool(*b),
 			Value::Seq(seq) => seq.serialize(serializer),
 			Value::Map(map) => map.serialize(serializer),
+			Value::Regex(regex) => regex.serialize(serializer),
 			Value::Tagged(tag, value) => {
 				// due to [a limitation in serde](https://github.com/serde-rs/serde/issues/2218) this
 				// function call has to leak the tag string.

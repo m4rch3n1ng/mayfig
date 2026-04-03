@@ -140,6 +140,8 @@ pub enum ErrorCode {
 	ExpectedEnum(char),
 	/// expected bytes as string or sequence
 	ExpectedBytes(char),
+	/// expected regex
+	ExpectedRegex(char),
 
 	/// expected delimiter
 	ExpectedDelimiter(char),
@@ -195,6 +197,7 @@ impl Display for ErrorCode {
 			ErrorCode::ExpectedSeqEnd(t) => write!(f, "expected end of seq ']', got {t:?}"),
 			ErrorCode::ExpectedEnum(t) => write!(f, "expected tagged enum, got {t:?}"),
 			ErrorCode::ExpectedBytes(t) => write!(f, "expected quote ', \" or seq, got {t:?}"),
+			ErrorCode::ExpectedRegex(t) => write!(f, "expected regex '/', got {t:?}"),
 			ErrorCode::ExpectedDelimiter(t) => {
 				write!(f, "expected delimiter after string, got {t:?}")
 			}

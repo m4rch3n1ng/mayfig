@@ -4,6 +4,7 @@ map {
 	val = "tag" [ +1.2 ]
 }
 vec = [ "test" -24 ]
+reg = /.*- thunar/i
 "#;
 
 fn main() {
