@@ -1,9 +1,9 @@
 //! contains the [`Value`] enum, a way of deserializing any valid mayfig value
 
-use crate::Error;
+use crate::{Error, Regex};
 use std::{fmt::Debug, hash::Hash};
 
-mod de;
+pub(crate) mod de;
 mod map;
 mod number;
 mod ser;
@@ -24,6 +24,8 @@ pub enum Value {
 	Seq(Vec<Value>),
 	/// represents a mayfig map
 	Map(Map),
+	/// represents a mayfig regex
+	Regex(Regex),
 	/// represents a mayfig tagged enum
 	///
 	/// # Warning
@@ -119,6 +121,7 @@ impl Debug for Value {
 			Value::Bool(bool) => write!(f, "Bool({})", bool),
 			Value::Seq(seq) => Debug::fmt(seq, f),
 			Value::Map(map) => Debug::fmt(map, f),
+			Value::Regex(regex) => write!(f, "Regex({})", regex),
 			Value::Tagged(tag, values) => write!(f, "Tagged({:?} {:?})", tag, values),
 		}
 	}

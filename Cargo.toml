@@ -27,6 +27,7 @@ annotate-snippets = "0.12.9"
 anstream = "0.6.21"
 serde = { version = "1.0.228", features = ["derive"] }
 serde_bytes = "0.11.19"
+regex = "1.12.3"
 
 [package.metadata.docs.rs]
 all-features = true

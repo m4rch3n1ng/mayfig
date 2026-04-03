@@ -1,4 +1,4 @@
-use mayfig::{value::Map, Value};
+use mayfig::{value::Map, Regex, Value};
 
 mod maytest;
 
@@ -8,6 +8,7 @@ map {
 	t = [ 1 2 3, ]
 }
 str = "string"
+r = /\d+\//v
 "#;
 
 const TAG: &str = r#"
@@ -37,6 +38,13 @@ fn value() {
 		(
 			Value::String("str".to_owned()),
 			Value::String("string".to_owned()),
+		),
+		(
+			Value::String("r".to_owned()),
+			Value::Regex(Regex {
+				pattern: r"\d+\/".to_owned(),
+				flags: "v".to_owned(),
+			}),
 		),
 	]));
 	assert_de!(V1 as Value, v1);

@@ -140,16 +140,19 @@ pub enum ErrorCode {
 	ExpectedEnum(char),
 	/// expected bytes as string or sequence
 	ExpectedBytes(char),
+	/// expected regex
+	ExpectedRegex(char),
 
 	/// expected delimiter
 	ExpectedDelimiter(char),
-
 	/// expected numeric
 	ExpectedNumeric(char),
 	/// expected word start character
 	ExpectedWordStart(char),
 	/// expected word continue character
 	ExpectedWordContinue(char),
+	/// expected regex flag character
+	ExpectedRegexFlag(char),
 
 	/// unit values are unsupported in mayfig
 	UnsupportedUnit,
@@ -195,6 +198,7 @@ impl Display for ErrorCode {
 			ErrorCode::ExpectedSeqEnd(t) => write!(f, "expected end of seq ']', got {t:?}"),
 			ErrorCode::ExpectedEnum(t) => write!(f, "expected tagged enum, got {t:?}"),
 			ErrorCode::ExpectedBytes(t) => write!(f, "expected quote ', \" or seq, got {t:?}"),
+			ErrorCode::ExpectedRegex(t) => write!(f, "expected regex '/', got {t:?}"),
 			ErrorCode::ExpectedDelimiter(t) => {
 				write!(f, "expected delimiter after string, got {t:?}")
 			}
@@ -206,6 +210,9 @@ impl Display for ErrorCode {
 			ErrorCode::ExpectedWordContinue(t) => {
 				f.write_str("unquoted identifier may only contain ")?;
 				write!(f, "ascii letters, numbers, _, *, - or +, found {t:?}")
+			}
+			ErrorCode::ExpectedRegexFlag(c) => {
+				write!(f, "regex flags may only be ascii alphabetic, got {c:?}")
 			}
 			ErrorCode::UnsupportedUnit => f.write_str("unsupported unit type"),
 			ErrorCode::UnsupportedNaN => f.write_str("unsupported nan"),

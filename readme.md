@@ -161,6 +161,23 @@ windowrules {
 }
 ```
 
+#### regular expressions
+
+```properties
+# mayfig also supports regular expressions as values in the format
+# ...
+#
+# the format for regular expressions is similar to that of ecmascript
+regex = /[a-z]+/
+escape = /\d+\\/
+# you can also pass extra flags at the end.
+# these flags are restricted to /[a-zA-Z]+/ and passed on literally.
+flags = /.* - thunar/i
+```
+
+to parse regexes with mayfig, you have to do that via the `mayfig::Regex`
+struct and then continue from there. [...]
+
 ### usage
 
 `mayland.mf`

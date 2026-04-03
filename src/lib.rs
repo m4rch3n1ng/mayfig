@@ -99,6 +99,7 @@
 
 pub mod de;
 pub mod error;
+mod regex;
 pub mod ser;
 #[cfg(feature = "value")]
 pub mod value;
@@ -107,6 +108,8 @@ pub mod value;
 pub use de::{from_reader, from_str, Deserializer};
 #[doc(inline)]
 pub use error::Error;
+#[doc(inline)]
+pub use regex::Regex;
 #[doc(inline)]
 pub use ser::{to_string, to_vec, to_writer, Serializer};
 #[doc(inline)]

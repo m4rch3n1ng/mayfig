@@ -350,14 +350,14 @@ impl<'de, R: Read<'de>> serde_core::de::Deserializer<'de> for TaggedKey<'_, R> {
 
 	fn deserialize_struct<V>(
 		self,
-		_name: &'static str,
-		_fields: &'static [&'static str],
+		name: &'static str,
+		fields: &'static [&'static str],
 		visitor: V,
 	) -> Result<V::Value, Self::Error>
 	where
 		V: serde_core::de::Visitor<'de>,
 	{
-		self.deserialize_map(visitor)
+		self.de.deserialize_struct(name, fields, visitor)
 	}
 
 	fn deserialize_enum<V>(

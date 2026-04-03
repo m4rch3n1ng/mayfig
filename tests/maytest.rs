@@ -18,7 +18,8 @@ pub fn errorcode_to_str(code: &ErrorCode) -> Option<String> {
 		| ErrorCode::ExpectedDelimiter(ch)
 		| ErrorCode::ExpectedNumeric(ch)
 		| ErrorCode::ExpectedWordStart(ch)
-		| ErrorCode::ExpectedWordContinue(ch) => Some(ch.to_string()),
+		| ErrorCode::ExpectedWordContinue(ch)
+		| ErrorCode::ExpectedRegexFlag(ch) => Some(ch.to_string()),
 
 		ErrorCode::InvalidBool(s) | ErrorCode::InvalidNum(s) | ErrorCode::UnexpectedWord(s) => {
 			Some(s.to_owned())
