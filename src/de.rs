@@ -177,7 +177,7 @@ impl<'de, R: Read<'de>> Deserializer<R> {
 			} else if peek == '\n' || peek == '#' {
 				let point = self.read.position();
 				let code = ErrorCode::UnexpectedNewline;
-				return Err(Error::with_point(code, point));
+				return Err(Error::with_point(code, point, peek));
 			} else {
 				return Ok(Some(peek));
 			}
@@ -205,7 +205,7 @@ impl<'de, R: Read<'de>> Deserializer<R> {
 			} else {
 				let point = self.read.position();
 				let code = ErrorCode::ExpectedNewline(peek);
-				return Err(Error::with_point(code, point));
+				return Err(Error::with_point(code, point, peek));
 			}
 		}
 
@@ -230,9 +230,9 @@ impl<'de, R: Read<'de>> Deserializer<R> {
 
 			let point = self.read.position();
 			let code = ErrorCode::ExpectedNumeric(peek);
-			Err(Error::with_point(code, point))
+			Err(Error::with_point(code, point, peek))
 		} else {
-			let span = Span::Span(start, self.read.position());
+			let span = Span::new(start, self.read.position());
 			Ok((r#ref, span))
 		}
 	}
@@ -242,7 +242,7 @@ impl<'de, R: Read<'de>> Deserializer<R> {
 
 		let start = self.read.position();
 		let word = self.read.word(&mut self.scratch)?;
-		Ok((word, Span::Span(start, self.read.position())))
+		Ok((word, Span::new(start, self.read.position())))
 	}
 
 	fn str<'s>(&'s mut self) -> Result<(Ref<'de, 's, str>, Span), Error> {
@@ -250,13 +250,13 @@ impl<'de, R: Read<'de>> Deserializer<R> {
 		if peek != '"' && peek != '\'' {
 			let point = self.read.position();
 			let code = ErrorCode::ExpectedQuote(peek);
-			return Err(Error::with_point(code, point));
+			return Err(Error::with_point(code, point, peek));
 		}
 
 		let start = self.read.position();
 		self.scratch.clear();
 		let str = self.read.str(&mut self.scratch)?;
-		Ok((str, Span::Span(start, self.read.position())))
+		Ok((str, Span::new(start, self.read.position())))
 	}
 
 	fn str_bytes<'s>(&'s mut self) -> Result<(Ref<'de, 's, [u8]>, Span), Error> {
@@ -273,7 +273,7 @@ impl<'de, R: Read<'de>> Deserializer<R> {
 		} else if !read::is_word_start(peek) {
 			let point = self.read.position();
 			let code = ErrorCode::ExpectedWordStart(peek);
-			return Err(Error::with_point(code, point));
+			return Err(Error::with_point(code, point, peek));
 		}
 
 		self.word()
@@ -329,7 +329,7 @@ impl<'de, R: Read<'de>> serde_core::de::Deserializer<'de> for &mut Deserializer<
 				let tagged = TaggedEnumValueAcc::with_tag(self, str);
 				visitor.visit_enum(tagged).map_err(|err| {
 					let end = self.read.position();
-					add_span(err, Span::Span(start, end))
+					add_span(err, Span::new(start, end))
 				})
 			} else {
 				match str {
@@ -512,7 +512,7 @@ impl<'de, R: Read<'de>> serde_core::de::Deserializer<'de> for &mut Deserializer<
 			_ => {
 				let point = self.read.position();
 				let code = ErrorCode::ExpectedBytes(peek);
-				Err(Error::with_point(code, point))
+				Err(Error::with_point(code, point, peek))
 			}
 		}
 	}
@@ -570,7 +570,7 @@ impl<'de, R: Read<'de>> serde_core::de::Deserializer<'de> for &mut Deserializer<
 		if next != '[' {
 			let point = self.read.position();
 			let code = ErrorCode::ExpectedSeq(next);
-			return Err(Error::with_point(code, point));
+			return Err(Error::with_point(code, point, next));
 		}
 
 		let start = self.read.position();
@@ -588,12 +588,12 @@ impl<'de, R: Read<'de>> serde_core::de::Deserializer<'de> for &mut Deserializer<
 
 		let val = val.map_err(|err| {
 			let end = self.read.position();
-			add_span(err, Span::Span(start, end))
+			add_span(err, Span::new(start, end))
 		})?;
 
 		if next != ']' {
 			let code = ErrorCode::ExpectedSeqEnd(next);
-			return Err(Error::with_point(code, seq_end));
+			return Err(Error::with_point(code, seq_end, next));
 		}
 
 		self.indent -= 1;
@@ -636,7 +636,7 @@ impl<'de, R: Read<'de>> serde_core::de::Deserializer<'de> for &mut Deserializer<
 			let map_acc = MapAcc::new(self);
 			let val = visitor.visit_map(map_acc).map_err(|err| {
 				let end = self.read.position();
-				add_span(err, Span::Span(start, end))
+				add_span(err, Span::new(start, end))
 			})?;
 
 			self.indent -= 1;
@@ -647,14 +647,14 @@ impl<'de, R: Read<'de>> serde_core::de::Deserializer<'de> for &mut Deserializer<
 
 			let point = self.read.position();
 			let code = ErrorCode::ExpectedMap(peek);
-			return Err(Error::with_point(code, point));
+			return Err(Error::with_point(code, point, peek));
 		} else {
 			self.indent += 1;
 
 			let top_map_acc = TopMapAcc::new(self);
 			let val = visitor.visit_map(top_map_acc).map_err(|err| {
 				let end = self.read.position();
-				add_span(err, Span::Span(start, end))
+				add_span(err, Span::new(start, end))
 			})?;
 
 			self.indent -= 1;
@@ -692,12 +692,12 @@ impl<'de, R: Read<'de>> serde_core::de::Deserializer<'de> for &mut Deserializer<
 			let acc = TaggedEnumValueAcc::new(self);
 			visitor.visit_enum(acc).map_err(|err| {
 				let end = self.read.position();
-				add_span(err, Span::Span(start, end))
+				add_span(err, Span::new(start, end))
 			})
 		} else {
 			let point = self.read.position();
 			let code = ErrorCode::ExpectedEnum(peek);
-			Err(Error::with_point(code, point))
+			Err(Error::with_point(code, point, peek))
 		}
 	}
 

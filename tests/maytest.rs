@@ -31,6 +31,10 @@ macro_rules! assert_err {
 		assert!(matches!(re.code(), $code));
 
 		assert_eq!(se.span(), re.span());
+		if let Some(span) = se.span() {
+			let slice = &$string[span.range()];
+			assert!(!slice.is_empty(), "error span should not be empty");
+		}
 	}};
 
 	($string:ident as $ty: ty, $code:pat, $span:expr) => {{
@@ -41,5 +45,8 @@ macro_rules! assert_err {
 		let re = mayfig::from_reader::<_, $ty>(std::io::Cursor::new($string)).unwrap_err();
 		assert!(matches!(re.code(), $code));
 		assert_eq!(re.span(), Some($span));
+
+		let slice = &$string[$span.range()];
+		assert!(!slice.is_empty(), "error span should not be empty");
 	}};
 }

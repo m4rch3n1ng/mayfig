@@ -63,7 +63,7 @@ impl<'de, R: Read<'de>> VariantAccess<'de> for TaggedEnumValueAcc<'_, 'de, R> {
 		if next != '[' && next != '{' {
 			let point = self.de.read.position();
 			let code = ErrorCode::ExpectedSeq(next);
-			return Err(Error::with_point(code, point));
+			return Err(Error::with_point(code, point, next));
 		}
 
 		let start = self.de.read.position();
@@ -81,13 +81,13 @@ impl<'de, R: Read<'de>> VariantAccess<'de> for TaggedEnumValueAcc<'_, 'de, R> {
 
 			if peek != ']' {
 				let code = ErrorCode::ExpectedSeqEnd(peek);
-				return Err(Error::with_point(code, seq_end_point));
+				return Err(Error::with_point(code, seq_end_point, peek));
 			}
 
 			self.de.read.discard();
 			val.map_err(|err| {
 				let end = self.de.read.position();
-				add_span(err, Span::Span(start, end))
+				add_span(err, Span::new(start, end))
 			})?
 		} else {
 			val?
@@ -142,7 +142,7 @@ impl<'a, 'de, R: Read<'de>> TaggedValue<'a, R> {
 		if peek != '[' {
 			let point = self.de.read.position();
 			let code = ErrorCode::ExpectedSeq(peek);
-			Err(Error::with_point(code, point))
+			Err(Error::with_point(code, point, peek))
 		} else {
 			self.de.read.discard();
 
@@ -318,7 +318,7 @@ impl<'de, R: Read<'de>> serde_core::de::Deserializer<'de> for &mut TaggedValue<'
 			_ => {
 				let point = self.de.read.position();
 				let code = ErrorCode::ExpectedBytes(peek);
-				Err(Error::with_point(code, point))
+				Err(Error::with_point(code, point, peek))
 			}
 		}
 	}
@@ -454,7 +454,7 @@ impl<'de, R: Read<'de>> serde_core::de::Deserializer<'de> for &mut TaggedValue<'
 		} else {
 			let point = self.de.read.position();
 			let code = ErrorCode::ExpectedEnum(peek);
-			Err(Error::with_point(code, point))
+			Err(Error::with_point(code, point, peek))
 		}
 	}
 

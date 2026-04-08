@@ -75,7 +75,7 @@ fn char() {
 	assert_err!(
 		V3 as V,
 		ErrorCode::Custom(_),
-		Span::Span(
+		Span::new(
 			Position {
 				line: 2,
 				col: 5,

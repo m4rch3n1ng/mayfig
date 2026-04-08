@@ -45,7 +45,7 @@ impl<'de, R: Read<'de>> serde_core::de::Deserializer<'de> for &mut MapKey<'_, R>
 					let tagged = TaggedEnumKeyAcc::with_tag(self, ident);
 					visitor.visit_enum(tagged).map_err(|err| {
 						let end = self.de.read.position();
-						add_span(err, Span::Span(start, end))
+						add_span(err, Span::new(start, end))
 					})
 				} else {
 					match ident {
@@ -281,12 +281,12 @@ impl<'de, R: Read<'de>> serde_core::de::Deserializer<'de> for &mut MapKey<'_, R>
 			let acc = TaggedEnumKeyAcc::new(self);
 			visitor.visit_enum(acc).map_err(|err| {
 				let end = self.de.read.position();
-				add_span(err, Span::Span(start, end))
+				add_span(err, Span::new(start, end))
 			})
 		} else {
 			let point = self.de.read.position();
 			let code = ErrorCode::ExpectedEnum(peek);
-			Err(Error::with_point(code, point))
+			Err(Error::with_point(code, point, peek))
 		}
 	}
 
