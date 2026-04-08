@@ -66,20 +66,34 @@ fn delim() {
 	assert_err!(
 		V1 as V,
 		ErrorCode::ExpectedDelimiter('2'),
-		Span::Point(Position {
-			line: 2,
-			col: 13,
-			index: 13
-		})
+		Span::new(
+			Position {
+				line: 2,
+				col: 13,
+				index: 13
+			},
+			Position {
+				line: 2,
+				col: 14,
+				index: 14
+			}
+		)
 	);
 	assert_err!(
 		W1 as W,
 		ErrorCode::ExpectedDelimiter('"'),
-		Span::Point(Position {
-			line: 2,
-			col: 12,
-			index: 12
-		})
+		Span::new(
+			Position {
+				line: 2,
+				col: 12,
+				index: 12
+			},
+			Position {
+				line: 2,
+				col: 13,
+				index: 13
+			}
+		)
 	);
 
 	assert_de!(V2 as V => v2, v2.t, ("test".into(), 20, "test".into()));

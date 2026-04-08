@@ -39,20 +39,34 @@ fn is_not_newline() {
 	assert_err!(
 		NO1 as Tst,
 		ErrorCode::ExpectedNewline('t'),
-		Span::Point(Position {
-			line: 2,
-			col: 10,
-			index: 10
-		})
+		Span::new(
+			Position {
+				line: 2,
+				col: 10,
+				index: 10
+			},
+			Position {
+				line: 2,
+				col: 11,
+				index: 11
+			}
+		)
 	);
 
 	assert_err!(
 		NO2 as Tst,
 		ErrorCode::UnexpectedNewline,
-		Span::Point(Position {
-			line: 3,
-			col: 6,
-			index: 14
-		})
+		Span::new(
+			Position {
+				line: 3,
+				col: 6,
+				index: 14
+			},
+			Position {
+				line: 4,
+				col: 1,
+				index: 15
+			}
+		)
 	);
 }

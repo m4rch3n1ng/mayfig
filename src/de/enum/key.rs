@@ -67,7 +67,7 @@ impl<'de, R: Read<'de>> VariantAccess<'de> for TaggedEnumKeyAcc<'_, '_, 'de, R> 
 		if next != '[' {
 			let point = self.map_key.de.read.position();
 			let code = ErrorCode::ExpectedSeq(next);
-			return Err(Error::with_point(code, point));
+			return Err(Error::with_point(code, point, next));
 		}
 		self.map_key.de.read.discard();
 
@@ -82,7 +82,7 @@ impl<'de, R: Read<'de>> VariantAccess<'de> for TaggedEnumKeyAcc<'_, '_, 'de, R> 
 		if peek != ']' {
 			let point = self.map_key.de.read.position();
 			let code = ErrorCode::ExpectedSeqEnd(next);
-			return Err(Error::with_point(code, point));
+			return Err(Error::with_point(code, point, next));
 		}
 		self.map_key.de.read.discard();
 
@@ -262,7 +262,7 @@ impl<'de, R: Read<'de>> serde_core::de::Deserializer<'de> for TaggedKey<'_, R> {
 			_ => {
 				let point = self.de.read.position();
 				let code = ErrorCode::ExpectedBytes(peek);
-				Err(Error::with_point(code, point))
+				Err(Error::with_point(code, point, peek))
 			}
 		}
 	}
@@ -376,7 +376,7 @@ impl<'de, R: Read<'de>> serde_core::de::Deserializer<'de> for TaggedKey<'_, R> {
 		} else {
 			let point = self.de.read.position();
 			let code = ErrorCode::ExpectedEnum(peek);
-			Err(Error::with_point(code, point))
+			Err(Error::with_point(code, point, peek))
 		}
 	}
 

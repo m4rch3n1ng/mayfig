@@ -101,7 +101,7 @@ fn custom_spans() {
 	assert_err!(
 		N1 as N,
 		ErrorCode::Custom(_),
-		Span::Span(
+		Span::new(
 			Position {
 				line: 2,
 				col: 5,
@@ -124,7 +124,7 @@ fn custom_spans() {
 	assert_err!(
 		C2 as C,
 		ErrorCode::Custom(_),
-		Span::Span(
+		Span::new(
 			Position {
 				line: 2,
 				col: 5,

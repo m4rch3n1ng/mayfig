@@ -1,6 +1,6 @@
 //! when deserializing or serializing mayfig goes wrong
 
-use std::{cmp::Ordering, fmt::Display};
+use std::fmt::Display;
 
 /// a `mayfig::Error`
 #[derive(Debug)]
@@ -30,8 +30,11 @@ impl Error {
 		Error { code, span: None }
 	}
 
-	pub(crate) const fn with_point(code: ErrorCode, point: Position) -> Self {
-		let span = Some(Span::Point(point));
+	pub(crate) const fn with_point(code: ErrorCode, start: Position, ch: char) -> Self {
+		let mut end = start;
+		end.next(ch);
+
+		let span = Some(Span::new(start, end));
 		Error { code, span }
 	}
 
@@ -237,145 +240,37 @@ impl Display for Position {
 }
 
 /// span of the `Error` location
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub enum Span {
-	/// a single point
-	Point(Position),
-	/// a span between two points
-	Span(Position, Position),
+#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
+pub struct Span {
+	/// the start position of the span
+	pub start: Position,
+	/// the end position of the span, exclusive
+	pub end: Position,
 }
 
 impl Span {
+	/// create a new Span
+	pub const fn new(start: Position, end: Position) -> Self {
+		Span { start, end }
+	}
+
 	/// returns a [`Range`](std::ops::Range) of the span
 	pub fn range(&self) -> std::ops::Range<usize> {
-		match self {
-			Span::Point(pos) => pos.index..pos.index,
-			Span::Span(pos1, pos2) => pos1.index..(pos2.index),
-		}
+		self.start.index..self.end.index
 	}
 }
 
 impl Display for Span {
 	fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-		match self {
-			Span::Point(pos) => Display::fmt(pos, f),
-			Span::Span(pos1, pos2) => {
-				if pos1.line == pos2.line {
-					write!(
-						f,
-						"line {}, columns {} to {}",
-						pos1.line, pos1.col, pos2.col
-					)
-				} else {
-					write!(f, "{} to {}", pos1, pos2)
-				}
-			}
+		let Span { start, end } = &self;
+		if start.line == end.line {
+			write!(
+				f,
+				"line {}, columns {} to {}",
+				start.line, start.col, end.col
+			)
+		} else {
+			write!(f, "{} to {}", start, end)
 		}
-	}
-}
-
-impl Ord for Span {
-	fn cmp(&self, other: &Self) -> Ordering {
-		match (self, other) {
-			(Span::Point(p1), Span::Point(p2)) => p1.cmp(p2),
-			(Span::Span(s1_1, s1_2), Span::Span(s2_1, s2_2)) => {
-				s1_1.cmp(s2_1).then_with(|| s1_2.cmp(s2_2))
-			}
-			(Span::Point(p), Span::Span(s1, s2)) => match p.cmp(s1) {
-				Ordering::Equal => Ordering::Equal,
-				Ordering::Less => Ordering::Less,
-				Ordering::Greater => {
-					if p > s2 {
-						Ordering::Greater
-					} else {
-						Ordering::Equal
-					}
-				}
-			},
-			(Span::Span(s1, s2), Span::Point(p)) => match s1.cmp(p) {
-				Ordering::Equal => Ordering::Equal,
-				Ordering::Less => {
-					if s2 < p {
-						Ordering::Less
-					} else {
-						Ordering::Equal
-					}
-				}
-				Ordering::Greater => Ordering::Greater,
-			},
-		}
-	}
-}
-
-impl PartialOrd for Span {
-	fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
-		Some(self.cmp(other))
-	}
-}
-
-#[cfg(test)]
-mod test {
-	use super::{Position, Span};
-	use std::cmp::Ordering;
-
-	#[test]
-	fn ord_span() {
-		let span = Span::Span(
-			Position {
-				line: 2,
-				col: 6,
-				index: 15,
-			},
-			Position {
-				line: 2,
-				col: 16,
-				index: 25,
-			},
-		);
-
-		let p1 = Span::Point(Position {
-			line: 1,
-			col: 6,
-			index: 5,
-		});
-
-		assert_eq!(span.cmp(&p1), Ordering::Greater);
-		assert_eq!(p1.cmp(&span), Ordering::Less);
-
-		let p2 = Span::Point(Position {
-			line: 2,
-			col: 6,
-			index: 15,
-		});
-
-		assert_eq!(span.cmp(&p2), Ordering::Equal);
-		assert_eq!(p2.cmp(&span), Ordering::Equal);
-
-		let p3 = Span::Point(Position {
-			line: 2,
-			col: 11,
-			index: 20,
-		});
-
-		assert_eq!(span.cmp(&p3), Ordering::Equal);
-		assert_eq!(p3.cmp(&span), Ordering::Equal);
-
-		let p4 = Span::Point(Position {
-			line: 2,
-			col: 16,
-			index: 25,
-		});
-
-		assert_eq!(span.cmp(&p4), Ordering::Equal);
-		assert_eq!(p4.cmp(&span), Ordering::Equal);
-
-		let p5 = Span::Point(Position {
-			line: 3,
-			col: 6,
-			index: 30,
-		});
-
-		assert_eq!(span.cmp(&p5), Ordering::Less);
-		assert_eq!(p5.cmp(&span), Ordering::Greater);
 	}
 }

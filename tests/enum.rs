@@ -82,11 +82,18 @@ fn tagged() {
 	assert_err!(
 		T7 as Tag,
 		ErrorCode::UnexpectedNewline,
-		Span::Point(Position {
-			line: 2,
-			col: 9,
-			index: 9
-		})
+		Span::new(
+			Position {
+				line: 2,
+				col: 9,
+				index: 9
+			},
+			Position {
+				line: 3,
+				col: 1,
+				index: 10
+			}
+		)
 	);
 
 	assert_de!(T8 as Tag => t8, t8.t, Tagged::Un);

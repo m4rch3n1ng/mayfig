@@ -16,7 +16,7 @@ impl Position {
 		}
 	}
 
-	fn next(&mut self, ch: char) {
+	pub(crate) const fn next(&mut self, ch: char) {
 		self.index += ch.len_utf8();
 		if ch == '\n' {
 			self.line += 1;
@@ -152,7 +152,7 @@ impl<'de, R: std::io::Read> Read<'de> for IoRead<R> {
 			} else {
 				let point = self.position();
 				let code = ErrorCode::ExpectedNumeric(peek);
-				return Err(Error::with_point(code, point));
+				return Err(Error::with_point(code, point, peek));
 			}
 		}
 
@@ -169,7 +169,7 @@ impl<'de, R: std::io::Read> Read<'de> for IoRead<R> {
 			} else {
 				let point = self.position();
 				let code = ErrorCode::ExpectedWordContinue(peek);
-				return Err(Error::with_point(code, point));
+				return Err(Error::with_point(code, point, peek));
 			}
 		}
 
@@ -189,7 +189,7 @@ impl<'de, R: std::io::Read> Read<'de> for IoRead<R> {
 			} else if peek.is_ascii_control() {
 				let point = self.position();
 				let code = ErrorCode::UnescapedControl(peek);
-				return Err(Error::with_point(code, point));
+				return Err(Error::with_point(code, point, peek));
 			} else if peek == '\\' {
 				self.discard();
 				parse_escape(self, scratch)?;
@@ -203,7 +203,7 @@ impl<'de, R: std::io::Read> Read<'de> for IoRead<R> {
 			if !is_delimiter(peek) {
 				let point = self.position();
 				let code = ErrorCode::ExpectedDelimiter(peek);
-				return Err(Error::with_point(code, point));
+				return Err(Error::with_point(code, point, peek));
 			}
 		}
 
@@ -275,7 +275,7 @@ impl<'de> Read<'de> for StrRead<'de> {
 			} else {
 				let point = self.position();
 				let code = ErrorCode::ExpectedNumeric(peek);
-				return Err(Error::with_point(code, point));
+				return Err(Error::with_point(code, point, peek));
 			}
 		}
 
@@ -295,7 +295,7 @@ impl<'de> Read<'de> for StrRead<'de> {
 			} else {
 				let point = self.position();
 				let code = ErrorCode::ExpectedWordContinue(peek);
-				return Err(Error::with_point(code, point));
+				return Err(Error::with_point(code, point, peek));
 			}
 		}
 
@@ -330,7 +330,7 @@ impl<'de> Read<'de> for StrRead<'de> {
 			if peek.is_ascii_control() {
 				let point = self.position();
 				let code = ErrorCode::UnescapedControl(peek);
-				return Err(Error::with_point(code, point));
+				return Err(Error::with_point(code, point, peek));
 			} else if peek == '\\' {
 				let slice = self.slice(start);
 				scratch.push_str(slice);
@@ -348,7 +348,7 @@ impl<'de> Read<'de> for StrRead<'de> {
 			if !is_delimiter(peek) {
 				let point = self.position();
 				let code = ErrorCode::ExpectedDelimiter(peek);
-				return Err(Error::with_point(code, point));
+				return Err(Error::with_point(code, point, peek));
 			}
 		}
 
@@ -372,7 +372,7 @@ fn parse_escape<'de, R: Read<'de>>(read: &mut R, scratch: &mut String) -> Result
 		_ => {
 			let point = read.position();
 			let code = ErrorCode::UnknownEscape(peek);
-			return Err(Error::with_point(code, point));
+			return Err(Error::with_point(code, point, peek));
 		}
 	}
 
