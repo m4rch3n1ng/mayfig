@@ -78,7 +78,7 @@ fn main() {
 	};
 
 	let test = mayfig::to_string(&value).unwrap();
-	print!("{}", test);
+	print!("{test}");
 
 	let back = mayfig::from_str::<Test>(&test).unwrap();
 	assert_eq!(value, back);

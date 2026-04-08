@@ -277,7 +277,7 @@ impl Display for Span {
 				start.line, start.col, end.col
 			)
 		} else {
-			write!(f, "{} to {}", start, end)
+			write!(f, "{start} to {end}")
 		}
 	}
 }

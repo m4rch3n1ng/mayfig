@@ -100,7 +100,7 @@ impl<'de, R: Read<'de>> MapAccess<'de> for MapAcc<'_, R> {
 	where
 		K: serde_core::de::DeserializeSeed<'de>,
 	{
-		if let Ok(Some('}')) = self.de.peek_line() {
+		if matches!(self.de.peek_line(), Ok(Some('}'))) {
 			self.de.read.discard();
 			return Ok(None);
 		}

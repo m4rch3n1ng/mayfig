@@ -116,13 +116,13 @@ impl Value {
 impl Debug for Value {
 	fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
 		match self {
-			Value::String(string) => write!(f, "String({:?})", string),
+			Value::String(string) => write!(f, "String({string:?})"),
 			Value::Number(number) => Debug::fmt(number, f),
-			Value::Bool(bool) => write!(f, "Bool({})", bool),
+			Value::Bool(bool) => write!(f, "Bool({bool})"),
 			Value::Seq(seq) => Debug::fmt(seq, f),
 			Value::Map(map) => Debug::fmt(map, f),
-			Value::Regex(regex) => write!(f, "Regex({})", regex),
-			Value::Tagged(tag, values) => write!(f, "Tagged({:?} {:?})", tag, values),
+			Value::Regex(regex) => write!(f, "Regex({regex})"),
+			Value::Tagged(tag, values) => write!(f, "Tagged({tag:?} {values:?})"),
 		}
 	}
 }

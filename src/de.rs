@@ -172,7 +172,8 @@ impl<'de, R: Read<'de>> Deserializer<R> {
 
 	/// peek next character on the current line, that isn't whitespace.
 	///
-	/// returns an [`Error::UnexpectedNewline`] error if nothing is found before a new line
+	/// returns an [`Error`] with an [`ErrorCode::UnexpectedNewline`] if
+	/// nothing is found before a new line
 	fn peek_line(&mut self) -> Result<Option<char>, Error> {
 		while let Some(peek) = self.read.peek()? {
 			if read::is_whitespace_line(peek) {
@@ -191,7 +192,8 @@ impl<'de, R: Read<'de>> Deserializer<R> {
 
 	/// peek next character on the next line, that isn't whitespace.
 	///
-	/// returns an [`Error::ExpectedNewline`] error if something was found before the linebreak
+	/// returns an [`Error`] with an [`ErrorCode::ExpectedNewline`] if something was
+	/// found before the linebreak
 	fn peek_newline(&mut self) -> Result<Option<char>, Error> {
 		let mut is_newline = false;
 		while let Some(peek) = self.read.peek()? {
@@ -340,7 +342,7 @@ impl<'de, R: Read<'de>> serde_core::de::Deserializer<'de> for &mut Deserializer<
 				Ref::Scratch(s) => Cow::Owned(s.to_owned()),
 			};
 
-			if let Ok(Some('[')) = self.peek_line() {
+			if matches!(self.peek_line(), Ok(Some('['))) {
 				let tagged = TaggedEnumValueAcc::with_tag(self, str);
 				visitor.visit_enum(tagged).map_err(|err| {
 					let end = self.read.position();
@@ -645,7 +647,7 @@ impl<'de, R: Read<'de>> serde_core::de::Deserializer<'de> for &mut Deserializer<
 		let start = self.read.position();
 
 		let peek = self.peek_any()?;
-		let value = if let Some('{') = peek {
+		let value = if peek == Some('{') {
 			self.indent += 1;
 
 			let start = self.read.position();

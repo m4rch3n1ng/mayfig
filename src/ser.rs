@@ -148,7 +148,7 @@ impl<'a, 'id, W: std::io::Write> serde_core::ser::Serializer for &'a mut Seriali
 	}
 
 	fn serialize_str(self, v: &str) -> Result<Self::Ok, Self::Error> {
-		let v = format!("{:?}", v);
+		let v = format!("{v:?}");
 		self.writer.write_all(v.as_bytes())?;
 		Ok(())
 	}
@@ -313,7 +313,7 @@ impl<W: std::io::Write> serde_core::ser::SerializeSeq for &mut Serializer<'_, W>
 	type Ok = ();
 	type Error = Error;
 
-	// todo somehow conditionally line break
+	// TODO: somehow conditionally line break
 	fn serialize_element<T>(&mut self, value: &T) -> Result<(), Self::Error>
 	where
 		T: ?Sized + Serialize,

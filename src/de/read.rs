@@ -183,7 +183,7 @@ impl<'de, R: std::io::Read> Read<'de> for IoRead<R> {
 
 	fn str<'s>(&mut self, scratch: &'s mut String) -> Result<Ref<'de, 's, str>, Error> {
 		let quote = self.next()?.ok_or(Error::EOF)?;
-		debug_assert!(matches!(quote, '"' | '\''), "is {:?}", quote);
+		debug_assert!(matches!(quote, '"' | '\''), "is {quote:?}");
 
 		let raw = quote == '\'';
 		let r#ref = loop {
@@ -220,8 +220,8 @@ impl<'de, R: std::io::Read> Read<'de> for IoRead<R> {
 		&mut self,
 		scratch: &'s mut String,
 	) -> Result<(Ref<'de, 's, str>, Ref<'de, 's, str>), Error> {
-		debug_assert_eq!(self.peek()?, Some('/'));
-		self.discard();
+		let next = self.next()?;
+		debug_assert_eq!(next, Some('/'));
 
 		let split = loop {
 			let ch = self.peek()?.ok_or(Error::EOF)?;
@@ -300,7 +300,7 @@ impl<'de> Read<'de> for StrRead<'de> {
 			self.discard();
 		}
 
-		if let Some('.') = self.peek()? {
+		if self.peek()? == Some('.') {
 			self.discard();
 
 			if let Some('a'..='z' | 'A'..='Z') = self.peek()? {
@@ -353,7 +353,7 @@ impl<'de> Read<'de> for StrRead<'de> {
 
 	fn str<'s>(&mut self, scratch: &'s mut String) -> Result<Ref<'de, 's, str>, Error> {
 		let quote = self.next()?.ok_or(Error::EOF)?;
-		debug_assert!(matches!(quote, '"' | '\''), "is {:?}", quote);
+		debug_assert!(matches!(quote, '"' | '\''), "is {quote:?}");
 
 		let raw = quote == '\'';
 		let mut start = self.position().index;
@@ -407,8 +407,8 @@ impl<'de> Read<'de> for StrRead<'de> {
 		&mut self,
 		_scratch: &'s mut String,
 	) -> Result<(Ref<'de, 's, str>, Ref<'de, 's, str>), Error> {
-		debug_assert_eq!(self.peek()?, Some('/'));
-		self.discard();
+		let next = self.next()?;
+		debug_assert_eq!(next, Some('/'));
 
 		let start = self.position().index;
 		let regex = loop {

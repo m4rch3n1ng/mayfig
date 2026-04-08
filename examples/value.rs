@@ -10,7 +10,7 @@ reg = /.*- thunar/i
 fn main() {
 	let value = mayfig::from_str::<mayfig::Value>(TXT);
 	match value {
-		Ok(value) => println!("{:#?}", value),
-		Err(err) => println!("{}", err),
+		Ok(value) => println!("{value:#?}"),
+		Err(err) => println!("{err}",),
 	}
 }

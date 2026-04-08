@@ -41,7 +41,7 @@ impl<'de, R: Read<'de>> serde_core::de::Deserializer<'de> for &mut MapKey<'_, R>
 					Ref::Scratch(s) => Cow::Owned(s.to_owned()),
 				};
 
-				if let Ok(Some('[')) = self.de.peek_line() {
+				if matches!(self.de.peek_line(), Ok(Some('['))) {
 					let tagged = TaggedEnumKeyAcc::with_tag(self, ident);
 					visitor.visit_enum(tagged).map_err(|err| {
 						let end = self.de.read.position();

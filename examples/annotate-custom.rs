@@ -25,7 +25,7 @@ impl Visitor<'_> for ColorVis {
 
 	fn visit_str<E: serde_core::de::Error>(self, v: &str) -> Result<Self::Value, E> {
 		let hex = hex_color(v).ok_or_else(|| {
-			serde_core::de::Error::custom(format_args!("invalid hex color {:?}", v))
+			serde_core::de::Error::custom(format_args!("invalid hex color {v:?}"))
 		})?;
 		Ok(Color(hex))
 	}
@@ -148,5 +148,5 @@ fn main() {
 		}
 	};
 
-	println!("thing {:?}", thing);
+	println!("thing {thing:?}");
 }

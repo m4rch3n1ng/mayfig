@@ -38,6 +38,13 @@ value = ["dep:indexmap"]
 
 [lints.clippy]
 allow_attributes = "warn"
+dbg_macro = "warn"
+debug_assert_with_mut_call = "warn"
 elidable_lifetime_names = "warn"
+equatable_if_let = "warn"
+# missing_const_for_fn = "warn"
+# must_use_candidate = "warn"
 semicolon_if_nothing_returned = "warn"
+uninlined_format_args = "warn"
 unnecessary_semicolon = "warn"
+# unnested_or_patterns = "warn"

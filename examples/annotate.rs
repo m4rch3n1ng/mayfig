@@ -48,5 +48,5 @@ fn main() {
 		}
 	};
 
-	println!("thing {:?}", thing);
+	println!("thing {thing:?}");
 }
