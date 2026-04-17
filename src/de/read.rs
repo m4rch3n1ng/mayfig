@@ -257,7 +257,7 @@ pub fn is_word(ch: char) -> bool {
 }
 
 pub fn is_word_start(ch: char) -> bool {
-	ch.is_ascii_alphabetic() || ch == '_'
+	ch.is_ascii_alphabetic() || ch == '_' || ch == '*'
 }
 
 pub fn is_whitespace(ch: char) -> bool {

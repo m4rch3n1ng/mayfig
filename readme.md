@@ -106,7 +106,7 @@ st2 = 'single quoted strings work too'
 
 map {
     # keys are also strings, but quotes are optional,
-    # if you restrict yourself to /[a-zA-Z_][a-zA-Z0-9\-+_]*/
+    # if you restrict yourself to /[a-zA-Z_*][a-zA-Z0-9_*\-+]*/
     unquoted = true
     "with quotes" = true
 }
