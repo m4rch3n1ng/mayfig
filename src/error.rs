@@ -190,11 +190,11 @@ impl Display for ErrorCode {
 			ErrorCode::ExpectedNumeric(t) => write!(f, "expected ascii numeric, got {t:?}"),
 			ErrorCode::ExpectedWordStart(t) => {
 				f.write_str("unquoted identifier may only start with ")?;
-				write!(f, "ascii letters or _, found {t:?}")
+				write!(f, "ascii letters, _ or *, found {t:?}")
 			}
 			ErrorCode::ExpectedWordContinue(t) => {
 				f.write_str("unquoted identifier may only contain ")?;
-				write!(f, "ascii letters, numbers, _, - or +, found {t:?}")
+				write!(f, "ascii letters, numbers, _, *, - or +, found {t:?}")
 			}
 			ErrorCode::UnsupportedUnit => f.write_str("unsupported unit type"),
 			ErrorCode::UnsupportedNaN => f.write_str("unsupported nan"),

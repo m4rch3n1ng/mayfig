@@ -4,6 +4,8 @@ use serde::{Deserialize, Serialize};
 const THING: &str = r#"_test = 0
 a+b+c = 1
 "whä" = 2
+* = 3
+let* = 4
 "#;
 
 #[test]
@@ -12,6 +14,8 @@ fn word() {
 		"_test".to_owned() => 0,
 		"a+b+c".to_owned() => 1,
 		"whä".to_owned() => 2,
+		"*".to_owned() => 3,
+		"let*".to_owned() => 4,
 	};
 
 	let de = mayfig::from_str::<IndexMap<String, u8>>(THING).unwrap();
