@@ -186,7 +186,7 @@ impl<'de, R: Read<'de>> Deserializer<R> {
 			return self.str();
 		} else if !read::is_word_start(peek) {
 			let point = self.read.position();
-			let code = ErrorCode::ExpectedAsciiAlphabetic(peek);
+			let code = ErrorCode::ExpectedWordStart(peek);
 			return Err(Error::with_point(code, point));
 		}
 

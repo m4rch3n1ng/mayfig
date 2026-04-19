@@ -135,10 +135,10 @@ pub enum ErrorCode {
 
 	/// expected numeric
 	ExpectedNumeric(char),
-	/// expected alphabetic
-	ExpectedAsciiAlphabetic(char),
-	/// expected alphanumeric
-	ExpectedAsciiAlphanumeric(char),
+	/// expected word start character
+	ExpectedWordStart(char),
+	/// expected word continue character
+	ExpectedWordContinue(char),
 
 	/// unit values are unsupported in mayfig
 	UnsupportedUnit,
@@ -188,11 +188,11 @@ impl Display for ErrorCode {
 				write!(f, "expected delimiter after string, got {t:?}")
 			}
 			ErrorCode::ExpectedNumeric(t) => write!(f, "expected ascii numeric, got {t:?}"),
-			ErrorCode::ExpectedAsciiAlphabetic(t) => {
+			ErrorCode::ExpectedWordStart(t) => {
 				f.write_str("unquoted identifier may only start with ")?;
 				write!(f, "ascii letters or _, found {t:?}")
 			}
-			ErrorCode::ExpectedAsciiAlphanumeric(t) => {
+			ErrorCode::ExpectedWordContinue(t) => {
 				f.write_str("unquoted identifier may only contain ")?;
 				write!(f, "ascii letters, numbers, _, - or +, found {t:?}")
 			}

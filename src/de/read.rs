@@ -155,7 +155,7 @@ impl<'de> Read<'de> for StrRead<'de> {
 				break;
 			} else {
 				let point = self.position();
-				let code = ErrorCode::ExpectedAsciiAlphanumeric(peek);
+				let code = ErrorCode::ExpectedWordContinue(peek);
 				return Err(Error::with_point(code, point));
 			}
 		}
