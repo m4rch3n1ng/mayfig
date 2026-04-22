@@ -1,3 +1,43 @@
+use mayfig::error::ErrorCode;
+
+#[expect(clippy::allow_attributes)]
+#[allow(dead_code, reason = "test weirdness")]
+pub fn errorcode_to_str(code: &ErrorCode) -> Option<String> {
+	match code {
+		ErrorCode::UnknownEscape(ch)
+		| ErrorCode::UnescapedControl(ch)
+		| ErrorCode::ExpectedNewline(ch)
+		| ErrorCode::ExpectedQuote(ch)
+		| ErrorCode::ExpectedValue(ch)
+		| ErrorCode::ExpectedMap(ch)
+		| ErrorCode::ExpectedSeq(ch)
+		| ErrorCode::ExpectedSeqEnd(ch)
+		| ErrorCode::ExpectedEnum(ch)
+		| ErrorCode::ExpectedBytes(ch)
+		| ErrorCode::ExpectedRegex(ch)
+		| ErrorCode::ExpectedDelimiter(ch)
+		| ErrorCode::ExpectedNumeric(ch)
+		| ErrorCode::ExpectedWordStart(ch)
+		| ErrorCode::ExpectedWordContinue(ch) => Some(ch.to_string()),
+
+		ErrorCode::InvalidBool(s) | ErrorCode::InvalidNum(s) | ErrorCode::UnexpectedWord(s) => {
+			Some(s.to_owned())
+		}
+
+		ErrorCode::Io(_)
+		| ErrorCode::Eof
+		| ErrorCode::InvalidUtf8
+		| ErrorCode::UnexpectedNewline
+		| ErrorCode::UnsupportedUnit
+		| ErrorCode::UnsupportedNaN
+		| ErrorCode::UnsupportedNone
+		| ErrorCode::UnsupportedMapKey(_)
+		| ErrorCode::Custom(_) => None,
+
+		_ => unreachable!("missed match arm for {code:?}"),
+	}
+}
+
 #[macro_export]
 macro_rules! assert_de {
 	($string:ident as $ty:ty, $val:expr) => {{
@@ -34,6 +74,10 @@ macro_rules! assert_err {
 		if let Some(span) = se.span() {
 			let slice = &$string[span.range()];
 			assert!(!slice.is_empty(), "error span should not be empty");
+
+			if let Some(code) = maytest::errorcode_to_str(se.code()) {
+				assert_eq!(code, slice);
+			}
 		}
 	}};
 
@@ -48,5 +92,9 @@ macro_rules! assert_err {
 
 		let slice = &$string[$span.range()];
 		assert!(!slice.is_empty(), "error span should not be empty");
+
+		if let Some(code) = maytest::errorcode_to_str(se.code()) {
+			assert_eq!(code, slice);
+		}
 	}};
 }
